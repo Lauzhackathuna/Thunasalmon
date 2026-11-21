@@ -1,5 +1,6 @@
 package com.tuna.finlife.game
 
+import com.tuna.finlife.simulation.DataProvenance
 import com.tuna.finlife.simulation.HousingContract
 import com.tuna.finlife.simulation.HousingType
 import com.tuna.finlife.simulation.LifeEvent
@@ -33,18 +34,21 @@ internal enum class WhatIfState {
  * engine calendar through [SimulationSessions.fork], so all money comes from the engine.
  */
 internal object AdventureRun {
-    // Synthetic demo assumptions for the shared-flat what-if (previously the month-four housing choice).
-    private val SHARED_FLAT_RENT = Money.chf(500)
-    private val SHARED_FLAT_MOVING_COST = Money.chf(500)
-
     /** [seed] drives the random problems; a new one per run unless given (tests). */
-    fun start(seed: Long = Random.nextLong()): SimulationSession {
-        val home = HousingContract("maya-home", Money.chf(700), 0, HousingType.ALONE)
+    fun start(seed: Long = Random.nextLong(), data: StartingData = StartingData.Default): SimulationSession {
+        val home = HousingContract("maya-home", Money.chf(data.rent), 0, HousingType.ALONE)
         val profile = MonthlyProfile.alexia().copy(
             profileId = "finlife-maya",
             name = "Maya",
+            cash = Money.chf(data.openingCash),
+            studentMonthlyIncome = Money.chf(data.parentIncome),
+            startingMonthlySalary = Money.chf(data.salaryAfterStudies),
             housing = home,
-            groceries = Money.chf(230),
+            healthInsurance = Money.chf(data.healthInsurance),
+            groceries = Money.chf(data.groceries),
+            otherExpenses = Money.chf(data.otherExpenses),
+            tuitionPayment = Money.chf(data.tuition),
+            provenance = if (data == StartingData.Default) DataProvenance.TEAM_ASSUMPTION else DataProvenance.USER_INPUT,
         )
         val session = SimulationSessions.start(
             profile = profile,
@@ -86,7 +90,7 @@ internal object AdventureRun {
     fun whatIfStates(session: SimulationSession): Map<WhatIf, WhatIfState> {
         val month = session.currentMonth
         val open = session.status == SessionStatus.READY && month < session.configuration.horizonMonths &&
-            SimulationSessions.pendingDecisions(session).isEmpty()
+            noPendingDecision(session)
         val state = session.currentState
         return WhatIf.entries.associateWith { whatIf ->
             val scheduled = session.calendar.any { it.id == whatIfId(whatIf, month) }
@@ -107,7 +111,11 @@ internal object AdventureRun {
     }
 
     /** Switches the what-if on for the current month; it takes effect when the month is advanced. */
-    fun applyWhatIf(session: SimulationSession, whatIf: WhatIf): SimulationSession {
+    fun applyWhatIf(
+        session: SimulationSession,
+        whatIf: WhatIf,
+        offer: SharedFlatOffer = SharedFlatOffer.Default,
+    ): SimulationSession {
         if (whatIfStates(session)[whatIf] != WhatIfState.Available) return session
         val month = session.currentMonth
         val id = whatIfId(whatIf, month)
@@ -122,8 +130,8 @@ internal object AdventureRun {
                         LifeEvent.HousingChoice(
                             id,
                             month,
-                            HousingContract("shared-flat-$month", SHARED_FLAT_RENT, month, HousingType.SHARED),
-                            SHARED_FLAT_MOVING_COST,
+                            HousingContract("shared-flat-$month", offer.monthlyRent, month, HousingType.SHARED),
+                            offer.movingCost,
                             PaymentResponsibility.CHARACTER,
                         ),
                     ),
@@ -140,8 +148,19 @@ internal object AdventureRun {
      * Internship first: adding an event forks the month, which drops answers already given in it
      * (the shared flat's "move").
      */
-    fun withWhatIfs(base: SimulationSession, selected: Set<WhatIf>): SimulationSession =
-        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf) }
+    fun withWhatIfs(
+        base: SimulationSession,
+        selected: Set<WhatIf>,
+        offer: SharedFlatOffer = SharedFlatOffer.Default,
+    ): SimulationSession =
+        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf, offer) }
+
+    /** False if a decision is pending or the engine rejects the coming month (amount limit reached). */
+    private fun noPendingDecision(session: SimulationSession): Boolean = try {
+        SimulationSessions.pendingDecisions(session).isEmpty()
+    } catch (_: IllegalArgumentException) {
+        false
+    }
 
     private fun whatIfId(whatIf: WhatIf, month: Int) = "whatif-${whatIf.name.lowercase()}-$month"
 

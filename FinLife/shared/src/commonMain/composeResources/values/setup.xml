@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setup_title">Maya’s starting data</string>
+    <string name="setup_hint">All amounts are synthetic values in whole francs. Change any of them before you start.</string>
+    <string name="setup_section_start">Starting point</string>
+    <string name="setup_section_expenses">Monthly expenses</string>
+    <string name="setup_section_studies">Studies and work</string>
+    <string name="setup_section_whatif">What-if: shared flat</string>
+    <string name="field_parent_income">Monthly income from parents</string>
+    <string name="field_rent">Rent</string>
+    <string name="field_health_insurance">Health insurance</string>
+    <string name="field_groceries">Groceries</string>
+    <string name="field_other_expenses">Other expenses</string>
+    <string name="field_tuition">Tuition, paid every 6 months of study</string>
+    <string name="field_salary">Monthly salary after studies</string>
+    <string name="field_shared_rent">Monthly rent of the shared flat</string>
+    <string name="field_moving_cost">Moving cost</string>
+    <string name="error_empty">Enter an amount.</string>
+    <string name="error_number">Whole francs only, digits only.</string>
+    <string name="error_negative">Must be 0 or more.</string>
+    <string name="error_too_large">At most %1$s.</string>
+    <string name="setup_start">Start</string>
+    <string name="setup_defaults">Restore defaults</string>
+</resources>

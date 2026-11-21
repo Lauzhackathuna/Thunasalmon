@@ -12,6 +12,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.Counterfactual
+import com.tuna.finlife.game.StartingData
 import com.tuna.finlife.game.WhatIfDraft
 import com.tuna.finlife.i18n.AppLanguage
 import com.tuna.finlife.i18n.LocalCurrencyCode
@@ -23,12 +24,15 @@ import com.tuna.finlife.ui.DemoSettings
 import com.tuna.finlife.ui.FinLifeTheme
 import com.tuna.finlife.ui.PersonaSelectionScreen
 import com.tuna.finlife.ui.SettingsSheet
+import com.tuna.finlife.ui.SetupScreen
 import com.tuna.finlife.ui.SummaryScreen
 
 @Composable
 @Preview
 fun App() {
-    val opening = remember { AdventureRun.start() }
+    // Editable on the setup screen; kept for the next run within this app session.
+    var startingData by remember { mutableStateOf(StartingData.Default) }
+    var setupOpen by remember { mutableStateOf(false) }
     var session by remember { mutableStateOf<SimulationSession?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
     var ended by remember { mutableStateOf(false) }
@@ -50,15 +54,24 @@ fun App() {
         CompositionLocalProvider(LocalCurrencyCode provides settings.currencyCode) {
             key(settings.language) {
                 when (val current = session) {
-                    null -> {
-                        PersonaSelectionScreen(
-                            openingCash = opening.currentState.cash.cents / 100.0,
-                            onOpenSettings = { settingsOpen = true },
-                            onSelect = {
+                    null -> if (setupOpen) {
+                        SetupScreen(
+                            initial = startingData,
+                            onStart = { data ->
+                                startingData = data
+                                setupOpen = false
                                 whatIfDraft = null
                                 counterfactual = null
-                                session = AdventureRun.start()
+                                ended = false
+                                session = AdventureRun.start(data = data)
                             },
+                            onOpenSettings = { settingsOpen = true },
+                        )
+                    } else {
+                        PersonaSelectionScreen(
+                            openingCash = startingData.openingCash.toDouble(),
+                            onOpenSettings = { settingsOpen = true },
+                            onSelect = { setupOpen = true },
                         )
                     }
                     else -> if (ended || current.status == SessionStatus.COMPLETED) {
@@ -78,10 +91,23 @@ fun App() {
                         onOpenSettings = { settingsOpen = true },
                         onAdvance = {
                             if (session === current) {
-                                val next = AdventureRun.advance(current)
-                                counterfactual = Counterfactual.afterAdvance(counterfactual, whatIfDraft, next)
-                                whatIfDraft = null
-                                session = next
+                                // The engine rejects a month whose amounts exceed its limit: end the run there.
+                                val next = try {
+                                    AdventureRun.advance(current)
+                                } catch (_: IllegalArgumentException) {
+                                    null
+                                }
+                                if (next == null) {
+                                    ended = true
+                                } else {
+                                    counterfactual = try {
+                                        Counterfactual.afterAdvance(counterfactual, whatIfDraft, next)
+                                    } catch (_: IllegalArgumentException) {
+                                        null
+                                    }
+                                    whatIfDraft = null
+                                    session = next
+                                }
                             }
                         },
                         onEnd = { ended = true },
@@ -93,11 +119,12 @@ fun App() {
                                 session = next
                             }
                         },
-                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current),
+                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current, offer = startingData.sharedFlatOffer),
                         counterfactual = counterfactual,
                         onWhatIfToggle = { whatIf, on ->
                             if (session === current) {
-                                val draft = (whatIfDraft ?: WhatIfDraft(current)).toggle(whatIf, on)
+                                val draft = (whatIfDraft ?: WhatIfDraft(current, offer = startingData.sharedFlatOffer))
+                                    .toggle(whatIf, on)
                                 whatIfDraft = draft
                                 session = draft.session
                             }
@@ -118,6 +145,7 @@ fun App() {
                         onThemeChange = { settings = settings.copy(themeMode = it) },
                         onReset = {
                             session = null
+                            setupOpen = false
                             whatIfDraft = null
                             counterfactual = null
                             ended = false

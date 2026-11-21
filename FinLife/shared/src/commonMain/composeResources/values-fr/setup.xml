@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setup_title">Données de départ de Maya</string>
+    <string name="setup_hint">Tous les montants sont des valeurs synthétiques en francs entiers. Modifiez-les avant de commencer.</string>
+    <string name="setup_section_start">Point de départ</string>
+    <string name="setup_section_expenses">Dépenses mensuelles</string>
+    <string name="setup_section_studies">Études et travail</string>
+    <string name="setup_section_whatif">Et si : colocation</string>
+    <string name="field_parent_income">Revenu mensuel des parents</string>
+    <string name="field_rent">Loyer</string>
+    <string name="field_health_insurance">Assurance maladie</string>
+    <string name="field_groceries">Courses</string>
+    <string name="field_other_expenses">Autres dépenses</string>
+    <string name="field_tuition">Frais de scolarité, payés tous les 6 mois d’études</string>
+    <string name="field_salary">Salaire mensuel après les études</string>
+    <string name="field_shared_rent">Loyer mensuel de la colocation</string>
+    <string name="field_moving_cost">Frais de déménagement</string>
+    <string name="error_empty">Saisissez un montant.</string>
+    <string name="error_number">Francs entiers, chiffres uniquement.</string>
+    <string name="error_negative">Doit être 0 ou plus.</string>
+    <string name="error_too_large">Au maximum %1$s.</string>
+    <string name="setup_start">Commencer</string>
+    <string name="setup_defaults">Valeurs par défaut</string>
+</resources>
