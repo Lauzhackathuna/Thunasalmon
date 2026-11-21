@@ -97,19 +97,22 @@ data class MonthlyProfile(
     val tuitionPayment: Money,
     val tuitionEveryStudyMonths: Int,
     val provenance: DataProvenance,
+    val initialEnvelopes: EnvelopeBalances? = null,
 ) {
     val currency: String get() = "CHF"
     init {
         require(profileId.isNotBlank() && name.isNotBlank())
         require(initialAge in 0..120 && studyMonths in 0..MonthlyConfiguration.MAX_MONTHS)
         require(tuitionEveryStudyMonths > 0 && housing.priceMonth == 0)
+        requireCost(cash)
+        require(initialEnvelopes == null || initialEnvelopes.total == cash)
         listOf(investments, debt, studentMonthlyIncome, startingMonthlySalary, healthInsurance,
             groceries, otherExpenses, tuitionPayment).forEach(::requireCost)
     }
     companion object {
         fun alexia() = MonthlyProfile("finlife-alexia", "Alexia", 20, "Lausanne",
             Money.chf(8_000), Money.ZERO, Money.ZERO, Money.chf(1_200), Money.chf(6_000),
-            HousingContract("initial-home", Money.chf(600)), Money.chf(250), Money.chf(250),
+            HousingContract("initial-home", Money.chf(1000), type = HousingType.ALONE), Money.chf(250), Money.chf(250),
             Money.chf(300), 24, Money.chf(800), 6, DataProvenance.TEAM_ASSUMPTION)
     }
 }
@@ -138,8 +141,11 @@ data class MonthlyConfiguration(
     val randomSeed: Long = 1L,
     val randomEvents: RandomEventSettings = RandomEventSettings(),
     val assumptionsProvenance: DataProvenance = DataProvenance.TEAM_ASSUMPTION,
+    val sharedReferenceRent: Money = Money.chf(800),
+    val sharedMovingCost: Money = Money.ZERO,
 ) {
     init {
+        requireCost(sharedReferenceRent); requireCost(sharedMovingCost)
         require(horizonMonths in 1..MAX_MONTHS)
         validateRate(annualInflation); validateRate(annualSalaryGrowth); validateRate(annualInvestmentReturn)
         require(annualDebtInterest.isFinite() && annualDebtInterest in 0.0..1.0)
@@ -174,14 +180,23 @@ data class MonthlyState(
     val careerStartMonth: Int?,
     val housing: HousingContract,
     val rentRule: MonthlyRentRule?,
+    val envelopes: EnvelopeBalances = EnvelopeBalances(reserve = cash),
+    val unpaid: UnpaidObligations = UnpaidObligations(),
+    val shortInternship: ShortInternship? = null,
+    val housingDecision: HousingDecision? = null,
 ) {
-    val netWorth: Money get() = cash + investments - debt
+    /** Legacy lastPaidTuitionProgress now tracks the last assessed deadline; payment lives in unpaid/ledger. */
+    val lastAssessedTuitionProgress: Int get() = lastPaidTuitionProgress
+    val accountsPayable: Money get() = unpaid.items.filter { !it.bankPrincipal }.map { it.missing }.total()
+    val theoreticalCash: Money get() = cash - unpaid.items.map { it.missing }.total()
+    val netWorth: Money get() = cash + investments - debt - accountsPayable
     val status: LifeStatus get() = when {
         internshipMonthsRemaining > 0 -> LifeStatus.INTERN
         studyMonthsRemaining > 0 -> LifeStatus.STUDENT
         else -> LifeStatus.EMPLOYED
     }
     init {
+        requireCost(cash); require(envelopes.total == cash)
         require(month >= 0 && studyMonthsCompleted >= 0 && studyMonthsRemaining >= 0)
         require(lastPaidTuitionProgress in -1..studyMonthsCompleted)
         require(internshipMonthsRemaining >= 0)
@@ -208,10 +223,12 @@ data class MonthlyFlow(
     val principalRepayment: Money = Money.ZERO,
     val investmentContribution: Money = Money.ZERO,
     val investmentReturn: Money = Money.ZERO,
+    /** Actual cash payments, including older arrears. expenses remains this month's accrued expense. */
+    val paidExpenses: Money = rent + healthInsurance + groceries + otherExpenses + tuition + exceptionalExpenses + decisionCosts + interest,
 ) {
     val income: Money get() = studentIncome + internshipIncome + professionalIncome
     val recurringExpenses: Money get() = rent + healthInsurance + groceries + otherExpenses
     val expenses: Money get() = recurringExpenses + tuition + exceptionalExpenses + decisionCosts + interest
-    val netCashFlow: Money get() = income + newBorrowing - expenses - principalRepayment
+    val netCashFlow: Money get() = income + newBorrowing - paidExpenses - principalRepayment
     val netWorthChange: Money get() = income - expenses + investmentReturn
 }

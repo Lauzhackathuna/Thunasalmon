@@ -25,9 +25,22 @@ sealed class LifeEvent {
         init { validateEvent(id, month); require(durationMonths in 1..MonthlyConfiguration.MAX_MONTHS); requireCost(monthlyIncome) }
     }
 
+    /** Internal FinLife offer; additive, exactly three months, never suspends academic progress. */
+    data class ShortInternshipOffer(
+        override val id: String = "FINLIFE_INTERNSHIP_OFFER",
+        override val month: Int,
+        val startMonth: Int = month,
+        val monthlyIncome: Money = Money.chf(300),
+    ) : LifeEvent() {
+        override val interactive: Boolean get() = true
+        val title: String get() = "Une entreprise te propose un stage rémunéré pendant trois mois. Acceptes-tu ?"
+        val durationMonths: Int get() = 3
+        init { validateEvent(id, month); require(startMonth >= month && startMonth <= MonthlyConfiguration.MAX_MONTHS - 3); requireCost(monthlyIncome) }
+    }
+
     data class RentRise(override val id: String, override val month: Int, val rule: MonthlyRentRule,
         override val numericProvenance: DataProvenance = DataProvenance.TEAM_ASSUMPTION) : LifeEvent() {
-        override val interactive: Boolean get() = false
+        override val interactive: Boolean get() = true
         override val scenarioId: ScenarioId get() = ScenarioId.S037
         init { validateEvent(id, month); require(rule.startMonth == month) }
     }
@@ -185,10 +198,9 @@ object EventCalendar {
     internal fun validate(events: List<LifeEvent>, horizon: Int) {
         require(events.map { it.id }.distinct().size == events.size) { "Duplicate event ID" }
         require(events.all { it.month in 0 until horizon }) { "Event outside simulation horizon" }
-        val moments = events.filter { it.interactive }.map { it.month }.distinct()
-        if (horizon <= 6) require(moments.size <= 2) { "At most two interactive moments in a six-month session" }
         for (sameMonth in events.groupBy { it.month }.values) {
             require(sameMonth.count { it is LifeEvent.Internship } <= 1)
+            require(sameMonth.count { it is LifeEvent.ShortInternshipOffer } <= 1)
             require(sameMonth.count { it is LifeEvent.HousingChoice } <= 1)
             require(sameMonth.count { it is LifeEvent.RentRise } <= 1)
         }
