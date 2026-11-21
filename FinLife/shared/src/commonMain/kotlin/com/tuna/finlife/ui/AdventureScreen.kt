@@ -1,13 +1,11 @@
 package com.tuna.finlife.ui
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.toggleable
@@ -24,13 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.WhatIfDraft
@@ -48,7 +40,6 @@ import finlife.shared.generated.resources.adventure_arrival
 import finlife.shared.generated.resources.adventure_month
 import finlife.shared.generated.resources.adventure_title
 import finlife.shared.generated.resources.cash_balance
-import finlife.shared.generated.resources.cash_history
 import finlife.shared.generated.resources.closing_cash
 import finlife.shared.generated.resources.decision_costs
 import finlife.shared.generated.resources.end_simulation
@@ -201,7 +192,7 @@ private fun AdventureFinances(session: SimulationSession, record: MonthlyRecord?
             if (record != null) {
                 val change = (record.after.cash - record.before.cash).cents / 100.0
                 DeltaIndicator(displayMoney(abs(change)), DeltaDirection.fromAmount(change))
-                if (showHistory) CashHistory(session)
+                if (showHistory) CashChart(session, Modifier.fillMaxWidth())
             }
             HorizontalDivider()
             LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))
@@ -210,38 +201,6 @@ private fun AdventureFinances(session: SimulationSession, record: MonthlyRecord?
                 LedgerLine(stringResource(Res.string.expenses), money(record.flow.expenses))
             }
         }
-    }
-}
-
-@Composable
-private fun CashHistory(session: SimulationSession) {
-    val amounts = remember(session) { session.states.map { it.cash.cents } }
-    val description = stringResource(Res.string.cash_history)
-    val color = MaterialTheme.colorScheme.primary
-    Canvas(
-        Modifier.fillMaxWidth().height(44.dp).semantics { contentDescription = description },
-    ) {
-        val low = amounts.min()
-        val range = (amounts.max() - low).coerceAtLeast(1)
-        val line = Path()
-        val fill = Path()
-        for ((index, cash) in amounts.withIndex()) {
-            val x = size.width * index / amounts.lastIndex
-            val fraction = (cash - low).toFloat() / range
-            val y = size.height * (0.85f - 0.7f * fraction)
-            if (index == 0) {
-                line.moveTo(x, y)
-                fill.moveTo(x, y)
-            } else {
-                line.lineTo(x, y)
-                fill.lineTo(x, y)
-            }
-        }
-        fill.lineTo(size.width, size.height)
-        fill.lineTo(0f, size.height)
-        fill.close()
-        drawPath(fill, Brush.verticalGradient(listOf(color.copy(alpha = 0.24f), color.copy(alpha = 0f))))
-        drawPath(line, color, style = Stroke(width = 2.dp.toPx()))
     }
 }
 
