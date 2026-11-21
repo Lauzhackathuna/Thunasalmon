@@ -13,7 +13,10 @@ sealed interface GameState {
         val persona: Persona,
         val snapshot: FinancialSnapshot,
         val lastMonth: MonthOutcome? = null,
-    ) : GameState
+        val cashChange: Double? = null,
+    ) : GameState {
+        val canAdvanceMonth: Boolean get() = snapshot.monthIndex < DEMO_HORIZON_MONTHS - 1
+    }
 }
 
 sealed interface GameAction {
@@ -31,14 +34,18 @@ fun reduceGame(state: GameState, action: GameAction, twin: TwinEngine): GameStat
             }
         }
         GameAction.AdvanceMonth -> {
-            if (state is GameState.Playing && state.snapshot.monthIndex < DEMO_HORIZON_MONTHS - 1) {
+            if (state is GameState.Playing && state.canAdvanceMonth) {
                 val outcome = twin.advanceMonth(
                     persona = state.persona,
                     current = state.snapshot,
                     playerSpendThisMonth = 0.0,
                     activeScenarios = emptySet(),
                 )
-                state.copy(snapshot = outcome.snapshot, lastMonth = outcome)
+                state.copy(
+                    snapshot = outcome.snapshot,
+                    lastMonth = outcome,
+                    cashChange = outcome.snapshot.cash - state.snapshot.cash,
+                )
             } else {
                 state
             }

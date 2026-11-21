@@ -13,17 +13,28 @@ private const val DEFAULT_CURRENCY_CODE = "CHF"
 
 @Composable
 internal fun displayMoney(amount: Double, currencyCode: String = DEFAULT_CURRENCY_CODE): String {
-    val minorUnits = (amount * 100).roundToLong()
-    val magnitude = abs(minorUnits)
+    val rounded = (amount * 100).roundToLong()
+    val number = displayMagnitude(abs(rounded), 100, 2)
+    val formatted = stringResource(Res.string.money_pattern, number, currencyCode)
+    return if (rounded < 0) "−$formatted" else formatted
+}
+
+@Composable
+internal fun displayMonths(amount: Double): String {
+    val rounded = (amount * 10).roundToLong()
+    val formatted = displayMagnitude(abs(rounded), 10, 1)
+    return if (rounded < 0) "−$formatted" else formatted
+}
+
+@Composable
+private fun displayMagnitude(magnitude: Long, scale: Int, fractionDigits: Int): String {
     val separator = stringResource(Res.string.money_group_separator)
-    val whole = (magnitude / 100).toString().reversed().chunked(3).asReversed()
+    val whole = (magnitude / scale).toString().reversed().chunked(3).asReversed()
         .joinToString(separator) { it.reversed() }
-    val cents = magnitude % 100
-    val number = if (cents == 0L) {
+    val fraction = magnitude % scale
+    return if (fraction == 0L) {
         whole
     } else {
-        whole + stringResource(Res.string.money_decimal_separator) + cents.toString().padStart(2, '0')
+        whole + stringResource(Res.string.money_decimal_separator) + fraction.toString().padStart(fractionDigits, '0')
     }
-    val formatted = stringResource(Res.string.money_pattern, number, currencyCode)
-    return if (minorUnits < 0) "−$formatted" else formatted
 }

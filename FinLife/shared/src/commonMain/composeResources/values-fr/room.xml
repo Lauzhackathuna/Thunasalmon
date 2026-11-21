@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="opening_balance">Solde d’ouverture</string>
+    <string name="month_number">Mois %1$d</string>
+    <string name="liquidity_months">Liquidité (mois)</string>
+    <string name="net_worth">Patrimoine net</string>
+    <string name="goal_feasibility">Objectif</string>
+    <string name="goal_on_track">En bonne voie</string>
+    <string name="goal_at_risk">À risque</string>
+    <string name="goal_off_track">Hors trajectoire</string>
+    <string name="constraint_breaches">Contraintes enfreintes</string>
+    <string name="room_description">Chambre partagée avec une fenêtre, un personnage et trois emplacements de mobilier vides.</string>
+    <string name="month_summary">Bilan du mois</string>
+    <string name="income">Revenus</string>
+    <string name="expenses">Dépenses</string>
+    <string name="month_events">Événements</string>
+    <string name="tuition_due">Frais de scolarité dus</string>
+    <string name="arrival_costs">Frais d’arrivée</string>
+    <string name="close_summary">Fermer</string>
+</resources>

@@ -30,7 +30,14 @@ fun App() {
                     onSelect = { state = reduceGame(state, GameAction.SelectPersona(it), twin) },
                 )
             }
-            is GameState.Playing -> RoomScreen(current)
+            is GameState.Playing -> RoomScreen(
+                state = current,
+                onAdvanceMonth = {
+                    if (state == current) {
+                        state = reduceGame(current, GameAction.AdvanceMonth, twin)
+                    }
+                },
+            )
         }
     }
 }
