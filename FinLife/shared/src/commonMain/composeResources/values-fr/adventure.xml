@@ -20,4 +20,9 @@
     <string name="continue_simulation">Continuer la simulation</string>
     <string name="start_over">Recommencer</string>
     <string name="chart_axis_months">Mois</string>
+    <string name="chart_your_path">Votre parcours</string>
+    <string name="chart_without_internship">Sans le stage</string>
+    <string name="chart_without_move">Sans le déménagement</string>
+    <string name="chart_without_both">Sans le stage ni le déménagement</string>
+    <string name="chart_difference">Écart</string>
 </resources>

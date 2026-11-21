@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.Counterfactual
 import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.WhatIfDraft
 import com.tuna.finlife.game.kind
@@ -69,6 +70,7 @@ internal fun AdventureScreen(
     onEnd: () -> Unit,
     onChoose: (eventId: String, optionId: String) -> Unit,
     whatIfDraft: WhatIfDraft,
+    counterfactual: Counterfactual?,
     onWhatIfToggle: (WhatIf, Boolean) -> Unit,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
@@ -79,7 +81,7 @@ internal fun AdventureScreen(
     if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
     GameScreen(
         onOpenSettings = onOpenSettings,
-        header = { AdventureFinances(session, record, showHistory = pending.isEmpty()) },
+        header = { AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty()) },
         actions = {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
@@ -180,7 +182,12 @@ private val WhatIf.label: StringResource
     }
 
 @Composable
-private fun AdventureFinances(session: SimulationSession, record: MonthlyRecord?, showHistory: Boolean) {
+private fun AdventureFinances(
+    session: SimulationSession,
+    record: MonthlyRecord?,
+    counterfactual: Counterfactual?,
+    showHistory: Boolean,
+) {
     val cash by animateFloatAsState(session.currentState.cash.cents.toFloat() / 100f, label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
         ScreenHeading(stringResource(Res.string.adventure_title, stringResource(Res.string.maya_name)))
@@ -192,7 +199,7 @@ private fun AdventureFinances(session: SimulationSession, record: MonthlyRecord?
             if (record != null) {
                 val change = (record.after.cash - record.before.cash).cents / 100.0
                 DeltaIndicator(displayMoney(abs(change)), DeltaDirection.fromAmount(change))
-                if (showHistory) CashChart(session, Modifier.fillMaxWidth())
+                if (showHistory) CashChart(session, counterfactual, Modifier.fillMaxWidth())
             }
             HorizontalDivider()
             LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))

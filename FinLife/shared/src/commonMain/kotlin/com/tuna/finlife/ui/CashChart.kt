@@ -31,6 +31,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -50,13 +52,21 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.tuna.finlife.game.ChartScale
+import com.tuna.finlife.game.Counterfactual
+import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.LocalCurrencyCode
+import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.simulation.SimulationSession
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.cash_balance
 import finlife.shared.generated.resources.cash_history
 import finlife.shared.generated.resources.chart_axis_months
+import finlife.shared.generated.resources.chart_difference
+import finlife.shared.generated.resources.chart_without_both
+import finlife.shared.generated.resources.chart_without_internship
+import finlife.shared.generated.resources.chart_without_move
+import finlife.shared.generated.resources.chart_your_path
 import finlife.shared.generated.resources.expenses
 import finlife.shared.generated.resources.income
 import finlife.shared.generated.resources.money_decimal_separator
@@ -64,6 +74,7 @@ import finlife.shared.generated.resources.money_group_separator
 import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 
@@ -76,18 +87,27 @@ private val TooltipWidth = 230.dp
  * nearest month and a tooltip with that month's details.
  */
 @Composable
-internal fun CashChart(session: SimulationSession, modifier: Modifier = Modifier) {
+internal fun CashChart(session: SimulationSession, counterfactual: Counterfactual?, modifier: Modifier = Modifier) {
     val states = remember(session) { session.states }
     val history = remember(session) { session.history }
     val events = remember(session) { session.calendar.associateBy { it.id } }
     val cash = remember(states) { states.map { it.cash.cents / 100 } }
-    val axis = remember(cash) { ChartScale.valueAxis(cash.min(), cash.max()) }
+    // Alternative path (dotted): from the month it branched off to the last month it reached.
+    val altStates = remember(counterfactual) { counterfactual?.alternative?.states.orEmpty() }
+    val altFrom = counterfactual?.month ?: 0
+    val altCash = remember(altStates) { altStates.map { it.cash.cents / 100 } }
+    val altLast = minOf(altStates.lastIndex, cash.lastIndex)
+    val altRange = if (altLast > altFrom) altFrom..altLast else IntRange.EMPTY
+    val axis = remember(cash, altCash, altRange) {
+        val all = cash + altRange.map { altCash[it] }
+        ChartScale.valueAxis(all.min(), all.max())
+    }
     val monthTicks = remember(states.size) { ChartScale.monthTicks(states.lastIndex) }
     val count = states.size
 
     val group = stringResource(Res.string.money_group_separator)
     val decimal = stringResource(Res.string.money_decimal_separator)
-    val yLabels = remember(axis, group, decimal) { axis.ticks.map { ChartScale.tickLabel(it, group, decimal) } }
+    val yLabels = remember(axis, group, decimal) { ChartScale.tickLabels(axis.ticks, group, decimal) }
     val colors = MaterialTheme.colorScheme
     val labelStyle = MaterialTheme.typography.labelSmall.copy(color = colors.onSurfaceVariant)
     val measurer = rememberTextMeasurer()
@@ -106,6 +126,13 @@ internal fun CashChart(session: SimulationSession, modifier: Modifier = Modifier
     val description = stringResource(Res.string.cash_history)
     val selectedLabel = selected?.let { monthLabel(it) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (!altRange.isEmpty() && counterfactual != null) {
+            // Two series: the legend is always present; identity by line style, not colour alone.
+            Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
+                LegendItem(stringResource(Res.string.chart_your_path), dotted = false)
+                LegendItem(withoutLabel(counterfactual.removed), dotted = true)
+            }
+        }
         // Y-axis title: the unit of the values.
         Text(LocalCurrencyCode.current, style = labelStyle)
         BoxWithConstraints(Modifier.fillMaxWidth().height(ChartHeight)) {
@@ -184,12 +211,26 @@ internal fun CashChart(session: SimulationSession, modifier: Modifier = Modifier
                     if (index == 0) line.moveTo(point.x, point.y) else line.lineTo(point.x, point.y)
                 }
                 drawPath(line, colors.primary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                if (!altRange.isEmpty()) {
+                    val dotted = Path()
+                    for (index in altRange) {
+                        val point = Offset(xOf(index.toFloat()), yOf(altCash[index]))
+                        if (index == altRange.first) dotted.moveTo(point.x, point.y) else dotted.lineTo(point.x, point.y)
+                    }
+                    drawPath(dotted, colors.primary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, pathEffect = dots(this)))
+                }
 
                 // Crosshair and marker (8dp dot with a 2dp surface ring), else an end-dot on the latest month.
                 val markerIndex = selected ?: cash.lastIndex
                 if (selected != null) {
                     val x = xOf(crosshair.value)
                     drawLine(colors.onSurfaceVariant, Offset(x, topPx), Offset(x, plotBottom), hairline)
+                }
+                if (selected != null && markerIndex in altRange && markerIndex > altFrom) {
+                    // Hollow marker on the alternative so it differs from the solid path's dot.
+                    val altMarker = Offset(xOf(markerIndex.toFloat()), yOf(altCash[markerIndex]))
+                    drawCircle(colors.surface, 6.dp.toPx(), altMarker)
+                    drawCircle(colors.primary, 4.dp.toPx(), altMarker, style = Stroke(2.dp.toPx()))
                 }
                 val marker = Offset(xOf(markerIndex.toFloat()), yOf(cash[markerIndex]))
                 drawCircle(colors.surface, 6.dp.toPx(), marker)
@@ -218,6 +259,20 @@ internal fun CashChart(session: SimulationSession, modifier: Modifier = Modifier
                         Text(monthLabel(index), style = MaterialTheme.typography.labelLarge)
                         TooltipLine(stringResource(Res.string.cash_balance), money(state.cash))
                         TooltipLine(stringResource(Res.string.net_worth), money(state.netWorth))
+                        if (counterfactual != null && index in altRange && index > altFrom) {
+                            val other = altStates[index]
+                            TooltipLine(withoutLabel(counterfactual.removed), money(other.cash))
+                            val difference = (state.cash - other.cash).cents / 100.0
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+                                Text(
+                                    stringResource(Res.string.chart_difference),
+                                    Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.onSurfaceVariant,
+                                )
+                                DeltaIndicator(displayMoney(abs(difference)), DeltaDirection.fromAmount(difference))
+                            }
+                        }
                         if (index > 0) {
                             val record = history[index - 1]
                             TooltipLine(stringResource(Res.string.income), money(record.flow.income))
@@ -251,6 +306,35 @@ private fun TooltipLine(label: String, value: String) {
         Text(value, Modifier.alignByBaseline(), style = MaterialTheme.typography.labelLarge)
     }
 }
+
+/** Round-capped, near-zero-length dashes read as dots. */
+private fun dots(scope: DrawScope): PathEffect = with(scope) {
+    PathEffect.dashPathEffect(floatArrayOf(0.1f, 5.dp.toPx()))
+}
+
+@Composable
+private fun LegendItem(label: String, dotted: Boolean) {
+    val color = MaterialTheme.colorScheme.primary
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Canvas(Modifier.width(20.dp).height(8.dp)) {
+            val y = size.height / 2
+            drawLine(
+                color, Offset(0f, y), Offset(size.width, y), 2.dp.toPx(), cap = StrokeCap.Round,
+                pathEffect = if (dotted) dots(this) else null,
+            )
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun withoutLabel(removed: Set<WhatIf>): String = stringResource(
+    when {
+        WhatIf.Internship in removed && WhatIf.SharedFlat in removed -> Res.string.chart_without_both
+        WhatIf.Internship in removed -> Res.string.chart_without_internship
+        else -> Res.string.chart_without_move
+    },
+)
 
 /** State m closes month m (shown 1-based like the month cards); state 0 is the opening balance. */
 @Composable

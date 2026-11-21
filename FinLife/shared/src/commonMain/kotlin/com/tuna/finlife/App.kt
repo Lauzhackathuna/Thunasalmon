@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.Counterfactual
 import com.tuna.finlife.game.WhatIfDraft
 import com.tuna.finlife.i18n.AppLanguage
 import com.tuna.finlife.i18n.LocalCurrencyCode
@@ -33,6 +34,8 @@ fun App() {
     var ended by remember { mutableStateOf(false) }
     // What-ifs of the current month, still reversible. Cleared whenever time moves or the run changes.
     var whatIfDraft by remember { mutableStateOf<WhatIfDraft?>(null) }
+    // The same run without the most recent what-ifs, shown dotted on the chart.
+    var counterfactual by remember { mutableStateOf<Counterfactual?>(null) }
     var settings by remember {
         val language = if (Locale.current.language == "fr") AppLanguage.French else AppLanguage.English
         mutableStateOf(DemoSettings(language))
@@ -53,6 +56,7 @@ fun App() {
                             onOpenSettings = { settingsOpen = true },
                             onSelect = {
                                 whatIfDraft = null
+                                counterfactual = null
                                 session = AdventureRun.start()
                             },
                         )
@@ -65,6 +69,7 @@ fun App() {
                                 session = null
                                 ended = false
                                 whatIfDraft = null
+                                counterfactual = null
                             },
                             onOpenSettings = { settingsOpen = true },
                         )
@@ -73,18 +78,23 @@ fun App() {
                         onOpenSettings = { settingsOpen = true },
                         onAdvance = {
                             if (session === current) {
+                                val next = AdventureRun.advance(current)
+                                counterfactual = Counterfactual.afterAdvance(counterfactual, whatIfDraft, next)
                                 whatIfDraft = null
-                                session = AdventureRun.advance(current)
+                                session = next
                             }
                         },
                         onEnd = { ended = true },
                         onChoose = { eventId, optionId ->
                             if (session === current) {
+                                val next = AdventureRun.choose(current, eventId, optionId)
+                                counterfactual = counterfactual?.catchUp(next.currentMonth)
                                 whatIfDraft = null
-                                session = AdventureRun.choose(current, eventId, optionId)
+                                session = next
                             }
                         },
                         whatIfDraft = whatIfDraft ?: WhatIfDraft(current),
+                        counterfactual = counterfactual,
                         onWhatIfToggle = { whatIf, on ->
                             if (session === current) {
                                 val draft = (whatIfDraft ?: WhatIfDraft(current)).toggle(whatIf, on)
@@ -109,6 +119,7 @@ fun App() {
                         onReset = {
                             session = null
                             whatIfDraft = null
+                            counterfactual = null
                             ended = false
                             settingsOpen = false
                         },

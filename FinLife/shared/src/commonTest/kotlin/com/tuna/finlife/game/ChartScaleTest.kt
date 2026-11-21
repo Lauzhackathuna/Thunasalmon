@@ -44,4 +44,10 @@ class ChartScaleTest {
         assertEquals("12,5K", ChartScale.tickLabel(12_500, " ", ","))
         assertEquals("1,250K", ChartScale.tickLabel(1_250_000, ",", "."))
     }
+
+    @Test
+    fun anAxisUsesOneLabelStyle() {
+        assertEquals(listOf("−10K", "−5K", "0", "5K", "10K"), ChartScale.tickLabels(listOf(-10_000L, -5_000, 0, 5_000, 10_000), ",", "."))
+        assertEquals(listOf("0", "2,500", "5,000"), ChartScale.tickLabels(listOf(0L, 2_500, 5_000), ",", "."))
+    }
 }

@@ -44,11 +44,17 @@ internal object ChartScale {
         return (x / width * (count - 1)).roundToInt().coerceIn(0, count - 1)
     }
 
-    /** Full number under 10,000 (with [groupSeparator]); compact "10K" / "12.5K" style from 10,000 on. */
-    fun tickLabel(chf: Long, groupSeparator: String, decimalSeparator: String): String {
+    /** One style per axis: compact ("5K", "10K") as soon as any tick reaches 10,000, else full numbers. */
+    fun tickLabels(ticks: List<Long>, groupSeparator: String, decimalSeparator: String): List<String> {
+        val compact = ticks.any { abs(it) >= 10_000 }
+        return ticks.map { tickLabel(it, groupSeparator, decimalSeparator, compact) }
+    }
+
+    /** Full number (with [groupSeparator]), or compact "10K" / "12.5K" style when [compact]. Zero stays "0". */
+    fun tickLabel(chf: Long, groupSeparator: String, decimalSeparator: String, compact: Boolean = abs(chf) >= 10_000): String {
         val sign = if (chf < 0) "−" else ""
         val magnitude = abs(chf)
-        if (magnitude >= 10_000) {
+        if (compact && magnitude != 0L) {
             val tenths = (magnitude / 100.0).roundToInt()
             val whole = group((tenths / 10).toLong(), groupSeparator)
             val text = if (tenths % 10 == 0) whole else "$whole$decimalSeparator${tenths % 10}"
