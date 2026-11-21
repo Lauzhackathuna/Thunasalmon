@@ -67,7 +67,9 @@ fun App() {
                         onOpenSettings = { settingsOpen = true },
                         onAdvance = { if (session === current) session = SimulationSessions.advance(current) },
                         onEnd = { ended = true },
-                        onChoose = { if (session === current) session = AdventureRun.choose(current, it) },
+                        onChoose = { eventId, optionId ->
+                            if (session === current) session = AdventureRun.choose(current, eventId, optionId)
+                        },
                     )
                 }
                 if (settingsOpen) {

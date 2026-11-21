@@ -24,12 +24,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tuna.finlife.game.AdventureRun
-import com.tuna.finlife.game.HousingDecision
+import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRecord
+import com.tuna.finlife.simulation.PendingDecision
 import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
+import com.tuna.finlife.simulation.SimulationSessions
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.advance_month
 import finlife.shared.generated.resources.adventure_arrival
@@ -37,24 +39,19 @@ import finlife.shared.generated.resources.adventure_month
 import finlife.shared.generated.resources.adventure_title
 import finlife.shared.generated.resources.cash_balance
 import finlife.shared.generated.resources.cash_history
-import finlife.shared.generated.resources.choose_housing
 import finlife.shared.generated.resources.closing_cash
+import finlife.shared.generated.resources.decision_costs
 import finlife.shared.generated.resources.end_simulation
 import finlife.shared.generated.resources.expenses
-import finlife.shared.generated.resources.housing_moved
-import finlife.shared.generated.resources.housing_prompt
-import finlife.shared.generated.resources.housing_stayed
 import finlife.shared.generated.resources.income
 import finlife.shared.generated.resources.maya_name
 import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.monthly_rent
-import finlife.shared.generated.resources.move_choice
-import finlife.shared.generated.resources.moving_cost
 import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
 import finlife.shared.generated.resources.settings
 import finlife.shared.generated.resources.simulation_complete
-import finlife.shared.generated.resources.stay_choice
+import finlife.shared.generated.resources.unexpected_costs
 import kotlin.math.abs
 import org.jetbrains.compose.resources.stringResource
 
@@ -64,18 +61,14 @@ internal fun AdventureScreen(
     onOpenSettings: () -> Unit,
     onAdvance: () -> Unit,
     onEnd: () -> Unit,
-    onChoose: (HousingDecision) -> Unit,
+    onChoose: (eventId: String, optionId: String) -> Unit,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
-    val preview = remember(session) {
-        if (session.status == SessionStatus.AWAITING_DECISION) {
-            HousingDecision.entries.associateWith { AdventureRun.preview(session, it) }
-        } else {
-            emptyMap()
-        }
+    val pending = remember(session) {
+        if (session.status == SessionStatus.AWAITING_DECISION) SimulationSessions.pendingDecisions(session) else emptyList()
     }
     GameScreen(
-        header = { AdventureFinances(session, record, showHistory = preview.isEmpty()) },
+        header = { AdventureFinances(session, record, showHistory = pending.isEmpty()) },
         actions = {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
@@ -89,20 +82,9 @@ internal fun AdventureScreen(
             }
         },
     ) {
-        if (preview.isNotEmpty()) {
-            val stay = preview.getValue(HousingDecision.Stay)
-            Text(stringResource(Res.string.choose_housing), style = MaterialTheme.typography.titleLarge)
-            Text(
-                stringResource(
-                    Res.string.housing_prompt,
-                    stay.month + 1,
-                    money(stay.flow.income),
-                    money(stay.flow.rent),
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            for ((decision, outcome) in preview) {
-                HousingOption(decision, outcome) { onChoose(decision) }
+        if (pending.isNotEmpty()) {
+            for (decision in pending) {
+                PendingDecisionView(session, decision) { optionId -> onChoose(decision.event.id, optionId) }
             }
         } else {
             OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
@@ -118,20 +100,19 @@ internal fun AdventureScreen(
                     if (record == null) {
                         Text(stringResource(Res.string.adventure_arrival, money(session.profile.studentMonthlyIncome)))
                     } else {
-                        val decision = record.decisions.singleOrNull()
-                        if (decision != null) {
-                            val message = if (decision.optionId == HousingDecision.Move.optionId) {
-                                Res.string.housing_moved
-                            } else {
-                                Res.string.housing_stayed
-                            }
-                            Text(stringResource(message))
+                        val events = remember(session) { session.calendar.associateBy { it.id } }
+                        for (outcome in record.events) {
+                            val event = events[outcome.eventId] ?: continue
+                            outcomeText(event.kind(), outcome, record)?.let { Text(it) }
                         }
                         Text(stringResource(Res.string.adventure_month, money(record.flow.income), money(record.flow.expenses)))
                         HorizontalDivider()
                         LedgerLine(stringResource(Res.string.monthly_rent), money(record.flow.rent))
                         if (record.flow.decisionCosts > Money.ZERO) {
-                            LedgerLine(stringResource(Res.string.moving_cost), money(record.flow.decisionCosts))
+                            LedgerLine(stringResource(Res.string.decision_costs), money(record.flow.decisionCosts))
+                        }
+                        if (record.flow.exceptionalExpenses > Money.ZERO) {
+                            LedgerLine(stringResource(Res.string.unexpected_costs), money(record.flow.exceptionalExpenses))
                         }
                     }
                     if (session.status == SessionStatus.COMPLETED) Text(stringResource(Res.string.simulation_complete))
@@ -199,17 +180,30 @@ private fun CashHistory(session: SimulationSession) {
 }
 
 @Composable
-private fun HousingOption(decision: HousingDecision, record: MonthlyRecord, onChoose: () -> Unit) {
-    val label = stringResource(if (decision == HousingDecision.Stay) Res.string.stay_choice else Res.string.move_choice)
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(FinLifeSpacing.medium),
-            verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-        ) {
-            LedgerLine(stringResource(Res.string.monthly_rent), money(record.flow.rent))
-            LedgerLine(stringResource(Res.string.moving_cost), money(record.flow.decisionCosts))
-            LedgerLine(stringResource(Res.string.closing_cash), money(record.after.cash))
-            PrimaryButton(label, onChoose)
+private fun PendingDecisionView(session: SimulationSession, decision: PendingDecision, onChoose: (String) -> Unit) {
+    val kind = remember(decision) { decision.event.kind() }
+    val previews = remember(session, decision) {
+        decision.options.associate { it.id to AdventureRun.preview(session, decision.event.id, it.id) }
+    }
+    val copy = decisionCopy(kind, decision.event.month)
+    if (copy.title.isNotEmpty()) Text(copy.title, style = MaterialTheme.typography.titleLarge)
+    Text(copy.prompt, style = MaterialTheme.typography.bodyMedium)
+    for (option in decision.options) {
+        val outcome = previews[option.id]
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(FinLifeSpacing.medium),
+                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            ) {
+                if (outcome != null) {
+                    LedgerLine(stringResource(Res.string.monthly_rent), money(outcome.flow.rent))
+                    LedgerLine(stringResource(Res.string.decision_costs), money(outcome.flow.decisionCosts))
+                    LedgerLine(stringResource(Res.string.closing_cash), money(outcome.after.cash))
+                } else {
+                    LedgerLine(stringResource(Res.string.decision_costs), money(option.immediateCost))
+                }
+                PrimaryButton(optionLabel(kind, option), { onChoose(option.id) })
+            }
         }
     }
 }

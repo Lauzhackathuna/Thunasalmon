@@ -54,13 +54,28 @@ internal object AdventureRun {
         )
     }
 
-    fun choose(session: SimulationSession, choice: HousingDecision): SimulationSession {
-        if (session.status != SessionStatus.AWAITING_DECISION ||
-            SimulationSessions.pendingDecisions(session).none { it.event.id == HOUSING_EVENT }
-        ) return session
-        return SimulationSessions.advance(SimulationSessions.submit(session, HOUSING_EVENT, choice.optionId))
-    }
+    fun choose(session: SimulationSession, choice: HousingDecision): SimulationSession =
+        choose(session, HOUSING_EVENT, choice.optionId)
 
     fun preview(session: SimulationSession, choice: HousingDecision): MonthlyRecord =
         choose(session, choice).history.last()
+
+    /**
+     * Records the answer to one pending decision. Once every decision of the month is answered,
+     * the month is advanced. Returns [session] unchanged if the decision or option is not pending.
+     */
+    fun choose(session: SimulationSession, eventId: String, optionId: String): SimulationSession {
+        val pending = SimulationSessions.pendingDecisions(session).singleOrNull { it.event.id == eventId }
+        if (session.status != SessionStatus.AWAITING_DECISION || pending == null ||
+            pending.options.none { it.id == optionId }
+        ) return session
+        val answered = SimulationSessions.submit(session, eventId, optionId)
+        return if (SimulationSessions.pendingDecisions(answered).isEmpty()) SimulationSessions.advance(answered) else answered
+    }
+
+    /** The month that would result from this option, or null if other decisions of the month remain open. */
+    fun preview(session: SimulationSession, eventId: String, optionId: String): MonthlyRecord? {
+        val chosen = choose(session, eventId, optionId)
+        return if (chosen.history.size > session.history.size) chosen.history.last() else null
+    }
 }

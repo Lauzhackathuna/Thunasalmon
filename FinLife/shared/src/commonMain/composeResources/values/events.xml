@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Decisions -->
+    <string name="decision_internship_title">A paid internship offer</string>
+    <string name="decision_internship_prompt">Maya can pause her studies for a %1$d-month internship paid %2$s per month.</string>
+    <string name="option_internship_accept">Take the internship</string>
+    <string name="option_internship_decline">Continue studies</string>
+    <string name="decision_housing_title">A housing decision</string>
+    <string name="decision_housing_prompt">Maya can move into a shared flat with a monthly rent of %1$s. Moving costs %2$s.</string>
+    <string name="option_housing_stay">Stay in her current home</string>
+    <string name="option_housing_move">Move into the shared flat</string>
+    <string name="decision_plant_title">A plant for the flat</string>
+    <string name="decision_plant_prompt">Maya sees a plant that costs %1$s.</string>
+    <string name="option_plant_buy">Buy the plant</string>
+    <string name="option_plant_skip">Don’t buy it</string>
+    <string name="decision_oven_title">The oven broke down</string>
+    <string name="decision_oven_prompt">Repairing it costs %1$s. Replacing it costs %2$s.</string>
+    <string name="option_oven_repair">Repair the oven</string>
+    <string name="option_oven_replace">Replace the oven</string>
+    <string name="decision_generic_prompt">Month %1$d. Choose one option.</string>
+    <!-- Outcomes -->
+    <string name="outcome_internship_accepted">Maya took the paid internship.</string>
+    <string name="outcome_internship_declined">Maya continued her studies.</string>
+    <string name="outcome_internship_not_applicable">The internship offer did not apply: Maya is no longer studying.</string>
+    <string name="outcome_rent_rise">Maya’s rent rises by %1$s% now and again every 12 months.</string>
+    <string name="outcome_rent_rise_already_rising">Another rent increase was announced, but Maya’s rent is already rising every year.</string>
+    <string name="outcome_rent_rise_previous_home">The rent increase concerned Maya’s previous home.</string>
+    <string name="outcome_maintenance">An unexpected repair bill of %1$s had to be paid.</string>
+    <string name="outcome_maintenance_other_party">A major repair was needed; someone else paid for it.</string>
+    <string name="outcome_plant_bought">Maya bought the plant.</string>
+    <string name="outcome_plant_skipped">Maya didn’t buy the plant.</string>
+    <string name="outcome_oven_repaired">Maya repaired the oven.</string>
+    <string name="outcome_oven_replaced">Maya replaced the oven.</string>
+    <string name="outcome_other_party">This cost was paid by someone else.</string>
+    <string name="outcome_housing_moved">Maya moved into the shared flat.</string>
+    <string name="outcome_housing_stayed">Maya stayed in her current home.</string>
+    <string name="outcome_one_off">%1$s: %2$s</string>
+    <string name="outcome_financing">Borrowed %1$s, repaid %2$s.</string>
+    <!-- Ledger -->
+    <string name="decision_costs">Costs of decisions</string>
+    <string name="unexpected_costs">Unexpected costs</string>
+</resources>

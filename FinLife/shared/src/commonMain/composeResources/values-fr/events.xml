@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Décisions -->
+    <string name="decision_internship_title">Une offre de stage rémunéré</string>
+    <string name="decision_internship_prompt">Maya peut suspendre ses études pour un stage de %1$d mois payé %2$s par mois.</string>
+    <string name="option_internship_accept">Accepter le stage</string>
+    <string name="option_internship_decline">Continuer les études</string>
+    <string name="decision_housing_title">Une décision de logement</string>
+    <string name="decision_housing_prompt">Maya peut emménager en colocation pour un loyer mensuel de %1$s. Le déménagement coûte %2$s.</string>
+    <string name="option_housing_stay">Rester dans son logement</string>
+    <string name="option_housing_move">Emménager en colocation</string>
+    <string name="decision_plant_title">Une plante pour l’appartement</string>
+    <string name="decision_plant_prompt">Maya voit une plante à %1$s.</string>
+    <string name="option_plant_buy">Acheter la plante</string>
+    <string name="option_plant_skip">Ne pas l’acheter</string>
+    <string name="decision_oven_title">Le four est en panne</string>
+    <string name="decision_oven_prompt">La réparation coûte %1$s. Le remplacement coûte %2$s.</string>
+    <string name="option_oven_repair">Réparer le four</string>
+    <string name="option_oven_replace">Remplacer le four</string>
+    <string name="decision_generic_prompt">Mois %1$d. Choisissez une option.</string>
+    <!-- Résultats -->
+    <string name="outcome_internship_accepted">Maya a accepté le stage rémunéré.</string>
+    <string name="outcome_internship_declined">Maya a continué ses études.</string>
+    <string name="outcome_internship_not_applicable">L’offre de stage ne s’appliquait pas : Maya n’est plus étudiante.</string>
+    <string name="outcome_rent_rise">Le loyer de Maya augmente de %1$s % maintenant, puis tous les 12 mois.</string>
+    <string name="outcome_rent_rise_already_rising">Une nouvelle hausse a été annoncée, mais le loyer de Maya augmente déjà chaque année.</string>
+    <string name="outcome_rent_rise_previous_home">La hausse de loyer concernait l’ancien logement de Maya.</string>
+    <string name="outcome_maintenance">Une facture de réparation imprévue de %1$s a dû être payée.</string>
+    <string name="outcome_maintenance_other_party">Une réparation importante était nécessaire ; une autre personne l’a payée.</string>
+    <string name="outcome_plant_bought">Maya a acheté la plante.</string>
+    <string name="outcome_plant_skipped">Maya n’a pas acheté la plante.</string>
+    <string name="outcome_oven_repaired">Maya a fait réparer le four.</string>
+    <string name="outcome_oven_replaced">Maya a remplacé le four.</string>
+    <string name="outcome_other_party">Ce coût a été payé par une autre personne.</string>
+    <string name="outcome_housing_moved">Maya a emménagé en colocation.</string>
+    <string name="outcome_housing_stayed">Maya est restée dans son logement.</string>
+    <string name="outcome_one_off">%1$s : %2$s</string>
+    <string name="outcome_financing">Emprunté %1$s, remboursé %2$s.</string>
+    <!-- Registre -->
+    <string name="decision_costs">Coûts des décisions</string>
+    <string name="unexpected_costs">Coûts imprévus</string>
+</resources>
