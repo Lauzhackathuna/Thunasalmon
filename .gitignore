@@ -53,6 +53,7 @@ coverage.xml
 cover/
 
 local.properties
+.idea/
 
 # Translations
 *.mo
