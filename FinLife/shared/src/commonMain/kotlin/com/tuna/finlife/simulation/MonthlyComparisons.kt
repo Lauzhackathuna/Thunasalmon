@@ -10,6 +10,7 @@ data class MonthlyComparison(
     val investmentContributions: Money,
     val nominalNetWorth: Money,
     val realNetWorth: Money,
+    val paidExpenses: Money = expenses,
 )
 
 data class AnnualMonthlySummary(
@@ -23,6 +24,7 @@ data class AnnualMonthlySummary(
     val investmentReturn: Money,
     val borrowing: Money,
     val principalRepayment: Money,
+    val paidExpenses: Money = expenses,
 ) {
     val isFullYear: Boolean get() = endMonthExclusive - startMonth == 12
 }
@@ -41,7 +43,8 @@ object MonthlyComparisons {
             sum(selected) { it.expenses } - sum(alternative) { it.expenses },
             a.investments - b.investments,
             sum(selected) { it.investmentContribution } - sum(alternative) { it.investmentContribution },
-            a.netWorth - b.netWorth, a.realNetWorth - b.realNetWorth)
+            a.netWorth - b.netWorth, a.realNetWorth - b.realNetWorth,
+            sum(selected) { it.paidExpenses } - sum(alternative) { it.paidExpenses })
     }
 
     /** Aggregates only actual monthly transitions; includes a labelled partial final year. */
@@ -49,6 +52,6 @@ object MonthlyComparisons {
         fun sum(field: (MonthlyFlow) -> Money) = months.map { field(it.flow) }.total()
         AnnualMonthlySummary(months.first().month, months.last().after.month, months.first().before, months.last().after,
             sum { it.income }, sum { it.expenses }, sum { it.investmentContribution }, sum { it.investmentReturn },
-            sum { it.newBorrowing }, sum { it.principalRepayment })
+            sum { it.newBorrowing }, sum { it.principalRepayment }, sum { it.paidExpenses })
     }
 }

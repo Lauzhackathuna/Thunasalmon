@@ -1,271 +1,307 @@
-# FinLife V2 — moteur mensuel et sessions interactives
+# FinLife V3 — moteur mensuel, enveloppes et projections
 
-Package : `com.tuna.finlife.simulation`. Aucun accès à Compose, aux interfaces, au réseau,
-à une horloge ou à un état global mutable. Tous les résultats financiers proviennent des
-transitions appliquées. La session est une valeur explicite ; chaque opération retourne
-une nouvelle session et laisse l'ancienne utilisable.
+Package commun Kotlin `com.tuna.finlife.simulation`, sans Compose, réseau, horloge ni état global.
+Les sessions et les états sont des valeurs immuables ; inspecter, projeter ou bifurquer ne modifie
+jamais la branche source. Les collections publiques sont des copies. Les calculs V3 prolongent
+`MonthlySimulation`, `Money`, `EventCalendar`, les décisions et la progression académique V2.
+Les API annuelles V1 (`FinancialSimulation.simulate`, etc.) restent disponibles avec leurs anciennes
+hypothèses, uniquement pour compatibilité. Elles ne calculent pas les projections V3.
 
-## V1 et réutilisation
+Les montants du profil et les paramètres sont des hypothèses FinLife configurables, pas des données
+empiriques UBS. Les définitions `ScenarioCatalog` S005, S037 et S040 sont conservées. Les conventions
+mathématiques sont celles du moteur existant : flux nominaux, intérêts sur dette d'ouverture,
+rendement sur placements d'ouverture, versements investis en fin de période, patrimoine réel déflaté.
+La distinction entre liquidités et dettes exigibles étend ces conventions sans richesse créée.
 
-`ScenarioCatalog`, `ScenarioDefinition` et `ScenarioId` sont réutilisés : seuls **S005,
-S037, S040** sont actifs. Les définitions officielles restent inchangées.
-`FinancialSimulation` expose maintenant `startSession` et `effectiveMonthlyRate`.
-Les anciennes fonctions annuelles (`simulate`, `plans`, `SimulationComparisons`, etc.)
-restent disponibles **uniquement pour compatibilité V1**, avec leurs anciennes hypothèses,
-leurs Double et leurs résultats historiques. Elles ne sont pas appelées par la V2.
-Ne pas utiliser ces fonctions annuelles pour représenter un parcours V2.
-Les sorties annuelles V2 viennent exclusivement de `MonthlyComparisons.annualSummaries`.
+## Profil, temps et précision
 
-La V2 réutilise les conventions de réconciliation, l'ordre des opérations et les métadonnées
-V1, avec un nouveau stockage en centimes et une progression mensuelle. La règle de versement
-investi a changé pour éviter le financement des placements par un découvert.
+`MonthlyProfile.alexia()` : Alexia, 20 ans, Lausanne, STUDENT, ALONE, 8 000 CHF de cash,
+aucun investissement ni emprunt. Revenu étudiant nominal de 1 200 CHF/mois ; dépenses de référence :
+loyer 1 000, assurance 250, courses 250, autres 300. Les études durent 24 mois académiques.
+Les factures universitaires de référence sont de 800 CHF aux progressions 0, 6, 12 et 18.
 
-## Origine des données
+L'état m ouvre le mois m ; les décisions et les paiements de m conduisent à l'état m+1.
+N transitions donnent N+1 états. Les échéances académiques sont suspendues pendant S005 et reprennent
+au même jalon, sans double facturation. Une facture impayée n'empêche pas la progression académique.
+Le champ historique `lastPaidTuitionProgress` est conservé pour compatibilité : il désigne désormais
+le **dernier jalon facturé**, également accessible par `lastAssessedTuitionProgress`. La preuve de
+paiement se trouve exclusivement dans `budget.payments`, et le solde dû dans `state.unpaid`.
 
-Les métadonnées de `scenario-library-120.csv` ont été retranscrites depuis les définitions
-explicitement fournies par l'équipe ; aucun téléchargement ou import CSV n'est effectué.
-**Tous les montants, taux et probabilités sont des hypothèses FinLife, pas des chiffres
-empiriques UBS ni des prévisions.**
+`Money` utilise des centimes Long, sommes exactes, arrondi des lignes au centime (demi-centime vers
+l'extérieur de zéro). Les taux sont en Double. Pas d'arrondi supplémentaire des cumuls.
+Inflation par défaut : 2 % ; indice `P(m) = (1 + inflation)^(m/12.0)`.
+Taux mensuel effectif d'intérêt/rendement : `(1 + tauxAnnuel)^(1/12.0) - 1`.
+Le patrimoine réel de l'état m est le patrimoine nominal divisé par P(m), arrondi au centime.
+Les limites numériques et les validations de taux V2 restent applicables.
 
-| ID | Catégorie officielle | Scénario | Référence | Intervention |
-|---|---|---|---|---|
-| S005 | Education & skills | Internship year | Continue studies | Paid internship year |
-| S037 | Housing & property | Rent increase | Stable rent | Annual rent rises |
-| S040 | Housing & property | Unexpected maintenance | Normal upkeep | Major repair bill |
+## Enveloppes et prévision du budget
 
-`MonthlyProfile.profileId` prépare les profils UBS. Le constructeur n'invente aucun champ
-manquant ; `MonthlyProfile.alexia()` est une fabrique explicite du profil fictif.
-`DataProvenance` distingue `HISTORICAL_SYNTHETIC_DATA`, `USER_INPUT`, `TEAM_ASSUMPTION`,
-`CHALLENGE_SCENARIO_DEFINITION` et `SIMULATED_RESULT`. Le profil et la configuration portent
-leur provenance ; chaque événement sépare définition et hypothèses numériques, avec
-`numericProvenance` configurable. `SourcedValue<T>` permet des valeurs annotées individuellement.
-`HistoricalMonthlyObservation` conserve les champs absents comme null et reste séparé du
-moteur : ses transactions ne sont jamais mélangées automatiquement aux flux simulés.
+| Enveloppe | CHF initiaux |
+|---|---:|
+| HOUSING | 3 000 |
+| INSURANCE | 1 000 |
+| GROCERIES | 750 |
+| STUDIES | 1 600 |
+| OTHER | 300 |
+| RESERVE | 1 350 |
+| Total | 8 000 |
 
-## Profil et temps
+`state.envelopes[Envelope.HOUSING]` et les propriétés nommées donnent les soldes.
+Invariant vérifié : `state.envelopes.total == state.cash`, avec tous les soldes non négatifs.
+`MonthlyProfile.initialEnvelopes` accepte une autre affectation dont le total doit égaler le cash.
+Sans affectation explicite : 8 000 CHF utilisent cette répartition de référence ; tout autre montant
+est initialement en RESERVE. Aucun montant n'est ajouté aux liquidités, investissements ou dettes.
+Les cash initiaux négatifs V2 sont désormais rejetés : fournir un état avec passifs explicites.
 
-Alexia : 20 ans, Lausanne, CHF, cash 8 000, investissements et dette nuls. Type de logement
-`UNKNOWN` (aucune supposition sur une vie seule ou en colocation). Revenus étudiants
-nominaux 1 200 CHF/mois ; loyer 600, assurance maladie 250, courses 250, autres dépenses
-300 CHF/mois. Ces quatre dépenses sont indexées sur une inflation annuelle de 2 % par défaut.
-L'objectif nominal de 350 000 CHF est dû au mois 120, indépendamment de l'horizon simulé.
-`session.goal` indique la date observée et si l'échéance a effectivement été simulée.
+Le revenu reçu comble les besoins non encore financés dans l'ordre :
+**STUDIES, HOUSING, INSURANCE, GROCERIES, OTHER, RESERVE**. La réserve reçoit le surplus.
+Un besoin déjà couvert ne reçoit rien. Un emprunt explicitement demandé est crédité en RESERVE,
+séparément des allocations de revenu ; il n'est jamais un revenu.
 
-Horizon : 1 à 1 200 mois (100 ans), notamment 6, 12, 24, 120. N transitions, N+1 états.
-L'état m ouvre le mois m ; ses événements affectent l'état m+1. Les identifiants de mois
-sont des indices relatifs à la date initiale, sans calendrier civil ni fiscalité.
-Tous les mois ont un résultat, même sans événement. Les événements planifiés doivent
-appartenir à l'horizon ; leurs conséquences persistantes peuvent le dépasser.
-`unsimulatedConsequences()` indique les études, stages et autres effets futurs non calculés.
+La politique prévisionnelle V3 est explicite : les dépenses récurrentes du mois, les deux prochaines
+échéances académiques restantes (y compris celle du mois), et les dépenses exceptionnelles certaines
+connues des douze prochains mois. Les factures d'études sont indexées à leur date prévisionnelle ;
+les suspensions S005 actives ou futures déjà engagées décalent ces dates. Les montants exceptionnels
+sont nominaux, sans seconde inflation. Les choix encore sans réponse ne sont pas présumés acceptés.
+Les objectifs sont recalculés chaque mois après les décisions : logement effectif, inflation,
+progression académique, revenu disponible dont le mini-stage. Le revenu temporaire ne change pas
+la priorité et n'est pas présumé disponible après sa fin. Les études provisionnées ne sont pas dépensées.
+Un besoin sur deux échéances est une politique FinLife configurable par les paramètres académiques,
+non une obligation universelle de garder exactement deux factures en réserve.
 
-## Précision et règles financières
+Pour une transition isolée, passer `knownFutureEvents` à `calculateMonth` pour provisionner les
+factures connues. Les sessions fournissent leur calendrier futur ; les projections fournissent
+uniquement le calendrier explicitement retenu. Connaître une future facture peut donc modifier
+les enveloppes avant sa date, sans diminuer le cash ni le patrimoine.
 
-`Money` stocke des `Long` en centimes : `Money(3500)` ou `Money.chf(35)`. Les sommes et
-réconciliations sont exactes au centime. Limite explicite : ±9 000 000 000 000 centimes
-par montant et résultat intermédiaire. Les dépassements sont rejetés, jamais tronqués.
-Les taux/facteurs restent des Double. Chaque ligne calculée est arrondie au centime, au
-plus proche, demi-centime à l'extérieur de zéro ; une tolérance de 1e−9 centime corrige
-le bruit binaire près des égalités décimales. Pas d'arrondi du total d'un cumul déjà arrondi.
+## Paiements, transferts, passifs et explications
 
-Facteur d'inflation à m : `(1 + annualInflation)^(m / 12.0)`.
-Taux mensuel effectif : `(1 + annualRate)^(1 / 12.0) - 1`.
-Patrimoine réel de l'état m : patrimoine nominal / facteur d'inflation à m, arrondi au centime.
-Inflation, croissance salariale et rendement annuels : finis, strictement supérieurs à −100 %
-et au plus 100 % ; intérêt de dette de 0 à 100 %. Les valeurs extrêmes peuvent dépasser
-la borne monétaire avant la fin d'un long horizon et sont alors rejetées explicitement.
+Les obligations sont réglées par date d'exigibilité (arriérés d'abord), puis catégorie prioritaire,
+puis ID déterministe. Un manque dans une enveloppe prélève **OTHER, RESERVE, GROCERIES, INSURANCE,
+HOUSING, STUDIES**, en excluant l'enveloppe destinataire. Un transfert n'est ni un revenu ni une dépense.
+`EnvelopeTransfer` conserve source, destination, montant, facture, raison et provision exposée
+`futureFundingAtRisk`. Ce dernier est un avertissement prudent sur les cibles budgétaires, pas une
+prédiction certaine d'impayé. Les cibles comprennent aussi les obligations pertinentes du mois.
 
-- Dépenses = dépenses récurrentes + études + exceptionnel + coûts de décisions + intérêts.
-- Flux net = revenus + emprunts explicites − dépenses − capital remboursé.
-- Cash suivant = cash + flux net − versement investi.
-- Investissements suivants = investissements + rendement arrondi + versement investi.
-- Dette suivante = dette + emprunts explicites − capital remboursé.
-- Patrimoine = cash + investissements − dette.
-- Variation de patrimoine = revenus − dépenses + rendement.
+Exemple : loyer 1 000, HOUSING 850, OTHER 100 : transfert OTHER → HOUSING de 100,
+puis RESERVE → HOUSING de 50. Le paiement fait baisser le cash de 1 000, une seule fois.
+Pour un imprévu de 500 avec OTHER 300 et RESERVE 1 350 : transfert de 200 depuis RESERVE,
+paiement de 500 depuis OTHER, réserve finale 1 150.
 
-Versement en fin de mois : minimum entre `part × max(revenus − dépenses − capital remboursé, 0)`
-et `max(cash initial + revenus − dépenses − capital remboursé, 0)`, arrondi au centime.
-La part vaut 0 par défaut. Les emprunts sont exclus du financement des versements.
-Une trésorerie négative doit d'abord être résorbée. Aucun prêt, vente d'actifs, découvert
-financé, remboursement ou assurance n'est créé implicitement. `needsFinancing` et
-`financingNeed` signalent le cash négatif. `LifeEvent.Financing` est la seule règle d'emprunt
-explicite ; aucun échéancier n'est inventé. L'intérêt annuel de dette vaut 0 par défaut,
-à fournir explicitement si le contrat en prévoit. Il porte sur le solde d'ouverture.
-Rendements illustratifs : prudent 1 %, équilibré 3 %, dynamique 5 % annuels effectifs.
+Le registre `MonthlyRecord.budget` expose `before`, `after`, `allocations`, `transfers`, `payments`,
+`outstanding`, `borrowing`, `invested`, `paidExpenses` et `paidPrincipal`.
+`FinancialObligation` contient ID, date, catégorie, montant initial, cumul payé et `missing`.
+Les frais événementiels portent l'ID de leur événement, même en cas de paiement partiel.
+`record.explanation()` compose ses textes depuis ces opérations et les résultats réels du moteur.
+`EventOutcome.chargedCost` est le coût **exigible**, pas la preuve d'un règlement intégral.
 
-## Études et scénarios
+Si les fonds manquent, le paiement est limité au disponible, l'enveloppe ne devient jamais négative,
+et l'obligation restante persiste dans `state.unpaid.items`. Aucun prêt ou actif vendu automatiquement.
+Les arriérés sont retentés les mois suivants, sans nouvelle dépense comptable ni intérêts de retard
+inventés. Un remboursement de capital impayé reste dans la dette bancaire ; il est identifié comme
+`bankPrincipal` et n'est pas ajouté une seconde fois aux dettes fournisseurs.
 
-24 mois d'études à effectuer. Frais de base : 800 CHF aux progressions académiques 0,
-6, 12 et 18, indexés à leur mois de paiement. Ce sont quatre factures, pas une mensualité.
-Le dernier jalon payé est conservé. Aucun paiement pendant une suspension, aucun remboursement
-ni facture répétée à la reprise. Cette convention simplifiée peut différer des règles
-d'une vraie institution. Le montant, le nombre de mois d'études et la cadence sont configurables.
+Contrats publics conservés, avec clarification des flux :
 
-Après les études : salaire mensuel initial nominal de 6 000 CHF, fixé au premier mois
-d'emploi même si décalé. Hausse nominale par paliers de 2 % à chaque anniversaire de carrière,
-sans inflation supplémentaire. Le moteur suit explicitement la date de début de carrière.
+- `flow.expenses` : charges exigibles du mois (comptabilité d'engagement).
+- `flow.paidExpenses` / `record.paidExpenses` : sorties effectivement payées, y compris anciens arriérés.
+- `flow.principalRepayment` : capital effectivement remboursé.
+- `flow.netCashFlow = income + newBorrowing - paidExpenses - principalRepayment`.
+- `cash' = cash + netCashFlow - investmentContribution`.
+- `investments' = investments + investmentReturn + investmentContribution`.
+- `debt' = debt + newBorrowing - principalRepayment` (emprunts bancaires seulement).
+- `accountsPayable` : somme des obligations impayées hors capital bancaire.
+- `netWorth = cash + investments - debt - accountsPayable`.
+- `netWorthChange = income - expenses + investmentReturn`.
+- `theoreticalCash = cash - somme(des obligations impayées)` : indicateur, jamais de l'argent disponible.
 
-**S005** : `LifeEvent.Internship`, 12 mois et 2 500 CHF/mois par défaut. Par défaut, décision
-accepter/refuser ; `interactive = false` représente un stage déjà décidé. Compatible seulement
-avec le statut étudiant et des études restantes. Aucun revenu étudiant ou frais universitaire
-simultané. Un stage en m=3 conserve 3 mois validés, suspend 12 mois, reprend les 21 mois restants
-en m=15 et conduit au premier emploi en m=36. Une offre devenue incompatible est marquée
-`NOT_APPLICABLE`, sans tirage de remplacement.
+Les anciens comparateurs et agrégats annuels gardent `expenses` et ajoutent `paidExpenses`.
+`needsFinancing` / `financingNeed` indiquent les obligations encore non couvertes.
+Le versement investi est plafonné par le surplus d'exploitation après arriérés, le cash hors nouvel
+emprunt et la RESERVE disponible après tous les paiements. Les affectations futures ne sont pas investies.
 
-**S037** : `LifeEvent.RentRise` et `MonthlyRentRule`. Hausse supplémentaire de 3 % dès le mois
-configuré, puis tous les 12 mois, jamais tous les mois. Elle s'ajoute à l'inflation générale :
-le loyer de référence est stable en pouvoir d'achat. La règle est liée à un contrat identifié.
-Une seconde règle active sur le même contrat est explicitement non applicable.
+## Logement et stages
 
-**S040** : `LifeEvent.Maintenance`. Paiement unique de 6 000 CHF nominaux au mois choisi,
-sans seconde inflation. `PaymentResponsibility` est obligatoire : `CHARACTER` ou `OTHER_PARTY`.
-Ce paramètre n'est jamais inféré du statut de locataire. La réparation n'est pas forcément
-à la charge d'Alexia ; elle ne l'est que si cette convention est explicitement sélectionnée.
-Les frais habituels restent dans les dépenses récurrentes. Aucun financement automatique.
+`SimulationSessions.proposeSharedHousing(session)` ajoute une décision au mois courant, sans avancer.
+Répondre `move` ou `stay`, puis avancer. La colocation est accessible sans S037 et indisponible si déjà
+active. Pour une date future, utiliser `schedule` avec `MonthlySimulation.sharedHousingChoice`.
+Le nouveau contrat supprime la règle S037 de l'ancien. `state.housingDecision` conserve date, motif et ID ;
+l'historique contient toutes les décisions. Aucun frais fictif : `sharedMovingCost = 0` par défaut.
 
-Les scénarios peuvent être combinés dans le même calendrier et passent par le même moteur.
-Des identifiants d'événement uniques évitent le double traitement ; deux événements distincts
-représentent deux interventions explicitement planifiées.
+`sharedReferenceRent = 800` est exprimé aux prix du mois zéro. À la signature m, il est indexé une fois,
+arrondi au centime et devient le loyer nominal du contrat à `priceMonth=m`. Ensuite, seule l'inflation
+relative à m s'applique. Un contrat explicite `HousingContract` utilise directement son prix nominal
+à `priceMonth` ; il ne réutilise aucun prix ni supplément d'un ancien contrat.
 
-## Événements internes et logement
+Une hausse contractuelle S037 positive, applicable au logement actuel non partagé, bloque désormais
+la simulation : `stay` accepte la hausse, `move` prend le nouveau contrat partagé. La hausse supplémentaire
+s'applique dès sa date puis à chaque anniversaire de douze mois, en plus de l'indice général.
+L'inflation générale ne déclenche aucun choix. Une hausse de l'ancien contrat est non applicable après
+le déménagement. Une hausse du contrat partagé actuel s'applique sans reproposer la colocation.
 
-`MicroEvents.plant` : acheter (35 CHF par défaut) ou ne pas acheter (0).
-`MicroEvents.oven` : réparer (450) ou remplacer (800), responsabilité explicite.
-`MicroEvents.transport` et `equipment` : dépenses ponctuelles de montant explicite.
-`LifeEvent.PurchaseChoice` permet de configurer titres, options et montants.
-Ces événements sont internes à FinLife, sans identifiant officiel UBS.
+`LifeEvent.ShortInternshipOffer(id="FINLIFE_INTERNSHIP_OFFER", month, startMonth=month,
+monthlyIncome=Money.chf(300))` est interne, sans `ScenarioId` UBS. Accepter (`accept`) ajoute exactement
+300 CHF pendant `[startMonth, startMonth+3[`, soit 900 CHF. Refuser (`decline`) ajoute zéro.
+Le revenu étudiant et le calendrier académique continuent. Une offre acceptée persiste dans l'état,
+même si son début est futur. Elle ne s'indexe pas automatiquement et n'est pas un revenu permanent.
 
-`LifeEvent.HousingChoice` propose conserver/changer de logement. Le nouveau loyer nominal
-et les frais de déménagement sont explicites ; le nouveau contrat entre en vigueur au mois
-de la décision. Son `priceMonth` est ce mois : on ne lui applique pas l'inflation passée.
-Il est ensuite indexé. L'ancienne règle S037 est supprimée ; seule une règle explicitement
-liée au nouveau contrat peut s'appliquer. Les factures passées restent inchangées.
-Pour une décision future, planifier l'événement au mois d'entrée en vigueur ; la V2 ne
-modélise pas de préavis avec réponse anticipée. Aucun intitulé seul/colocation n'est inventé.
-À mois égal : logement, puis règle de loyer, puis autres événements dans l'ordre des IDs.
+S005 reste `LifeEvent.Internship` : 12 mois, 2 500 CHF/mois par défaut, remplacement du revenu étudiant
+et suspension académique. Une offre de mini-stage exige le statut étudiant, sans autre mini-stage
+engagé ni S005 actif. Un S005 déjà engagé dans le calendrier prime sur une nouvelle offre incompatible.
+Un mini-stage déjà accepté rend une nouvelle proposition S005 incompatible jusqu'à sa fin.
+Les événements incompatibles sont `NOT_APPLICABLE`, pas silencieusement remplacés. Une proposition
+interactive future n'est pas un engagement tant qu'elle n'a pas été acceptée.
 
-## Aléatoire et sessions
-
-Au démarrage, `EventCalendar.generate` produit un calendrier conservé dans la session.
-Générateur xorshift32 explicite à graine Long (repliée sur 32 bits) pour un comportement
-stable entre plateformes ; ce générateur de démonstration n'est pas cryptographique.
-Deux opportunités par bloc de six mois, chacune avec probabilité illustrative 0,4 :
-une dépense avec choix (plante ou four si responsabilité four définie), puis une décision
-de vie (autre contrat si fourni, sinon stage si études compatibles). Les collisions peuvent
-réduire le nombre d'événements. Les événements générés n'occupent pas de mois déjà planifié
-et n'ajoutent pas un troisième moment interactif dans une fenêtre de six mois.
-Un calendrier explicite de six mois contenant trois moments interactifs est rejeté.
-Les parcours longs permettent plus de moments ; les calendriers manuels sont explicites.
-Aucun événement n'est forcé. `enabled = false` désactive la génération.
-
-`advance` retourne `AWAITING_DECISION` sans aucune transition si une réponse manque.
-`submit` enregistre une option valide sans avancer le mois. Il faut ensuite appeler
-`advance` ou `runUntilBlocked`. Plusieurs décisions dans un mois doivent toutes être résolues.
-Les événements non applicables sont marqués comme tels. Les coûts ne sont appliqués qu'une
-fois la transition complète exécutée ; `inspect` est une prévisualisation pure, sans mutation.
-`READY` signifie que l'appel d'avancement peut être demandé ; il peut découvrir une décision
-à résoudre. `pendingDecisions` permet de la consulter immédiatement, même avant cet appel.
-
-`viewState` consulte sans recalcul ni tirage. `fork` garde les états jusqu'à l'état de
-bifurcation inclus, conserve le calendrier extérieur, efface les réponses à partir de ce
-mois et permet des interventions supplémentaires non rétroactives. La branche initiale
-reste intacte. Les paramètres/configuration restent communs ; les choix divergent.
-Les collections exposées sont des copies, et les objets contenus sont immuables.
-Le moteur ne stocke pas un registre global des branches : l'appelant conserve les sessions
-et fournit des identifiants de branches distincts dans son application.
-
-## API et exemples compilés dans commonTest
+## API de session et exemple d'intégration
 
 ```kotlin
-import com.tuna.finlife.simulation.*
-
-val profile = MonthlyProfile.alexia()
-val config = MonthlyConfiguration(
-    horizonMonths = 6,
-    annualInflation = 0.0,
-    randomEvents = RandomEventSettings(enabled = false),
-)
-var session = FinancialSimulation.startSession(profile, config,
-    events = listOf(MicroEvents.plant("plant", month = 2)))
-session = SimulationSessions.runUntilBlocked(session) // attend au mois 2
-val options = SimulationSessions.pendingDecisions(session).single().options
-session = SimulationSessions.submit(session, "plant", "first")
-session = SimulationSessions.advance(session) // applique le mois 2
-val monthResult = session.history.last()
-val explanations = monthResult.explanation()
-session = SimulationSessions.runUntilBlocked(session) // finit au mois 6
-
-val past = SimulationSessions.viewState(session, 2)
-var alternative = SimulationSessions.fork(session, 2, "no-plant")
-alternative = SimulationSessions.submit(alternative, "plant", "second")
-alternative = SimulationSessions.runUntilBlocked(alternative)
-val difference = MonthlyComparisons.compare(session, alternative, month = 6)
-val summaries = MonthlyComparisons.annualSummaries(session)
+val config = MonthlyConfiguration(randomEvents = RandomEventSettings(enabled = false))
+var session = SimulationSessions.start(configuration = config)
+session = SimulationSessions.proposeSharedHousing(session)
+val housing = SimulationSessions.pendingDecisions(session).single()
+session = SimulationSessions.submit(session, housing.event.id, "move")
+session = SimulationSessions.schedule(session, LifeEvent.ShortInternshipOffer(month = 0))
+session = SimulationSessions.submit(session, "FINLIFE_INTERNSHIP_OFFER", "accept")
+session = SimulationSessions.advance(session)
+val envelopes = session.currentState.envelopes
+val transfers = session.history.last().budget.transfers
+val explanations = session.history.last().explanation()
+val projection = FinancialProjections.nothingChanges(session)
+val comparison = FinancialProjections.compareDecisions(
+    session.profile, session.configuration, session.currentState)
+val stability = FinancialStabilityAnalysis.evaluate(
+    session.profile, session.configuration, comparison.reference, comparison)
+val curves = comparison.curves // rôle, libellé, couleur indicative, points, projection complète
 ```
 
-`session.currentMonth`, `currentState`, `states`, `history`, `calendar`, `selections`, `status`
-et `goal` sont directement utilisables par les interfaces. `currentEvents` renvoie les
-événements du mois courant. `MonthlySimulation.calculateMonth(profile, config, state,
-events, decisions)` calcule une transition isolée à partir de toutes ses règles explicites.
+`inspect`, `currentEvents`, `pendingDecisions`, `submit`, `advance`, `runUntilBlocked`, `viewState`,
+`fork`, `history`, `states`, `selections`, `goal` restent disponibles. `submit` ne fait pas avancer le
+mois ; toutes les décisions applicables doivent être résolues. `fork` conserve calendrier et préfixe,
+efface les réponses depuis la bifurcation et ne retire aucun événement extérieur.
+La limite de deux opportunités aléatoires par six mois reste dans le générateur déterministe.
+Elle ne limite plus les décisions explicitement planifiées : une colocation volontaire reste accessible.
 
-Exemple de scénario déjà choisi, sans réponse interactive :
+## Douze mois, scénarios et données de courbe
 
-```kotlin
-val config = MonthlyConfiguration(horizonMonths = 48,
-    randomEvents = RandomEventSettings(enabled = false))
-val events = listOf(
-    LifeEvent.Internship("S005", month = 3, interactive = false),
-    LifeEvent.RentRise("S037", month = 24, rule = MonthlyRentRule("initial-home", 24)),
-    LifeEvent.Maintenance("S040", month = 40, responsibility = PaymentResponsibility.CHARACTER),
-)
-val result = SimulationSessions.runUntilBlocked(FinancialSimulation.startSession(configuration = config, events = events))
-```
+`FinancialProjections.nothingChanges(profile, configuration, state, knownEvents, commitments)`
+part de n'importe quel état valide et calcule exactement douze transitions, treize états.
+L'horizon de calcul est prolongé si nécessaire, sans modifier la session (limite globale : mois 1 200).
+Aucun générateur aléatoire n'est appelé. La surcharge prenant une session retient par défaut ses
+événements explicites futurs (IDs hors préfixe réservé `random-`) et ses décisions déjà soumises.
+Un calendrier `knownEvents` explicite remplace cette sélection si l'interface connaît d'autres événements.
+Les événements déjà actifs restent intégralement dans l'état.
 
-Les comparaisons utilisent une date commune effectivement simulée, le même `profileId`
-et le même taux d'inflation pour comparer des CHF réels de même base. Elles retournent les
-écarts de cash, revenus et dépenses cumulés, investissements, versements cumulés, patrimoine
-nominal et réel. Les effets individuels ne sont jamais supposés additifs. Les agrégations
-annuelles incluent un indicateur `isFullYear` pour un horizon partiel.
+Sans engagement explicite : conserver le logement, refuser les nouvelles offres, ignorer les achats
+discrétionnaires non choisis. Les contrats actifs, frais universitaires, revenus réguliers, impayés,
+inflation et événements extérieurs déjà connus continuent. Chaque projection expose ses hypothèses,
+les registres, les dépenses payées, les enveloppes, le patrimoine nominal/réel et les mois déficitaires.
+`project(label, ...)` permet une projection avec choix explicites, notamment un stress séparé.
 
-## Exemples chiffrés vérifiés
+`compareDecisions(profile, config, state, knownEvents, offer)` explore un ensemble fini : conserver
+le logement ou partager immédiatement, et accepter/refuser l'offre courte fournie. Sans offre : deux
+possibilités ; déjà en colocation : pas de second déménagement. Les alternatives inapplicables sont
+exclues. Les autres décisions extérieures gardent leurs réponses de référence. Le calendrier extérieur
+est identique ; un effet peut devenir non applicable après une décision (ex. ancien contrat S037).
+Ne pas passer de choix de logement/achat/mini-stage dans `knownEvents` de cette comparaison ; utiliser
+`offer` pour la proposition commune. Aucun S040 supplémentaire n'est ajouté pour fabriquer un pire cas.
+Un stress fourni explicitement est commun à toutes ces trajectoires et figure dans leurs hypothèses.
 
-Sans inflation, sans investissement et sans événement :
+Le classement utilise le cash **disponible au terme**, puis moins d'impayés en cas d'égalité, puis plus
+de patrimoine. Les courbes sont les trajectoires entières sélectionnées, pas des maximums/minimums
+fabriqués chaque mois. Elles peuvent se croiser. `ProjectionCurve.points` fournit date, cash, cash
+théorique, patrimoine nominal/réel, impayés et loyer du mois qui vient de se terminer (`null` à l'origine).
+`role`, `label` et `colorHex` fournissent une légende neutre/verte/rouge indépendante des couleurs.
+Aucune bibliothèque graphique n'est imposée. Il s'agit des cas étudiés, pas de tous les futurs,
+ni de prévisions certaines ou d'intervalles de confiance.
 
-| Transition | Revenu | Dépenses récurrentes | Études | Cash final |
-|---|---:|---:|---:|---:|
-| m=0 → 1 | 1 200 | 1 400 | 800 | 7 000 |
-| m=1 → 2 | 1 200 | 1 400 | 0 | 6 800 |
-| m=2 → 3 | 1 200 | 1 400 | 0 | 6 600 |
-| m=3 → 4 | 1 200 | 1 400 | 0 | 6 400 |
-| m=4 → 5 | 1 200 | 1 400 | 0 | 6 200 |
-| m=5 → 6 | 1 200 | 1 400 | 0 | 6 000 |
+## Stabilité et sensibilité distinctes
 
-Avec un four à la charge d'Alexia en m=4 et une réparation choisie à 450 CHF : cash final
-à six mois **5 550 CHF**. Avec la plante à m=2 : acheter mène à **5 965 CHF**, refuser
-à **6 000 CHF** ; écart de patrimoine **−35 CHF**, états jusqu'à m=2 inclus identiques.
-Ces chiffres sont des résultats de tests, pas des données intégrées dans l'affichage.
+`averageSpread = somme(cashBest(m) - cashWorst(m), m=1..12) / 12`, arrondi au centime, en CHF.
+C'est l'écart signé des deux trajectoires sélectionnées au terme ; des croisements peuvent le réduire.
+`relativeSpread` divise cet écart par la moyenne des dépenses essentielles des douze mois de la projection analysée.
+Aucune probabilité n'est attribuée à la dispersion et aucun score ne mélange CHF et ratios.
+
+`FinancialStabilityAnalysis.evaluate` analyse la projection choisie, indépendamment de la dispersion :
+
+- Couverture à chaque ouverture et à la clôture : loyer + assurance + courses + frais d'études lissés
+  (`tuitionPayment / tuitionEveryStudyMonths`, indexés), plus la fraction configurable d'OTHER.
+  La provision analytique ne remplace jamais les factures effectives. Après les études elle vaut zéro.
+- RESERVE, liquidités mobilisables, cash non affecté net des dettes fournisseurs, mois couverts et
+  repères de trois/six mois sont séparés. Si les dépenses essentielles sont nulles, le ratio vaut `null`
+  (pas de besoin mesurable), jamais NaN/infini. Mobiliser les enveloppes peut exposer des factures futures.
+- Budget structurel : revenu étudiant régulier ou salaire − dépenses récurrentes − provision d'études
+  − intérêts bancaires. Ni S005 ni mini-stage ne sont permanents. Tolérance d'équilibre : ±10 CHF par défaut.
+- Résilience : mois avec impayés, maximum du financement manquant, impayés au terme, cash minimum,
+  épuisement de RESERVE, capacité brute à absorber `unexpectedExpense` (500 CHF par défaut) après impayés.
+  La capacité brute n'est pas une promesse de préserver toutes les affectations futures ; le cash non
+  affecté est affiché séparément.
+
+Classement déterministe, conditions testées dans cet ordre :
+
+1. **CRITICAL** : besoin maximal supérieur à `significantUnpaid` (100 CHF par défaut), ou au moins deux
+   clôtures mensuelles avec impayés.
+2. **FRAGILE** : au moins une clôture avec impayés, ou budget structurel déficitaire à une date,
+   ou couverture inférieure à un mois.
+3. **WATCH** : couverture inférieure à trois mois à une date, ou imprévu configurable non absorbable.
+4. **STABLE** : aucun de ces critères défavorables.
+
+Les six mois sont affichés comme repère supplémentaire, pas comme seuil d'une note cachée. Trois à six
+mois est un repère prudent de finances personnelles évoqué dans le besoin produit, pas une règle de
+notation UBS ni un seuil universel. Les paramètres et raisons du classement sont exposés.
+Indicateur pédagogique de simulation FinLife, ni notation officielle UBS ni conseil personnalisé.
+
+## Exemples vérifiés
+
+Zéro inflation, aucune intervention extérieure, aucune contribution investie :
+
+| Mois terminé | Cash disponible | Impayés |
+|---|---:|---:|
+| 0 (initial) | 8 000 | 0 |
+| 1 | 6 600 | 0 |
+| 2 | 6 000 | 0 |
+| 3 | 5 400 | 0 |
+| 4 | 4 800 | 0 |
+| 5 | 4 200 | 0 |
+| 6 | 3 600 | 0 |
+| 7 | 2 200 | 0 |
+| 8 | 1 600 | 0 |
+| 9 | 1 000 | 0 |
+| 10 | 400 | 0 |
+| 11 | 0 | 200 |
+| 12 | 0 | 800 |
+
+Revenus 14 400 ; charges récurrentes 21 600 ; études 1 600 ; flux théorique −8 800.
+Dépenses effectivement payées : 22 400. Cash théorique final −800, cash disponible 0,
+passifs fournisseurs 800, dette bancaire 0, patrimoine nominal/réel −800.
+Avec inflation annuelle 2 % : cash théorique −1 005,28, passifs 1 005,28,
+patrimoine réel −985,57 CHF. Ces chiffres sont des assertions des tests, pas des constantes d'affichage.
+
+Décisions au mois zéro, zéro inflation :
+
+| Logement | Offre courte | Cash après 12 mois | Impayés | Patrimoine |
+|---|---|---:|---:|---:|
+| Seule, 1 000/mois | Refusée | 0 | 800 | −800 |
+| Seule, 1 000/mois | Acceptée | 100 | 0 | 100 |
+| Colocation, 800/mois | Refusée | 1 600 | 0 | 1 600 |
+| Colocation, 800/mois | Acceptée | 2 500 | 0 | 2 500 |
+
+Le stage apporte exactement 900 CHF ; la colocation économise 2 400 CHF sur les douze mois.
+L'écart moyen meilleur/pire de cet ensemble vaut 2 041,67 CHF. Les deux trajectoires sont encore
+structurellement déficitaires. Deux copies du scénario seul/refusé ont un écart nul et restent CRITICAL.
+Essentiels seuls : 1 633,33 CHF/mois ; colocation : 1 433,33. Repères seuls : environ 4 900 / 9 800.
 
 ## Tests et limites
 
-Depuis `FinLife` :
+Depuis `FinLife` : `./gradlew :shared:jvmTest :shared:testAndroidHostTest --offline --console=plain`.
+Validation exécutée : **82 tests JVM et 82 tests Android hôte**, zéro échec, erreur ou test ignoré.
+Les tests communs couvrent les invariants, arrondis, transferts et priorités, arriérés/règlement,
+capital bancaire, progression académique, logement, stages, indexation, projections, scénarios,
+stabilité et reproductibilité. Les tests annuels V1 sont conservés. Android est testé sur hôte,
+pas sur appareil ; aucune validation iOS/JS n'est revendiquée.
 
-```sh
-./gradlew :shared:jvmTest :shared:testAndroidHostTest --offline --console=plain
-```
-
-Résultat réellement obtenu après correction : **BUILD SUCCESSFUL**, 58 tests par cible
-(JVM et Android hôte), zéro échec, zéro erreur et zéro test ignoré. Ces 58 tests comprennent
-32 nouveaux tests V2, 24 tests V1 du moteur et 2 tests préexistants du module.
-
-Tests V1 conservés. Tests V2 : conditions initiales exactes, N+1 états, échéances académiques,
-stage et reprise, carrière, hausse annuelle du loyer, responsabilité des réparations, huit
-combinaisons, contrats de logement, blocage des décisions, plafonnement des placements,
-réconciliation au centime, taux effectifs, historique immuable, branches, calendrier reproductible,
-comparaison et agrégation. Les tests Android sont des tests hôte, pas des tests sur appareil.
-Le premier passage V2 a détecté un cas d'arrondi de demi-centime lié aux Double ; corrigé
-et couvert par une régression (`Money(100).scaled(1.005) == Money(101)`).
-
-Pas d'interface, importateur CSV, sérialisation/disque, fiscalité, garantie, assurance événementielle,
-financement automatique, anticipation du marché ou probabilités empiriques. Les règles universitaires,
-les contrats et les revenus sont volontairement simplifiés. Les taux négatifs > −100 % sont acceptés
-pour inflation/rendement/croissance, mais pas de rendement annuel exactement −100 % dans cette version.
-Les deux cibles actuelles Android/JVM sont vérifiées ; aucun résultat de test iOS/JS n'est revendiqué.
+Simplifications : paiements mensuels sans calendrier civil/journalier, pas de fiscalité ou de pénalités
+de retard, prix et revenus déterministes, absence de probabilités empiriques, réserve budgétaire selon
+une politique explicite de deux échéances académiques, pas d'optimiseur global des choix futurs.
+Les cibles n'anticipent pas l'acceptation d'une proposition encore non décidée. Une nouvelle information
+recalcule le budget au prochain mois. La colocation ne comporte ni préavis ni coût par défaut.
+Le moteur ne certifie pas la solvabilité réelle ni la conformité de chaque hypothèse à un contrat UBS.

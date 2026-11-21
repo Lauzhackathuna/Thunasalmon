@@ -17,7 +17,7 @@ class SimulationSessionTest {
         assertEquals(0, start.currentMonth)
         assertEquals(6, result.currentMonth)
         assertTrue(result.history.all { it.events.isEmpty() })
-        assertEquals(Money.chf(6_000), result.currentState.cash)
+        assertEquals(Money.chf(3_600), result.currentState.cash)
     }
 
     @Test fun decisionBlocksWithoutApplyingAnyPartOfTheMonth() {
@@ -36,10 +36,10 @@ class SimulationSessionTest {
         assertEquals(3, next.currentMonth)
         assertEquals(Money.chf(35), next.history.last().flow.decisionCosts)
         assertEquals(Money.chf(6_000), next.history.last().flow.exceptionalExpenses)
-        assertEquals(Money.chf(565), next.currentState.cash)
+        assertEquals(Money.ZERO, next.currentState.cash)
     }
 
-    @Test fun twoInteractiveMomentsAreAllowedButAThirdIsRejected() {
+    @Test fun explicitDecisionsAreNotLimitedByRandomCalendarQuota() {
         var session = start(listOf(MicroEvents.plant("plant", 1), MicroEvents.oven("oven", 4, PaymentResponsibility.CHARACTER)))
         session = SimulationSessions.runUntilBlocked(session)
         assertEquals(1, session.currentMonth)
@@ -47,10 +47,8 @@ class SimulationSessionTest {
         assertEquals(4, session.currentMonth)
         session = SimulationSessions.runUntilBlocked(SimulationSessions.submit(session, "oven", "first"))
         assertEquals(6, session.currentMonth)
-        assertEquals(Money.chf(5_550), session.currentState.cash)
-        assertFailsWith<IllegalArgumentException> {
-            start(listOf(MicroEvents.plant("a", 0), MicroEvents.plant("b", 2), MicroEvents.plant("c", 4)))
-        }
+        assertEquals(Money.chf(3_150), session.currentState.cash)
+        assertEquals(3, start(listOf(MicroEvents.plant("a", 0), MicroEvents.plant("b", 2), MicroEvents.plant("c", 4))).calendar.size)
     }
 
     @Test fun forkPreservesPrefixOriginalBranchAndExternalEvents() {
@@ -66,8 +64,8 @@ class SimulationSessionTest {
         skip = SimulationSessions.runUntilBlocked(SimulationSessions.submit(skip, "plant", "second"))
         assertEquals(savedStates, buy.states)
         assertEquals(buy.states.take(3), skip.states.take(3))
-        assertEquals(Money.chf(5_965), buy.currentState.cash)
-        assertEquals(Money.chf(6_000), skip.currentState.cash)
+        assertEquals(Money.chf(3_565), buy.currentState.cash)
+        assertEquals(Money.chf(3_600), skip.currentState.cash)
         val delta = MonthlyComparisons.compare(buy, skip, 6)
         assertEquals(Money.chf(-35), delta.cash)
         assertEquals(Money.chf(35), delta.expenses)
@@ -83,8 +81,8 @@ class SimulationSessionTest {
         val branch = SimulationSessions.fork(reference, 3, "internship", listOf(LifeEvent.Internship("stage", 3, interactive = false)))
         val result = SimulationSessions.runUntilBlocked(branch)
         assertEquals(reference.states.take(4), result.states.take(4))
-        assertEquals(Money.chf(9_900), result.currentState.cash)
-        assertEquals(Money.chf(6_000), reference.currentState.cash)
+        assertEquals(Money.chf(7_500), result.currentState.cash)
+        assertEquals(Money.chf(3_600), reference.currentState.cash)
         assertFailsWith<IllegalArgumentException> { SimulationSessions.fork(reference, 3, "invalid", listOf(MicroEvents.plant("past", 1))) }
     }
 
@@ -147,7 +145,7 @@ class SimulationSessionTest {
         val event = MicroEvents.oven("oven", 1, PaymentResponsibility.OTHER_PARTY)
         val result = SimulationSessions.runUntilBlocked(start(listOf(event)))
         assertEquals(6, result.currentMonth)
-        assertEquals(Money.chf(6_000), result.currentState.cash)
+        assertEquals(Money.chf(3_600), result.currentState.cash)
         assertEquals(EventApplication.NOT_APPLICABLE, result.history[1].events.single().application)
         assertEquals(null, event.scenarioId)
         assertEquals(DataProvenance.TEAM_ASSUMPTION, event.definitionProvenance)
@@ -173,7 +171,7 @@ class SimulationSessionTest {
         assertEquals(0, SimulationSessions.advance(oneAnswer).currentMonth)
         val ready = SimulationSessions.submit(oneAnswer, "b", "second")
         val result = SimulationSessions.advance(ready)
-        assertEquals(Money.chf(6_965), result.currentState.cash)
+        assertEquals(Money.chf(6_565), result.currentState.cash)
         assertEquals(Money.chf(35), result.history.single().flow.decisionCosts)
         assertEquals(2, result.history.single().decisions.size)
     }

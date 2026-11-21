@@ -9,7 +9,16 @@ class MonthlyScenarioTest {
     private fun config(months: Int) = MonthlyConfiguration(horizonMonths = months, annualInflation = 0.0,
         randomEvents = RandomEventSettings(enabled = false))
     private fun run(months: Int, events: List<LifeEvent>, configuration: MonthlyConfiguration = config(months)) =
-        SimulationSessions.runUntilBlocked(SimulationSessions.start(configuration = configuration, events = events))
+        runAcceptingRent(SimulationSessions.start(configuration = configuration, events = events))
+
+    private fun runAcceptingRent(input: SimulationSession): SimulationSession {
+        var session = SimulationSessions.runUntilBlocked(input)
+        while (SimulationSessions.pendingDecisions(session).any { it.event is LifeEvent.RentRise }) {
+            val pending = SimulationSessions.pendingDecisions(session).first { it.event is LifeEvent.RentRise }
+            session = SimulationSessions.runUntilBlocked(SimulationSessions.submit(session, pending.event.id, "stay"))
+        }
+        return session
+    }
 
     @Test fun internshipAtMonthThreeSuspendsAndResumesStudiesWithoutDoubleBilling() {
         val session = run(49, listOf(LifeEvent.Internship("S005", 3, interactive = false)))
@@ -55,22 +64,24 @@ class MonthlyScenarioTest {
 
     @Test fun rentRisesOnlyAtStartAndAnnualAnniversary() {
         val session = run(28, listOf(LifeEvent.RentRise("S037", 2, MonthlyRentRule("initial-home", 2))))
-        assertEquals(Money.chf(600), session.history[1].flow.rent)
-        assertEquals(Money.chf(618), session.history[2].flow.rent)
-        assertEquals(Money.chf(618), session.history[13].flow.rent)
-        assertEquals(Money(63_654), session.history[14].flow.rent)
-        assertEquals(Money(63_654), session.history[25].flow.rent)
-        assertEquals(Money(65_564), session.history[26].flow.rent)
+        assertEquals(Money.chf(1000), session.history[1].flow.rent)
+        assertEquals(Money.chf(1030), session.history[2].flow.rent)
+        assertEquals(Money.chf(1030), session.history[13].flow.rent)
+        assertEquals(Money(106_090), session.history[14].flow.rent)
+        assertEquals(Money(106_090), session.history[25].flow.rent)
+        assertEquals(Money(109_273), session.history[26].flow.rent)
         val inflated = run(15, listOf(LifeEvent.RentRise("S037", 2, MonthlyRentRule("initial-home", 2))),
             config(15).copy(annualInflation = 0.02))
-        assertEquals(Money.chf(600).scaled(1.02 * 1.03), inflated.history[12].flow.rent)
+        assertEquals(Money.chf(1000).scaled(1.02 * 1.03), inflated.history[12].flow.rent)
     }
 
     @Test fun repairIsUniqueNominalAndRequiresExplicitPaymentResponsibility() {
         val configuration = config(6).copy(annualInflation = 0.1)
         val reference = run(6, emptyList(), configuration)
         val repair = run(6, listOf(LifeEvent.Maintenance("S040", 4, PaymentResponsibility.CHARACTER)), configuration)
-        assertEquals(reference.states.take(5), repair.states.take(5))
+        // Known future repairs change earmarking before they change cash or wealth.
+        assertEquals(reference.states.take(5).map { it.cash }, repair.states.take(5).map { it.cash })
+        assertEquals(reference.states.take(5).map { it.netWorth }, repair.states.take(5).map { it.netWorth })
         assertEquals(Money.chf(6_000), repair.history[4].flow.exceptionalExpenses)
         assertEquals(1, repair.history.count { it.flow.exceptionalExpenses > Money.ZERO })
         assertEquals(Money.chf(-6_000), repair.currentState.netWorth - reference.currentState.netWorth)
@@ -90,7 +101,7 @@ class MonthlyScenarioTest {
         assertEquals(2, session.currentMonth)
         session = SimulationSessions.submit(session, "move", "move")
         session = SimulationSessions.runUntilBlocked(session)
-        assertEquals(Money.chf(618), session.history[1].flow.rent)
+        assertEquals(Money.chf(1030), session.history[1].flow.rent)
         assertEquals(Money.chf(500), session.history[2].flow.rent)
         assertEquals(Money.chf(100), session.history[2].flow.decisionCosts)
         assertEquals(Money.chf(500), session.history[5].flow.rent)

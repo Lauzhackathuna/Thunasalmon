@@ -65,7 +65,8 @@ object SimulationSessions {
         val events = session.calendar.filter { it.month == session.currentMonth }
         val eventIds = events.map { it.id }.toSet()
         return MonthlySimulation.calculateMonth(session.profile, session.configuration, session.currentState,
-            events, session.selections.filter { it.eventId in eventIds })
+            events, session.selections.filter { it.eventId in eventIds },
+            session.calendar.filter { it.month > session.currentMonth })
     }
 
     fun currentEvents(session: SimulationSession): List<LifeEvent> =
@@ -73,6 +74,20 @@ object SimulationSessions {
 
     fun pendingDecisions(session: SimulationSession): List<PendingDecision> =
         (inspect(session) as? MonthStep.AwaitingDecision)?.decisions ?: emptyList()
+
+    /** Adds an explicit opportunity without changing the branch or advancing its clock. */
+    fun schedule(session: SimulationSession, event: LifeEvent): SimulationSession {
+        require(event.month >= session.currentMonth)
+        val calendar = (session.calendar + event).sortedWith(EventCalendar.order)
+        EventCalendar.validate(calendar, session.configuration.horizonMonths)
+        return SimulationSession(session.branchId, session.parentBranchId, session.forkMonth, session.profile,
+            session.configuration, session.initialState, calendar, session.history, session.selections, session.status)
+    }
+
+    fun proposeSharedHousing(session: SimulationSession): SimulationSession {
+        require(session.currentState.housing.type != HousingType.SHARED)
+        return schedule(session, MonthlySimulation.sharedHousingChoice(session.currentMonth, session.configuration))
+    }
 
     /** Records a response but does not advance the clock. A past response is changed through fork(). */
     fun submit(session: SimulationSession, eventId: String, optionId: String): SimulationSession {

@@ -31,9 +31,9 @@ class MonthlyApiExamplesTest {
         val summaries = MonthlyComparisons.annualSummaries(session)
         assertEquals(2, options.size)
         assertTrue(explanations.isNotEmpty())
-        assertEquals(Money.chf(6_800), past.cash)
-        assertEquals(Money.chf(5_965), session.currentState.cash)
-        assertEquals(Money.chf(6_000), alternative.currentState.cash)
+        assertEquals(Money.chf(6_000), past.cash)
+        assertEquals(Money.chf(3_565), session.currentState.cash)
+        assertEquals(Money.chf(3_600), alternative.currentState.cash)
         assertEquals(Money.chf(-35), difference.nominalNetWorth)
         assertFalse(summaries.single().isFullYear)
     }
@@ -46,7 +46,8 @@ class MonthlyApiExamplesTest {
             LifeEvent.RentRise("S037", month = 24, rule = MonthlyRentRule("initial-home", 24)),
             LifeEvent.Maintenance("S040", month = 40, responsibility = PaymentResponsibility.CHARACTER),
         )
-        val result = SimulationSessions.runUntilBlocked(FinancialSimulation.startSession(configuration = config, events = events))
+        var result = SimulationSessions.runUntilBlocked(FinancialSimulation.startSession(configuration = config, events = events))
+        result = SimulationSessions.runUntilBlocked(SimulationSessions.submit(result, "S037", "stay"))
         assertEquals(48, result.currentMonth)
         assertEquals(Money.chf(6_000), result.history[40].flow.exceptionalExpenses)
         assertEquals(36, result.currentState.careerStartMonth)
