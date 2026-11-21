@@ -2,6 +2,7 @@ package com.tuna.finlife.game
 
 import com.tuna.finlife.simulation.EventApplication
 import com.tuna.finlife.simulation.HousingType
+import com.tuna.finlife.simulation.LifeStatus
 import com.tuna.finlife.simulation.LifeEvent
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRentRule
@@ -11,7 +12,6 @@ import com.tuna.finlife.simulation.SimulationSession
 import com.tuna.finlife.simulation.SimulationSessions
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -84,44 +84,52 @@ class AdventureRunTest {
     }
 
     @Test
-    fun whatIfAddsADecisionInTheCurrentMonth() {
+    fun sharedFlatToggleMovesMayaWithoutADecisionScreen() {
         val start = AdventureRun.start(seed = 3)
-        assertEquals(WhatIf.entries, AdventureRun.availableWhatIfs(start))
-        val waiting = AdventureRun.addWhatIf(start, WhatIf.SharedFlat)
-        assertEquals(SessionStatus.AWAITING_DECISION, waiting.status)
-        assertEquals(0, waiting.currentMonth)
-        assertTrue(AdventureRun.availableWhatIfs(waiting).isEmpty())
-        val pending = SimulationSessions.pendingDecisions(waiting).single()
-        assertEquals(listOf("stay", "move"), pending.options.map { it.id })
+        assertEquals(WhatIf.entries.associateWith { WhatIfState.Available }, AdventureRun.whatIfStates(start))
+        val switchedOn = AdventureRun.applyWhatIf(start, WhatIf.SharedFlat)
+        assertEquals(SessionStatus.READY, switchedOn.status)
+        assertTrue(SimulationSessions.pendingDecisions(switchedOn).isEmpty())
+        assertEquals(WhatIfState.Active, AdventureRun.whatIfStates(switchedOn)[WhatIf.SharedFlat])
+        assertSame(switchedOn, AdventureRun.applyWhatIf(switchedOn, WhatIf.SharedFlat))
 
-        val moved = AdventureRun.choose(waiting, pending.event.id, "move")
+        val moved = AdventureRun.advance(switchedOn)
         assertEquals(1, moved.currentMonth)
         assertEquals(Money.chf(500), moved.history.last().flow.rent)
         assertEquals(Money.chf(500), moved.history.last().flow.decisionCosts)
         assertEquals(HousingType.SHARED, moved.currentState.housing.type)
-        assertFalse(WhatIf.SharedFlat in AdventureRun.availableWhatIfs(moved))
+        // Still on in later months: the engine has no way back.
+        assertEquals(WhatIfState.Active, AdventureRun.whatIfStates(advance(moved, 5))[WhatIf.SharedFlat])
     }
 
     @Test
-    fun previewMatchesTheChosenMonthAndChangesNothing() {
-        val waiting = AdventureRun.addWhatIf(AdventureRun.start(seed = 3), WhatIf.Oven)
-        val id = SimulationSessions.pendingDecisions(waiting).single().event.id
-        val preview = AdventureRun.preview(waiting, id, "second")
-        val chosen = AdventureRun.choose(waiting, id, "second")
-        assertEquals(preview?.after, chosen.history.last().after)
-        assertEquals(Money.chf(800), chosen.history.last().flow.decisionCosts)
-        assertTrue(waiting.selections.isEmpty())
-        assertSame(chosen, AdventureRun.choose(chosen, id, "first"))
-    }
-
-    @Test
-    fun internshipWhatIfIsOnlyOfferedWhileStudying() {
+    fun internshipToggleAppliesFromThisMonthAndOnlyWhileStudying() {
         val start = AdventureRun.start(seed = 3)
-        val waiting = AdventureRun.addWhatIf(start, WhatIf.Internship)
-        val id = SimulationSessions.pendingDecisions(waiting).single().event.id
-        val interning = AdventureRun.choose(waiting, id, "accept")
-        assertFalse(WhatIf.Internship in AdventureRun.availableWhatIfs(interning))
+        val interning = AdventureRun.advance(AdventureRun.applyWhatIf(start, WhatIf.Internship))
+        assertEquals(LifeStatus.INTERN, interning.currentState.status)
+        assertEquals(Money.chf(2_500), interning.history.last().flow.internshipIncome)
+        assertEquals(WhatIfState.Active, AdventureRun.whatIfStates(advance(interning, 5))[WhatIf.Internship])
+
         val graduated = advance(start, 24)
-        assertFalse(WhatIf.Internship in AdventureRun.availableWhatIfs(graduated))
+        assertEquals(WhatIfState.Unavailable, AdventureRun.whatIfStates(graduated)[WhatIf.Internship])
+        assertSame(graduated, AdventureRun.applyWhatIf(graduated, WhatIf.Internship))
+    }
+
+    @Test
+    fun genericPreviewMatchesTheChosenMonthAndChangesNothing() {
+        val waiting = SimulationSessions.advance(
+            SimulationSessions.start(
+                configuration = com.tuna.finlife.simulation.MonthlyConfiguration(
+                    horizonMonths = 12,
+                    randomEvents = com.tuna.finlife.simulation.RandomEventSettings(enabled = false),
+                ),
+                events = listOf(LifeEvent.Internship("offer", 0)),
+            ),
+        )
+        val preview = AdventureRun.preview(waiting, "offer", "accept")
+        val chosen = AdventureRun.choose(waiting, "offer", "accept")
+        assertEquals(preview?.after, chosen.history.last().after)
+        assertTrue(waiting.selections.isEmpty())
+        assertSame(chosen, AdventureRun.choose(chosen, "offer", "decline"))
     }
 }

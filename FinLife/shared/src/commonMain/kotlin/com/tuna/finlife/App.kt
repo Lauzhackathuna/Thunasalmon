@@ -69,7 +69,7 @@ fun App() {
                         onChoose = { eventId, optionId ->
                             if (session === current) session = AdventureRun.choose(current, eventId, optionId)
                         },
-                        onWhatIf = { if (session === current) session = AdventureRun.addWhatIf(current, it) },
+                        onWhatIf = { if (session === current) session = AdventureRun.applyWhatIf(current, it) },
                     )
                 }
                 if (settingsOpen) {

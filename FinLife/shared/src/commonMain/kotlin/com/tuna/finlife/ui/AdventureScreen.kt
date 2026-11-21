@@ -9,22 +9,31 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.WhatIf
+import com.tuna.finlife.game.WhatIfState
 import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.simulation.Money
@@ -50,13 +59,11 @@ import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.monthly_rent
 import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
-import finlife.shared.generated.resources.settings
+import finlife.shared.generated.resources.close_settings
 import finlife.shared.generated.resources.simulation_complete
 import finlife.shared.generated.resources.unexpected_costs
 import finlife.shared.generated.resources.whatif_hint
 import finlife.shared.generated.resources.whatif_internship
-import finlife.shared.generated.resources.whatif_oven
-import finlife.shared.generated.resources.whatif_plant
 import finlife.shared.generated.resources.whatif_shared_flat
 import finlife.shared.generated.resources.whatif_title
 import kotlin.math.abs
@@ -76,7 +83,11 @@ internal fun AdventureScreen(
     val pending = remember(session) {
         if (session.status == SessionStatus.AWAITING_DECISION) SimulationSessions.pendingDecisions(session) else emptyList()
     }
+    val whatIfs = remember(session) { AdventureRun.whatIfStates(session) }
+    var whatIfOpen by remember { mutableStateOf(false) }
+    if (whatIfOpen) WhatIfDialog(whatIfs, onWhatIf, onDismiss = { whatIfOpen = false })
     GameScreen(
+        onOpenSettings = onOpenSettings,
         header = { AdventureFinances(session, record, showHistory = pending.isEmpty()) },
         actions = {
             FlowRow(
@@ -86,8 +97,10 @@ internal fun AdventureScreen(
                 if (session.status == SessionStatus.READY) {
                     PrimaryButton(stringResource(Res.string.advance_month), onAdvance)
                 }
+                if (pending.isEmpty() && session.status != SessionStatus.COMPLETED) {
+                    PrimaryButton(stringResource(Res.string.whatif_title), { whatIfOpen = true })
+                }
                 PrimaryButton(stringResource(Res.string.end_simulation), onEnd)
-                PrimaryButton(stringResource(Res.string.settings), onOpenSettings)
             }
         },
     ) {
@@ -127,41 +140,54 @@ internal fun AdventureScreen(
                     if (session.status == SessionStatus.COMPLETED) Text(stringResource(Res.string.simulation_complete))
                 }
             }
-            val whatIfs = remember(session) { AdventureRun.availableWhatIfs(session) }
-            if (whatIfs.isNotEmpty()) WhatIfSection(whatIfs, onWhatIf)
         }
     }
 }
 
+/** Pop-up with one switch per what-if. Switching on applies it this month; it cannot be switched off. */
 @Composable
-private fun WhatIfSection(whatIfs: List<WhatIf>, onWhatIf: (WhatIf) -> Unit) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        Column(
-            modifier = Modifier.padding(FinLifeSpacing.medium),
-            verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-        ) {
-            Text(stringResource(Res.string.whatif_title), style = MaterialTheme.typography.titleLarge)
-            Text(
-                stringResource(Res.string.whatif_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-            ) {
-                for (whatIf in whatIfs) PrimaryButton(stringResource(whatIf.label), { onWhatIf(whatIf) })
+private fun WhatIfDialog(states: Map<WhatIf, WhatIfState>, onWhatIf: (WhatIf) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.whatif_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+                Text(
+                    stringResource(Res.string.whatif_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                for ((whatIf, state) in states) {
+                    val label = stringResource(whatIf.label)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = FinLifeSpacing.touchTarget)
+                            .toggleable(
+                                value = state == WhatIfState.Active,
+                                enabled = state == WhatIfState.Available,
+                                role = Role.Switch,
+                                onValueChange = { if (it) onWhatIf(whatIf) },
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+                    ) {
+                        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        Switch(
+                            checked = state == WhatIfState.Active,
+                            onCheckedChange = null,
+                            enabled = state == WhatIfState.Available || state == WhatIfState.Active,
+                        )
+                    }
+                }
             }
-        }
-    }
+        },
+        confirmButton = { PrimaryButton(stringResource(Res.string.close_settings), onDismiss) },
+    )
 }
 
 private val WhatIf.label: StringResource
     get() = when (this) {
         WhatIf.Internship -> Res.string.whatif_internship
         WhatIf.SharedFlat -> Res.string.whatif_shared_flat
-        WhatIf.Plant -> Res.string.whatif_plant
-        WhatIf.Oven -> Res.string.whatif_oven
     }
 
 @Composable

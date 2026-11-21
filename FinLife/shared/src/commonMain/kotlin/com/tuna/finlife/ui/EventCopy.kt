@@ -2,7 +2,9 @@ package com.tuna.finlife.ui
 
 import androidx.compose.runtime.Composable
 import com.tuna.finlife.game.EventKind
+import com.tuna.finlife.game.RentRiseResult
 import com.tuna.finlife.game.percentLabel
+import com.tuna.finlife.game.rentRiseResult
 import com.tuna.finlife.simulation.DecisionOption
 import com.tuna.finlife.simulation.EventApplication
 import com.tuna.finlife.simulation.EventOutcome
@@ -97,10 +99,10 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
                 EventApplication.NOT_APPLICABLE -> Res.string.outcome_internship_not_applicable
             },
         )
-        is EventKind.RentRise -> when {
-            applied -> stringResource(Res.string.outcome_rent_rise, percentLabel(kind.annualExtraRate))
-            kind.contractId != record.before.housing.id -> stringResource(Res.string.outcome_rent_rise_previous_home)
-            else -> stringResource(Res.string.outcome_rent_rise_already_rising)
+        is EventKind.RentRise -> when (rentRiseResult(kind.contractId, outcome, record)) {
+            RentRiseResult.Applied -> stringResource(Res.string.outcome_rent_rise, percentLabel(kind.annualExtraRate))
+            RentRiseResult.PreviousHome -> stringResource(Res.string.outcome_rent_rise_previous_home)
+            RentRiseResult.AlreadyRising -> stringResource(Res.string.outcome_rent_rise_already_rising)
         }
         is EventKind.Maintenance ->
             if (applied) stringResource(Res.string.outcome_maintenance, money(outcome.chargedCost))

@@ -77,4 +77,35 @@ class EventKindTest {
         assertEquals(preview.after, done.currentState)
         assertEquals(Money.chf(35), done.history.last().flow.decisionCosts)
     }
+
+    @Test
+    fun rentRiseResultDistinguishesAppliedAlreadyRisingAndPreviousHome() {
+        val configuration = MonthlyConfiguration(horizonMonths = 24, randomEvents = RandomEventSettings(enabled = false))
+        val home = com.tuna.finlife.simulation.MonthlyProfile.alexia().housing.id
+        fun runWith(vararg events: LifeEvent, move: Boolean = false): com.tuna.finlife.simulation.SimulationSession {
+            var session = SimulationSessions.start(configuration = configuration, events = events.toList())
+            session = SimulationSessions.advance(session)
+            if (move) session = AdventureRun.choose(session, "move", "move")
+            return SimulationSessions.runUntilBlocked(session, maxMonths = 3)
+        }
+        fun result(session: com.tuna.finlife.simulation.SimulationSession, id: String): RentRiseResult {
+            val record = session.history.single { record -> record.events.any { it.eventId == id } }
+            val event = session.calendar.single { it.id == id } as LifeEvent.RentRise
+            return rentRiseResult(event.rule.contractId, record.events.single { it.eventId == id }, record)
+        }
+
+        val twice = runWith(
+            LifeEvent.RentRise("first", 0, MonthlyRentRule(home, 0)),
+            LifeEvent.RentRise("second", 1, MonthlyRentRule(home, 1)),
+        )
+        assertEquals(RentRiseResult.Applied, result(twice, "first"))
+        assertEquals(RentRiseResult.AlreadyRising, result(twice, "second"))
+
+        val movedSameMonth = runWith(
+            LifeEvent.RentRise("rise", 0, MonthlyRentRule(home, 0)),
+            LifeEvent.HousingChoice("move", 0, HousingContract("flat", Money.chf(500), 0), Money.ZERO, PaymentResponsibility.CHARACTER),
+            move = true,
+        )
+        assertEquals(RentRiseResult.PreviousHome, result(movedSameMonth, "rise"))
+    }
 }

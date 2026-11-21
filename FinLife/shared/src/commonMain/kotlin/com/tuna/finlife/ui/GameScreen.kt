@@ -33,6 +33,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun GameScreen(
     header: (@Composable () -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -40,8 +41,13 @@ internal fun GameScreen(
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
             val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
             val pinControls = maxHeight >= 700.dp * fontScale
+            // Keep content clear of the top-right gear when the window leaves no free margin for it.
+            val contentWidth = if (wideRoom) FinLifeContentWidth * 2 else FinLifeContentWidth
+            val gearMargin = (FinLifeSpacing.touchTarget + FinLifeSpacing.medium * 2) * 2
+            val reserveTop = onOpenSettings != null && maxWidth < contentWidth + gearMargin
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize()
+                    .padding(top = if (reserveTop) FinLifeSpacing.touchTarget + FinLifeSpacing.small else 0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (wideRoom) {
@@ -79,6 +85,9 @@ internal fun GameScreen(
                     }
                 }
                 SimulationNotice(screenWidth().padding(vertical = FinLifeSpacing.small))
+            }
+            if (onOpenSettings != null) {
+                SettingsGearButton(onOpenSettings, Modifier.align(Alignment.TopEnd).padding(FinLifeSpacing.medium))
             }
         }
     }

@@ -2,7 +2,6 @@ package com.tuna.finlife.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -10,7 +9,6 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.model.Persona
 import finlife.shared.generated.resources.Res
@@ -26,7 +24,6 @@ import finlife.shared.generated.resources.opening_cash
 import finlife.shared.generated.resources.samir_name
 import finlife.shared.generated.resources.samir_role
 import finlife.shared.generated.resources.samir_story
-import finlife.shared.generated.resources.settings
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -36,15 +33,8 @@ internal fun PersonaSelectionScreen(
     onOpenSettings: () -> Unit,
     onSelect: () -> Unit,
 ) {
-    GameScreen {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ScreenHeading(stringResource(Res.string.first_year_abroad), Modifier.weight(1f))
-            PrimaryButton(stringResource(Res.string.settings), onOpenSettings)
-        }
+    GameScreen(onOpenSettings = onOpenSettings) {
+        ScreenHeading(stringResource(Res.string.first_year_abroad))
         Text(stringResource(Res.string.choose_persona), style = MaterialTheme.typography.titleMedium)
         val copy = personaCopy(Persona.MastersStudent)
         OutlinedCard(

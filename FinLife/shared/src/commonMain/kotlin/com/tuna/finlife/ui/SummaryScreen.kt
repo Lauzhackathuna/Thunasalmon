@@ -21,7 +21,6 @@ import finlife.shared.generated.resources.cash_balance
 import finlife.shared.generated.resources.continue_simulation
 import finlife.shared.generated.resources.months_simulated
 import finlife.shared.generated.resources.net_worth
-import finlife.shared.generated.resources.settings
 import finlife.shared.generated.resources.start_over
 import finlife.shared.generated.resources.summary_title
 import finlife.shared.generated.resources.total_expenses
@@ -37,6 +36,7 @@ internal fun SummaryScreen(
 ) {
     val summary = remember(session) { RunSummary.of(session) }
     GameScreen(
+        onOpenSettings = onOpenSettings,
         actions = {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
@@ -44,7 +44,6 @@ internal fun SummaryScreen(
             ) {
                 if (onContinue != null) PrimaryButton(stringResource(Res.string.continue_simulation), onContinue)
                 PrimaryButton(stringResource(Res.string.start_over), onStartOver)
-                PrimaryButton(stringResource(Res.string.settings), onOpenSettings)
             }
         },
     ) {

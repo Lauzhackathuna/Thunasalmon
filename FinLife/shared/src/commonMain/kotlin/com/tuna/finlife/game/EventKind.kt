@@ -1,8 +1,11 @@
 package com.tuna.finlife.game
 
+import com.tuna.finlife.simulation.EventApplication
+import com.tuna.finlife.simulation.EventOutcome
 import com.tuna.finlife.simulation.LifeEvent
 import com.tuna.finlife.simulation.MicroEvents
 import com.tuna.finlife.simulation.Money
+import com.tuna.finlife.simulation.MonthlyRecord
 import com.tuna.finlife.simulation.PaymentResponsibility
 
 /**
@@ -44,4 +47,13 @@ internal fun LifeEvent.kind(): EventKind = when (this) {
 internal fun percentLabel(rate: Double): String {
     val tenths = kotlin.math.round(rate * 1000).toLong()
     return if (tenths % 10 == 0L) (tenths / 10).toString() else "${tenths / 10}.${kotlin.math.abs(tenths % 10)}"
+}
+
+internal enum class RentRiseResult { Applied, AlreadyRising, PreviousHome }
+
+/** How a rent rise turned out in [record]'s month. A move in the same month is applied before the rise. */
+internal fun rentRiseResult(contractId: String, outcome: EventOutcome, record: MonthlyRecord): RentRiseResult = when {
+    outcome.application == EventApplication.APPLIED -> RentRiseResult.Applied
+    contractId != record.after.housing.id -> RentRiseResult.PreviousHome
+    else -> RentRiseResult.AlreadyRising
 }

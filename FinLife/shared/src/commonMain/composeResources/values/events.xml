@@ -40,9 +40,7 @@
     <string name="decision_costs">Costs of decisions</string>
     <string name="unexpected_costs">Unexpected costs</string>
     <string name="whatif_title">What if…?</string>
-    <string name="whatif_hint">Try a situation in this month. Its decision appears right away.</string>
+    <string name="whatif_hint">Switch a situation on to apply it from this month. It can’t be switched off again.</string>
     <string name="whatif_internship">A paid internship</string>
     <string name="whatif_shared_flat">Moving into a shared flat</string>
-    <string name="whatif_plant">Buying a plant</string>
-    <string name="whatif_oven">The oven breaking down</string>
 </resources>
