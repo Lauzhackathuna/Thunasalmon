@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cash_balance">Cash balance</string>
+    <string name="monthly_change">Monthly change</string>
+    <string name="advance_month">Advance month</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="simulation_note">Simulation under stated assumptions, not a forecast or financial advice.</string>
+    <string name="preview_cash">CHF 8,000</string>
+    <string name="preview_delta">CHF 250</string>
+</resources>

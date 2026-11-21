@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cash_balance">Solde disponible</string>
+    <string name="monthly_change">Variation mensuelle</string>
+    <string name="advance_month">Passer au mois suivant</string>
+    <string name="theme_system">Système</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="simulation_note">Simulation selon les hypothèses indiquées. Ceci ne constitue ni une prévision ni un conseil financier.</string>
+    <string name="preview_cash">8 000 CHF</string>
+    <string name="preview_delta">250 CHF</string>
+</resources>
