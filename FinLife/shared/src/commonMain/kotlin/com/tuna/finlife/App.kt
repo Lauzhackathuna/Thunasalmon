@@ -32,12 +32,11 @@ fun App() {
             }
             is GameState.Playing -> RoomScreen(
                 state = current,
-                onAdvanceMonth = {
-                    if (state == current) {
-                        state = reduceGame(current, GameAction.AdvanceMonth, twin)
+                onAction = { action ->
+                    if (action != GameAction.AdvanceMonth || state == current) {
+                        state = reduceGame(state, action, twin)
                     }
                 },
-                onBuyItem = { state = reduceGame(state, GameAction.BuyRoomItem(it), twin) },
             )
         }
     }

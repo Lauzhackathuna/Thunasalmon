@@ -3,6 +3,7 @@ package com.tuna.finlife.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.tuna.finlife.game.RoomMonthChanges
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.model.LifeEvent
 import com.tuna.finlife.model.MonthOutcome
@@ -13,20 +14,19 @@ import finlife.shared.generated.resources.income
 import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.month_summary
 import finlife.shared.generated.resources.month_events
-import finlife.shared.generated.resources.room_purchases
+import finlife.shared.generated.resources.room_changes
+import finlife.shared.generated.resources.furniture_condition_change
+import finlife.shared.generated.resources.room_upgrade
 import finlife.shared.generated.resources.tuition_due
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-internal fun MonthSummarySheet(outcome: MonthOutcome, roomPurchases: Int, onDismiss: () -> Unit) {
+internal fun MonthSummarySheet(outcome: MonthOutcome, roomChanges: RoomMonthChanges, onDismiss: () -> Unit) {
     GameSheet(onDismiss) {
         ScreenHeading(stringResource(Res.string.month_summary))
         Text(stringResource(Res.string.month_number, outcome.snapshot.monthIndex + 1))
         SummaryAmount(stringResource(Res.string.income), displayMoney(outcome.income))
         SummaryAmount(stringResource(Res.string.expenses), displayMoney(outcome.expenses))
-        if (roomPurchases > 0) {
-            SummaryAmount(stringResource(Res.string.room_purchases), displayMoney(roomPurchases.toDouble()))
-        }
         if (outcome.events.isNotEmpty()) {
             Text(stringResource(Res.string.month_events), style = MaterialTheme.typography.titleMedium)
             for (event in outcome.events) {
@@ -36,6 +36,19 @@ internal fun MonthSummarySheet(outcome: MonthOutcome, roomPurchases: Int, onDism
                 }
                 Text(stringResource(label))
             }
+        }
+        if (roomChanges.damage != null || roomChanges.upgradedTo != null) {
+            Text(stringResource(Res.string.room_changes), style = MaterialTheme.typography.titleMedium)
+            roomChanges.damage?.let {
+                Text(
+                    stringResource(
+                        Res.string.furniture_condition_change,
+                        stringResource(it.item.label),
+                        stringResource(it.newCondition.label),
+                    ),
+                )
+            }
+            roomChanges.upgradedTo?.let { Text(stringResource(Res.string.room_upgrade, stringResource(it.label))) }
         }
     }
 }

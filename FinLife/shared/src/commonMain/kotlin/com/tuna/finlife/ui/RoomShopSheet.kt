@@ -2,6 +2,7 @@ package com.tuna.finlife.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,27 +12,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.tuna.finlife.game.GameState
-import com.tuna.finlife.game.PurchaseStatus
+import com.tuna.finlife.game.ClaimStatus
+import com.tuna.finlife.game.GameAction
+import com.tuna.finlife.game.ItemCondition
 import com.tuna.finlife.game.RoomItem
-import com.tuna.finlife.i18n.displayMoney
+import com.tuna.finlife.game.RoomTier
 import finlife.shared.generated.resources.Res
-import finlife.shared.generated.resources.available_cash
-import finlife.shared.generated.resources.buy
+import finlife.shared.generated.resources.armchair
+import finlife.shared.generated.resources.broken
 import finlife.shared.generated.resources.chair
+import finlife.shared.generated.resources.claim
+import finlife.shared.generated.resources.damaged
+import finlife.shared.generated.resources.flat
+import finlife.shared.generated.resources.intact
 import finlife.shared.generated.resources.inventory
-import finlife.shared.generated.resources.not_enough_cash
+import finlife.shared.generated.resources.place
 import finlife.shared.generated.resources.plant
 import finlife.shared.generated.resources.reading_lamp
+import finlife.shared.generated.resources.repair
+import finlife.shared.generated.resources.shared_room
 import finlife.shared.generated.resources.shop
 import finlife.shared.generated.resources.simulation_complete
+import finlife.shared.generated.resources.small_studio
+import finlife.shared.generated.resources.table_lamp
+import finlife.shared.generated.resources.unlocks_at
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-internal fun RoomShopSheet(state: GameState.Playing, onBuyItem: (RoomItem) -> Unit, onDismiss: () -> Unit) {
+internal fun RoomShopSheet(state: GameState.Playing, onAction: (GameAction) -> Unit, onDismiss: () -> Unit) {
     GameSheet(onDismiss) {
         ScreenHeading(stringResource(Res.string.shop))
-        Text(stringResource(Res.string.available_cash, displayMoney(state.availableCash)))
         if (!state.canAdvanceMonth) {
             Text(
                 stringResource(Res.string.simulation_complete),
@@ -39,47 +50,75 @@ internal fun RoomShopSheet(state: GameState.Playing, onBuyItem: (RoomItem) -> Un
             )
         }
         for (item in RoomItem.entries) {
-            if (item !in state.ownedItems) {
-                ShopItemRow(item, state.purchaseStatus(item)) { onBuyItem(item) }
+            if (item !in state.room.inventory) {
+                ShopItemRow(item, state.claimStatus(item)) { onAction(GameAction.ClaimRoomItem(item)) }
             }
         }
-        if (state.ownedItems.isNotEmpty()) {
+        if (state.room.inventory.isNotEmpty()) {
             Text(
                 stringResource(Res.string.inventory),
                 modifier = Modifier.padding(top = FinLifeSpacing.small),
                 style = MaterialTheme.typography.titleMedium,
             )
             for (item in RoomItem.entries) {
-                if (item in state.ownedItems) Text(stringResource(item.label))
+                val condition = state.room.inventory[item] ?: continue
+                InventoryItemRow(
+                    item = item,
+                    condition = condition,
+                    displayed = state.room.displayed[item.slot] == item,
+                    onAction = onAction,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ShopItemRow(item: RoomItem, status: PurchaseStatus, onBuy: () -> Unit) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(item.label), style = MaterialTheme.typography.titleMedium)
-                Text(displayMoney(item.priceChf.toDouble()), style = MaterialTheme.typography.bodyMedium)
+private fun ShopItemRow(item: RoomItem, status: ClaimStatus, onClaim: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(item.label), style = MaterialTheme.typography.titleMedium)
+            if (status == ClaimStatus.Locked) {
+                Text(
+                    stringResource(Res.string.unlocks_at, stringResource(item.requiredTier.label)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            PrimaryButton(
-                label = stringResource(Res.string.buy),
-                enabled = status == PurchaseStatus.Available,
-                onClick = onBuy,
-            )
         }
-        if (status == PurchaseStatus.NotEnoughCash) {
-            Text(
-                stringResource(Res.string.not_enough_cash),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        PrimaryButton(
+            label = stringResource(Res.string.claim),
+            enabled = status == ClaimStatus.Available,
+            onClick = onClaim,
+        )
+    }
+}
+
+@Composable
+private fun InventoryItemRow(
+    item: RoomItem,
+    condition: ItemCondition,
+    displayed: Boolean,
+    onAction: (GameAction) -> Unit,
+) {
+    Column {
+        Text(stringResource(item.label), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(condition.label),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+            if (condition != ItemCondition.Intact) {
+                PrimaryButton(stringResource(Res.string.repair), onClick = { onAction(GameAction.RepairRoomItem(item)) })
+            }
+            if (!displayed) {
+                PrimaryButton(stringResource(Res.string.place), onClick = { onAction(GameAction.PlaceRoomItem(item)) })
+            }
         }
     }
 }
@@ -89,4 +128,20 @@ internal val RoomItem.label: StringResource
         RoomItem.ReadingLamp -> Res.string.reading_lamp
         RoomItem.Chair -> Res.string.chair
         RoomItem.Plant -> Res.string.plant
+        RoomItem.TableLamp -> Res.string.table_lamp
+        RoomItem.Armchair -> Res.string.armchair
+    }
+
+internal val RoomTier.label: StringResource
+    get() = when (this) {
+        RoomTier.SharedRoom -> Res.string.shared_room
+        RoomTier.SmallStudio -> Res.string.small_studio
+        RoomTier.Flat -> Res.string.flat
+    }
+
+internal val ItemCondition.label: StringResource
+    get() = when (this) {
+        ItemCondition.Intact -> Res.string.intact
+        ItemCondition.Damaged -> Res.string.damaged
+        ItemCondition.Broken -> Res.string.broken
     }

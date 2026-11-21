@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.tuna.finlife.game.GameState
-import com.tuna.finlife.game.RoomItem
+import com.tuna.finlife.game.GameAction
+import com.tuna.finlife.game.LOW_LIQUIDITY_MONTHS
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.i18n.displayMonths
 import com.tuna.finlife.model.GoalStatus
@@ -39,14 +41,18 @@ import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
 import finlife.shared.generated.resources.room_title
 import finlife.shared.generated.resources.shop
+import finlife.shared.generated.resources.speech_opening
+import finlife.shared.generated.resources.speech_gain
+import finlife.shared.generated.resources.speech_loss
+import finlife.shared.generated.resources.speech_low_liquidity
+import finlife.shared.generated.resources.speech_unchanged
 import kotlin.math.abs
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun RoomScreen(
     state: GameState.Playing,
-    onAdvanceMonth: () -> Unit,
-    onBuyItem: (RoomItem) -> Unit,
+    onAction: (GameAction) -> Unit,
 ) {
     var dismissedMonth by remember { mutableIntStateOf(-1) }
     var shopOpen by remember { mutableStateOf(false) }
@@ -56,7 +62,7 @@ internal fun RoomScreen(
             Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
                 PrimaryButton(
                     label = stringResource(Res.string.advance_month),
-                    onClick = onAdvanceMonth,
+                    onClick = { onAction(GameAction.AdvanceMonth) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = state.canAdvanceMonth,
                 )
@@ -70,20 +76,47 @@ internal fun RoomScreen(
             }
         },
     ) {
-        RoomCanvas(state.ownedItems)
+        Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+            Text(stringResource(state.room.tier.label), style = MaterialTheme.typography.titleMedium)
+            RoomCanvas(state.room, state.mood)
+            CharacterSpeech(state)
+        }
     }
     val summary = state.lastMonth
     if (summary != null && summary.snapshot.monthIndex > dismissedMonth) {
-        MonthSummarySheet(summary, state.lastMonthRoomPurchases) { dismissedMonth = summary.snapshot.monthIndex }
+        MonthSummarySheet(summary, state.lastRoomChanges) { dismissedMonth = summary.snapshot.monthIndex }
     } else if (shopOpen) {
-        RoomShopSheet(state, onBuyItem, onDismiss = { shopOpen = false })
+        RoomShopSheet(state, onAction, onDismiss = { shopOpen = false })
+    }
+}
+
+@Composable
+private fun CharacterSpeech(state: GameState.Playing) {
+    val change = state.cashChange
+    val message = when {
+        change == null -> Res.string.speech_opening
+        state.snapshot.liquidityMonths < LOW_LIQUIDITY_MONTHS -> Res.string.speech_low_liquidity
+        change < 0 -> Res.string.speech_loss
+        change > 0 -> Res.string.speech_gain
+        else -> Res.string.speech_unchanged
+    }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Text(
+            text = stringResource(message),
+            modifier = Modifier.padding(horizontal = FinLifeSpacing.medium, vertical = FinLifeSpacing.small),
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 
 @Composable
 private fun FinanceHeader(state: GameState.Playing) {
     val snapshot = state.snapshot
-    val animatedCash by animateFloatAsState(state.availableCash.toFloat(), label = "cash balance")
+    val animatedCash by animateFloatAsState(snapshot.cash.toFloat(), label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
             ScreenHeading(stringResource(Res.string.room_title), Modifier.alignByBaseline())

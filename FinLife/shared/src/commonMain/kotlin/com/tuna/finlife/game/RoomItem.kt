@@ -2,11 +2,18 @@ package com.tuna.finlife.game
 
 enum class RoomSlot { Left, Center, Right }
 
-// Synthetic CHF prices for the demo shop.
-enum class RoomItem(val priceChf: Int, val slot: RoomSlot) {
-    ReadingLamp(80, RoomSlot.Left),
-    Chair(150, RoomSlot.Center),
-    Plant(40, RoomSlot.Right),
+enum class RoomTier { SharedRoom, SmallStudio, Flat }
+
+enum class RoomItem(val slot: RoomSlot, val requiredTier: RoomTier = RoomTier.SharedRoom) {
+    ReadingLamp(RoomSlot.Left),
+    Chair(RoomSlot.Center),
+    Plant(RoomSlot.Right),
+    TableLamp(RoomSlot.Left, RoomTier.SmallStudio),
+    Armchair(RoomSlot.Center, RoomTier.Flat),
 }
 
-enum class PurchaseStatus { Available, Owned, NotEnoughCash, SimulationComplete }
+enum class ClaimStatus { Available, Owned, Locked, SimulationComplete }
+
+enum class ItemCondition { Intact, Damaged, Broken }
+
+enum class CharacterMood { Thriving, Okay, Stressed }

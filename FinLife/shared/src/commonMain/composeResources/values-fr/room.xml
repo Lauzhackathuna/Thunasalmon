@@ -9,7 +9,7 @@
     <string name="goal_at_risk">À risque</string>
     <string name="goal_off_track">Hors trajectoire</string>
     <string name="constraint_breaches">Contraintes enfreintes</string>
-    <string name="room_description">Chambre partagée avec une fenêtre, un personnage et trois emplacements de mobilier vides.</string>
+    <string name="room_description">%1$s avec une fenêtre, un personnage et trois emplacements de mobilier vides.</string>
     <string name="month_summary">Bilan du mois</string>
     <string name="income">Revenus</string>
     <string name="expenses">Dépenses</string>
@@ -17,4 +17,12 @@
     <string name="tuition_due">Frais de scolarité dus</string>
     <string name="arrival_costs">Frais d’arrivée</string>
     <string name="close_summary">Fermer</string>
+    <string name="room_changes">Changements dans le logement</string>
+    <string name="furniture_condition_change">%1$s · %2$s</string>
+    <string name="room_upgrade">Nouveau logement : %1$s.</string>
+    <string name="speech_opening">Je m’installe.</string>
+    <string name="speech_gain">Mon solde a augmenté ce mois-ci.</string>
+    <string name="speech_loss">Mon solde a baissé ce mois-ci.</string>
+    <string name="speech_low_liquidity">Mon solde couvre moins d’un mois de dépenses.</string>
+    <string name="speech_unchanged">Mon solde est resté stable ce mois-ci.</string>
 </resources>

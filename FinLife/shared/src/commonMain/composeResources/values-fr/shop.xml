@@ -2,13 +2,21 @@
 <resources>
     <string name="shop">Boutique</string>
     <string name="inventory">Inventaire</string>
-    <string name="buy">Acheter</string>
-    <string name="available_cash">Solde disponible : %1$s</string>
-    <string name="not_enough_cash">Solde insuffisant</string>
+    <string name="claim">Obtenir</string>
+    <string name="unlocks_at">Se débloque au niveau « %1$s »</string>
+    <string name="repair">Réparer</string>
+    <string name="place">Placer</string>
+    <string name="intact">Intact</string>
+    <string name="damaged">Endommagé</string>
+    <string name="broken">Cassé</string>
     <string name="simulation_complete">Simulation terminée</string>
     <string name="reading_lamp">Lampe de lecture</string>
     <string name="chair">Chaise</string>
     <string name="plant">Plante</string>
-    <string name="room_purchases">Achats pour la chambre</string>
-    <string name="furnished_room_description">Chambre partagée avec une fenêtre, un personnage et du mobilier : %1$s.</string>
+    <string name="table_lamp">Lampe de table</string>
+    <string name="armchair">Fauteuil</string>
+    <string name="shared_room">Chambre partagée</string>
+    <string name="small_studio">Petit studio</string>
+    <string name="flat">Appartement</string>
+    <string name="furnished_room_description">%1$s avec une fenêtre, un personnage et du mobilier : %2$s.</string>
 </resources>

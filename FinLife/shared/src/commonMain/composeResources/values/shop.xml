@@ -2,13 +2,21 @@
 <resources>
     <string name="shop">Shop</string>
     <string name="inventory">Inventory</string>
-    <string name="buy">Buy</string>
-    <string name="available_cash">Available cash: %1$s</string>
-    <string name="not_enough_cash">Not enough cash</string>
+    <string name="claim">Claim</string>
+    <string name="unlocks_at">Unlocks in %1$s</string>
+    <string name="repair">Repair</string>
+    <string name="place">Place</string>
+    <string name="intact">Intact</string>
+    <string name="damaged">Damaged</string>
+    <string name="broken">Broken</string>
     <string name="simulation_complete">Simulation complete</string>
     <string name="reading_lamp">Reading lamp</string>
     <string name="chair">Chair</string>
     <string name="plant">Plant</string>
-    <string name="room_purchases">Room purchases</string>
-    <string name="furnished_room_description">Shared room with a window, a character, and furniture: %1$s.</string>
+    <string name="table_lamp">Table lamp</string>
+    <string name="armchair">Armchair</string>
+    <string name="shared_room">Shared room</string>
+    <string name="small_studio">Small studio</string>
+    <string name="flat">Flat</string>
+    <string name="furnished_room_description">%1$s with a window, a character, and furniture: %2$s.</string>
 </resources>
