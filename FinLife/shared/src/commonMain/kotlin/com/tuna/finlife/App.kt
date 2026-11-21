@@ -37,6 +37,7 @@ fun App() {
                         state = reduceGame(current, GameAction.AdvanceMonth, twin)
                     }
                 },
+                onBuyItem = { state = reduceGame(state, GameAction.BuyRoomItem(it), twin) },
             )
         }
     }

@@ -6,17 +6,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.tuna.finlife.game.GameState
+import com.tuna.finlife.game.RoomItem
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.i18n.displayMonths
 import com.tuna.finlife.model.GoalStatus
@@ -34,35 +38,52 @@ import finlife.shared.generated.resources.monthly_change
 import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
 import finlife.shared.generated.resources.room_title
+import finlife.shared.generated.resources.shop
 import kotlin.math.abs
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-internal fun RoomScreen(state: GameState.Playing, onAdvanceMonth: () -> Unit) {
+internal fun RoomScreen(
+    state: GameState.Playing,
+    onAdvanceMonth: () -> Unit,
+    onBuyItem: (RoomItem) -> Unit,
+) {
     var dismissedMonth by remember { mutableIntStateOf(-1) }
+    var shopOpen by remember { mutableStateOf(false) }
     GameScreen(
         header = { FinanceHeader(state) },
         actions = {
-            PrimaryButton(
-                label = stringResource(Res.string.advance_month),
-                onClick = onAdvanceMonth,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = state.canAdvanceMonth,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+                PrimaryButton(
+                    label = stringResource(Res.string.advance_month),
+                    onClick = onAdvanceMonth,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = state.canAdvanceMonth,
+                )
+                OutlinedButton(
+                    onClick = { shopOpen = true },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = FinLifeSpacing.touchTarget),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(stringResource(Res.string.shop))
+                }
+            }
         },
     ) {
-        RoomCanvas()
+        RoomCanvas(state.ownedItems)
     }
     val summary = state.lastMonth
     if (summary != null && summary.snapshot.monthIndex > dismissedMonth) {
-        MonthSummarySheet(summary) { dismissedMonth = summary.snapshot.monthIndex }
+        MonthSummarySheet(summary, state.lastMonthRoomPurchases) { dismissedMonth = summary.snapshot.monthIndex }
+    } else if (shopOpen) {
+        RoomShopSheet(state, onBuyItem, onDismiss = { shopOpen = false })
     }
 }
 
 @Composable
 private fun FinanceHeader(state: GameState.Playing) {
     val snapshot = state.snapshot
-    val animatedCash by animateFloatAsState(snapshot.cash.toFloat(), label = "cash balance")
+    val animatedCash by animateFloatAsState(state.availableCash.toFloat(), label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
             ScreenHeading(stringResource(Res.string.room_title), Modifier.alignByBaseline())

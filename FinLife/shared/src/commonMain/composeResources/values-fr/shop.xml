@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shop">Boutique</string>
+    <string name="inventory">Inventaire</string>
+    <string name="buy">Acheter</string>
+    <string name="available_cash">Solde disponible : %1$s</string>
+    <string name="not_enough_cash">Solde insuffisant</string>
+    <string name="simulation_complete">Simulation terminée</string>
+    <string name="reading_lamp">Lampe de lecture</string>
+    <string name="chair">Chaise</string>
+    <string name="plant">Plante</string>
+    <string name="room_purchases">Achats pour la chambre</string>
+    <string name="furnished_room_description">Chambre partagée avec une fenêtre, un personnage et du mobilier : %1$s.</string>
+</resources>
