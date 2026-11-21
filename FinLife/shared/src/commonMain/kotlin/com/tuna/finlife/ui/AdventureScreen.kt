@@ -12,7 +12,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -77,9 +76,9 @@ internal fun AdventureScreen(
         actions = {
             Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
                 if (session.status == SessionStatus.READY) {
-                    PrimaryButton(stringResource(Res.string.advance_month), onAdvance, Modifier.weight(1f))
+                    PrimaryButton(stringResource(Res.string.advance_month), onAdvance)
                 }
-                TextButton(onClick = onOpenSettings) { Text(stringResource(Res.string.settings)) }
+                PrimaryButton(stringResource(Res.string.settings), onOpenSettings)
             }
         },
     ) {
@@ -203,7 +202,7 @@ private fun HousingOption(decision: HousingDecision, record: MonthlyRecord, onCh
             LedgerLine(stringResource(Res.string.monthly_rent), money(record.flow.rent))
             LedgerLine(stringResource(Res.string.moving_cost), money(record.flow.decisionCosts))
             LedgerLine(stringResource(Res.string.closing_cash), money(record.after.cash))
-            PrimaryButton(label, onChoose, Modifier.fillMaxWidth())
+            PrimaryButton(label, onChoose)
         }
     }
 }

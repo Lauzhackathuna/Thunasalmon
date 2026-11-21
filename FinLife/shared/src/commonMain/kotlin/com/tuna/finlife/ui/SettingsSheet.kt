@@ -7,7 +7,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,9 +57,7 @@ internal fun SettingsSheet(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmingReset = false }) {
-                    Text(stringResource(Res.string.cancel))
-                }
+                PrimaryButton(stringResource(Res.string.cancel), onClick = { confirmingReset = false })
             },
             confirmButton = { PrimaryButton(stringResource(Res.string.reset_run), onClick = onReset) },
         )
@@ -89,9 +86,7 @@ internal fun SettingsSheet(
             }
             Text(stringResource(Res.string.demo_currency, settings.currencyCode))
             if (canReset) {
-                TextButton(onClick = { confirmingReset = true }) {
-                    Text(stringResource(Res.string.reset_run))
-                }
+                PrimaryButton(stringResource(Res.string.reset_run), onClick = { confirmingReset = true })
             }
         }
     }

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -44,7 +43,7 @@ internal fun PersonaSelectionScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ScreenHeading(stringResource(Res.string.first_year_abroad), Modifier.weight(1f))
-            TextButton(onClick = onOpenSettings) { Text(stringResource(Res.string.settings)) }
+            PrimaryButton(stringResource(Res.string.settings), onOpenSettings)
         }
         Text(stringResource(Res.string.choose_persona), style = MaterialTheme.typography.titleMedium)
         val copy = personaCopy(Persona.MastersStudent)

@@ -61,7 +61,6 @@ internal fun GameSheet(
             PrimaryButton(
                 label = stringResource(Res.string.close_settings),
                 onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

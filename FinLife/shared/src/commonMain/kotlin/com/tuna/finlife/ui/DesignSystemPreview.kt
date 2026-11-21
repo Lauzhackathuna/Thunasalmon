@@ -70,7 +70,11 @@ fun DesignSystemPreview() {
                     PrimaryButton(
                         label = stringResource(Res.string.advance_month),
                         onClick = {},
-                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    PrimaryButton(
+                        label = stringResource(Res.string.advance_month),
+                        onClick = {},
+                        enabled = false,
                     )
                     Text(
                         text = stringResource(Res.string.simulation_note),

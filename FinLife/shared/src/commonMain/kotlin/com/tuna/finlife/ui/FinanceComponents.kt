@@ -1,15 +1,18 @@
 package com.tuna.finlife.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun KeyFigureCard(
@@ -52,11 +55,17 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    Button(
+    val blue = MaterialTheme.colorScheme.primary
+    OutlinedButton(
         onClick = onClick,
         modifier = modifier.heightIn(min = FinLifeSpacing.touchTarget),
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = LocalButtonContainer.current,
+            contentColor = blue,
+        ),
+        border = BorderStroke(1.dp, if (enabled) blue else blue.copy(alpha = 0.38f)),
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge)
     }

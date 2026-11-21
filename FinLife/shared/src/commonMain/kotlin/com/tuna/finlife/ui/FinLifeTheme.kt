@@ -71,6 +71,8 @@ internal val LocalDeltaColors = staticCompositionLocalOf { LightDeltaColors }
 private val LightBackdrop = Brush.verticalGradient(listOf(Color(0xFFFDFCF9), LightColors.background))
 private val DarkBackdrop = Brush.verticalGradient(listOf(Color(0xFF353B4B), DarkColors.background, Color(0xFF202127)))
 internal val LocalGameBackdrop = staticCompositionLocalOf { LightBackdrop }
+/** Background of outlined buttons: white in light mode, the dark surface in dark mode. */
+internal val LocalButtonContainer = staticCompositionLocalOf { Color.White }
 
 private val FinLifeShapes = Shapes(
     small = RoundedCornerShape(8.dp),
@@ -109,6 +111,7 @@ fun FinLifeTheme(mode: ThemeMode = ThemeMode.System, content: @Composable () -> 
     CompositionLocalProvider(
         LocalDeltaColors provides if (dark) DarkDeltaColors else LightDeltaColors,
         LocalGameBackdrop provides if (dark) DarkBackdrop else LightBackdrop,
+        LocalButtonContainer provides if (dark) DarkColors.surface else Color.White,
     ) {
         MaterialTheme(
             colorScheme = if (dark) DarkColors else LightColors,
