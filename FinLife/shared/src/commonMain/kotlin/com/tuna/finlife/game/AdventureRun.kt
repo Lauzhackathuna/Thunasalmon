@@ -9,7 +9,7 @@ import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyConfiguration
 import com.tuna.finlife.simulation.MonthlyProfile
 import com.tuna.finlife.simulation.MonthlyRecord
-import com.tuna.finlife.simulation.PaymentResponsibility
+import com.tuna.finlife.simulation.MonthlySimulation
 import com.tuna.finlife.simulation.RandomEventSettings
 import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
@@ -31,7 +31,7 @@ internal enum class WhatIfState {
 /**
  * App-side setup of the adventure on top of the engine. Problems (rent rises, maintenance) are drawn
  * by [RandomTroubles] when each month opens; what-ifs are switched on by the player. Both are added to the
- * engine calendar through [SimulationSessions.fork], so all money comes from the engine.
+ * engine calendar through [SimulationSessions.schedule], so all money comes from the engine.
  */
 internal object AdventureRun {
     /** [seed] drives the random problems; a new one per run unless given (tests). */
@@ -57,6 +57,9 @@ internal object AdventureRun {
                 horizonMonths = MonthlyConfiguration.MAX_MONTHS,
                 annualInflation = 0.0,
                 randomSeed = seed,
+                // The engine's shared-flat contract (what-if and answer to a rent rise) uses these values.
+                sharedReferenceRent = Money.chf(data.sharedFlatRent),
+                sharedMovingCost = Money.chf(data.sharedFlatMovingCost),
                 // The engine's own random calendar is off: problems come from RandomTroubles only.
                 randomEvents = RandomEventSettings(enabled = false),
             ),
@@ -87,6 +90,16 @@ internal object AdventureRun {
         return if (next.history.size > session.history.size) next.history.last() else null
     }
 
+    /**
+     * The engine's own default answer when nobody chose (FinancialProjections: keep the housing,
+     * decline new offers). Null for decisions without such a default (purchases).
+     */
+    fun defaultAnswer(event: LifeEvent): String? = when (event) {
+        is LifeEvent.RentRise, is LifeEvent.HousingChoice -> "stay"
+        is LifeEvent.Internship, is LifeEvent.ShortInternshipOffer -> "decline"
+        else -> null
+    }
+
     fun whatIfStates(session: SimulationSession): Map<WhatIf, WhatIfState> {
         val month = session.currentMonth
         val open = session.status == SessionStatus.READY && month < session.configuration.horizonMonths &&
@@ -111,49 +124,24 @@ internal object AdventureRun {
     }
 
     /** Switches the what-if on for the current month; it takes effect when the month is advanced. */
-    fun applyWhatIf(
-        session: SimulationSession,
-        whatIf: WhatIf,
-        offer: SharedFlatOffer = SharedFlatOffer.Default,
-    ): SimulationSession {
+    fun applyWhatIf(session: SimulationSession, whatIf: WhatIf): SimulationSession {
         if (whatIfStates(session)[whatIf] != WhatIfState.Available) return session
         val month = session.currentMonth
         val id = whatIfId(whatIf, month)
         return when (whatIf) {
             // interactive = false: the engine treats the internship as already accepted.
             WhatIf.Internship -> withEvents(session, listOf(LifeEvent.Internship(id, month, interactive = false)))
-            // A housing choice is always a decision in the engine, so the move is answered right away.
-            WhatIf.SharedFlat -> SimulationSessions.submit(
-                withEvents(
-                    session,
-                    listOf(
-                        LifeEvent.HousingChoice(
-                            id,
-                            month,
-                            HousingContract("shared-flat-$month", offer.monthlyRent, month, HousingType.SHARED),
-                            offer.movingCost,
-                            PaymentResponsibility.CHARACTER,
-                        ),
-                    ),
-                ),
-                id,
-                "move",
-            )
+            // The engine's own shared-flat proposal; it is a decision, so the move is answered right away.
+            WhatIf.SharedFlat -> SimulationSessions.submit(SimulationSessions.proposeSharedHousing(session), id, "move")
         }
     }
 
     /**
      * [base] with the selected what-ifs switched on for its current month. Rebuilt from [base] each time,
      * so a what-if can be switched off again until the month is advanced.
-     * Internship first: adding an event forks the month, which drops answers already given in it
-     * (the shared flat's "move").
      */
-    fun withWhatIfs(
-        base: SimulationSession,
-        selected: Set<WhatIf>,
-        offer: SharedFlatOffer = SharedFlatOffer.Default,
-    ): SimulationSession =
-        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf, offer) }
+    fun withWhatIfs(base: SimulationSession, selected: Set<WhatIf>): SimulationSession =
+        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf) }
 
     /** False if a decision is pending or the engine rejects the coming month (amount limit reached). */
     private fun noPendingDecision(session: SimulationSession): Boolean = try {
@@ -162,7 +150,11 @@ internal object AdventureRun {
         false
     }
 
-    private fun whatIfId(whatIf: WhatIf, month: Int) = "whatif-${whatIf.name.lowercase()}-$month"
+    private fun whatIfId(whatIf: WhatIf, month: Int) = when (whatIf) {
+        // Id chosen by the engine's proposeSharedHousing.
+        WhatIf.SharedFlat -> MonthlySimulation.sharedHousingChoice(month, MonthlyConfiguration(horizonMonths = month + 1)).id
+        else -> "whatif-${whatIf.name.lowercase()}-$month"
+    }
 
     private fun submit(session: SimulationSession, eventId: String, optionId: String): SimulationSession? {
         val pending = SimulationSessions.pendingDecisions(session).singleOrNull { it.event.id == eventId }
@@ -180,13 +172,13 @@ internal object AdventureRun {
             session.currentState.housing.id,
             session.calendar,
         )
-        return if (drawn.isEmpty()) session else withEvents(session, drawn)
+        if (drawn.isEmpty()) return session
+        val scheduled = withEvents(session, drawn)
+        // A drawn rent rise can be a decision now: surface it before anything else happens this month.
+        return if (noPendingDecision(scheduled)) scheduled else SimulationSessions.advance(scheduled)
     }
 
-    /** Adds events from the current month on. No past month or answer is changed. */
-    private fun withEvents(session: SimulationSession, events: List<LifeEvent>): SimulationSession {
-        var branchId = "run-${session.currentMonth}-${session.calendar.size + events.size}"
-        if (branchId == session.branchId) branchId += "b"
-        return SimulationSessions.fork(session, session.currentMonth, branchId, events)
-    }
+    /** Adds events to the current month; answers already given this month are kept. */
+    private fun withEvents(session: SimulationSession, events: List<LifeEvent>): SimulationSession =
+        events.fold(session) { run, event -> SimulationSessions.schedule(run, event) }
 }

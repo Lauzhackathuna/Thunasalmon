@@ -31,6 +31,7 @@ import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRecord
+import com.tuna.finlife.simulation.MonthlySimulation
 import com.tuna.finlife.simulation.PendingDecision
 import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
@@ -54,6 +55,7 @@ import finlife.shared.generated.resources.opening_balance
 import finlife.shared.generated.resources.close_settings
 import finlife.shared.generated.resources.simulation_complete
 import finlife.shared.generated.resources.unexpected_costs
+import finlife.shared.generated.resources.unpaid_bills
 import finlife.shared.generated.resources.whatif_hint
 import finlife.shared.generated.resources.whatif_internship
 import finlife.shared.generated.resources.whatif_shared_flat
@@ -128,6 +130,10 @@ internal fun AdventureScreen(
                         }
                         if (record.flow.exceptionalExpenses > Money.ZERO) {
                             LedgerLine(stringResource(Res.string.unexpected_costs), money(record.flow.exceptionalExpenses))
+                        }
+                        // Cash never goes below zero in the engine: what could not be paid stays owed.
+                        if (record.financingNeed > Money.ZERO) {
+                            LedgerLine(stringResource(Res.string.unpaid_bills), money(record.financingNeed))
                         }
                     }
                     if (session.status == SessionStatus.COMPLETED) Text(stringResource(Res.string.simulation_complete))
@@ -217,7 +223,10 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
     val previews = remember(session, decision) {
         decision.options.associate { it.id to AdventureRun.preview(session, decision.event.id, it.id) }
     }
-    val copy = decisionCopy(kind, decision.event.month)
+    val shared = remember(session, decision) {
+        MonthlySimulation.sharedContract(decision.event.month, session.configuration).monthlyRent
+    }
+    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCost)
     if (copy.title.isNotEmpty()) Text(copy.title, style = MaterialTheme.typography.titleLarge)
     Text(copy.prompt, style = MaterialTheme.typography.bodyMedium)
     for (option in decision.options) {

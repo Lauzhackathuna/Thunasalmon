@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.RunSummary
+import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.SimulationSession
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.cash_balance
@@ -25,6 +26,7 @@ import finlife.shared.generated.resources.start_over
 import finlife.shared.generated.resources.summary_title
 import finlife.shared.generated.resources.total_expenses
 import finlife.shared.generated.resources.total_income
+import finlife.shared.generated.resources.unpaid_bills
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -62,6 +64,7 @@ internal fun SummaryScreen(
                 LedgerLine(stringResource(Res.string.net_worth), money(summary.netWorth))
                 LedgerLine(stringResource(Res.string.total_income), money(summary.totalIncome))
                 LedgerLine(stringResource(Res.string.total_expenses), money(summary.totalExpenses))
+                if (summary.unpaid > Money.ZERO) LedgerLine(stringResource(Res.string.unpaid_bills), money(summary.unpaid))
             }
         }
     }

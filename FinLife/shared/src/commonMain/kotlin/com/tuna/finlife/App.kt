@@ -114,17 +114,16 @@ fun App() {
                         onChoose = { eventId, optionId ->
                             if (session === current) {
                                 val next = AdventureRun.choose(current, eventId, optionId)
-                                counterfactual = counterfactual?.catchUp(next.currentMonth)
+                                counterfactual = counterfactual?.catchUp(next)
                                 whatIfDraft = null
                                 session = next
                             }
                         },
-                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current, offer = startingData.sharedFlatOffer),
+                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current),
                         counterfactual = counterfactual,
                         onWhatIfToggle = { whatIf, on ->
                             if (session === current) {
-                                val draft = (whatIfDraft ?: WhatIfDraft(current, offer = startingData.sharedFlatOffer))
-                                    .toggle(whatIf, on)
+                                val draft = (whatIfDraft ?: WhatIfDraft(current)).toggle(whatIf, on)
                                 whatIfDraft = draft
                                 session = draft.session
                             }

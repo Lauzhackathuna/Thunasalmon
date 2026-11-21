@@ -15,7 +15,7 @@ class CounterfactualTest {
         previous: Counterfactual?,
         draft: WhatIfDraft? = null,
     ): Pair<SimulationSession, Counterfactual?> {
-        val next = AdventureRun.advance(draft?.session ?: session)
+        val next = AdventureRun.advance(answerDefaults(draft?.session ?: session))
         return next to Counterfactual.afterAdvance(previous, draft, next)
     }
 
@@ -27,7 +27,7 @@ class CounterfactualTest {
 
     @Test
     fun alternativeIsTheSameRunWithoutTheWhatIfInLockstep() {
-        val start = AdventureRun.start(seed = 5)
+        val start = answerDefaults(AdventureRun.start(seed = 5))
         var (main, counterfactual) = play(start, null, WhatIfDraft(start).toggle(WhatIf.SharedFlat, true))
         repeat(5) { play(main, counterfactual).let { (m, c) -> main = m; counterfactual = c } }
         val alternative = assertNotNull(counterfactual).alternative
@@ -45,7 +45,7 @@ class CounterfactualTest {
 
     @Test
     fun aLaterWhatIfReplacesTheAlternative() {
-        val start = AdventureRun.start(seed = 5)
+        val start = answerDefaults(AdventureRun.start(seed = 5))
         var (main, counterfactual) = play(start, null, WhatIfDraft(start).toggle(WhatIf.SharedFlat, true))
         play(main, counterfactual).let { (m, c) -> main = m; counterfactual = c }
         play(main, counterfactual, WhatIfDraft(main).toggle(WhatIf.Internship, true)).let { (m, c) -> main = m; counterfactual = c }
@@ -58,7 +58,7 @@ class CounterfactualTest {
 
     @Test
     fun switchingOnThenOffLeavesThePreviousAlternative() {
-        val start = AdventureRun.start(seed = 5)
+        val start = answerDefaults(AdventureRun.start(seed = 5))
         val draft = WhatIfDraft(start).toggle(WhatIf.Internship, true).toggle(WhatIf.Internship, false)
         val (_, counterfactual) = play(start, null, draft)
         assertNull(counterfactual)

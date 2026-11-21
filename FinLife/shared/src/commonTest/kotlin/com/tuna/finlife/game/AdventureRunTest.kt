@@ -17,8 +17,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class AdventureRunTest {
-    private fun advance(session: SimulationSession, months: Int): SimulationSession =
-        (1..months).fold(session) { run, _ -> AdventureRun.advance(run) }
+    private fun advance(session: SimulationSession, months: Int): SimulationSession = playDefaults(session, months)
 
     private fun randomEvents(session: SimulationSession) = session.calendar.filter(RandomTroubles::isRandom)
 
@@ -77,11 +76,21 @@ class AdventureRunTest {
     }
 
     @Test
-    fun runIsOpenEndedAndHasNoScheduledDecision() {
+    fun runIsOpenEndedAndOnlyRandomRentRisesAskForADecision() {
         val run = advance(AdventureRun.start(seed = 7), 30)
         assertEquals(30, run.currentMonth)
-        assertEquals(SessionStatus.READY, run.status)
-        assertTrue(run.calendar.none { it.interactive })
+        assertTrue(run.calendar.filter { it.interactive }.all { it is LifeEvent.RentRise && RandomTroubles.isRandom(it) })
+    }
+
+    @Test
+    fun aDrawnRentRiseIsAskedBeforeTheMonthIsPlayed() {
+        val calendar = RandomTroubles.decide(0.0, 0.99, 0, "maya-home", emptyList())
+        assertTrue(calendar.single() is LifeEvent.RentRise)
+        // Find a run whose first month draws a rent rise, then check the app stops on it.
+        val run = (1L..200L).map { AdventureRun.start(seed = it) }.first { s -> s.calendar.any { it is LifeEvent.RentRise } }
+        assertEquals(SessionStatus.AWAITING_DECISION, run.status)
+        assertEquals(listOf("stay", "move"), SimulationSessions.pendingDecisions(run).single().options.map { it.id })
+        assertEquals(WhatIfState.Unavailable, AdventureRun.whatIfStates(run)[WhatIf.SharedFlat])
     }
 
     @Test

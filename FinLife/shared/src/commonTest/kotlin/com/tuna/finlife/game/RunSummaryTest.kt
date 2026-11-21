@@ -9,7 +9,7 @@ import kotlin.test.assertNotEquals
 class RunSummaryTest {
     @Test
     fun runIsNotLimitedToTwelveMonths() {
-        val session = (1..24).fold(AdventureRun.start(seed = 1)) { run, _ -> AdventureRun.advance(run) }
+        val session = playDefaults(AdventureRun.start(seed = 1), 24)
         assertEquals(24, session.currentMonth)
         assertNotEquals(SessionStatus.COMPLETED, session.status)
     }

@@ -1,6 +1,7 @@
 package com.tuna.finlife.game
 
 import com.tuna.finlife.simulation.SimulationSession
+import com.tuna.finlife.simulation.SimulationSessions
 
 /**
  * The run without the most recent what-ifs: [alternative] branches from the session saved just before
@@ -12,10 +13,20 @@ internal data class Counterfactual(
     val removed: Set<WhatIf>,
     val alternative: SimulationSession,
 ) {
-    /** Advances [alternative] up to [month]; stops early if the alternative would need a decision. */
-    fun catchUp(month: Int): Counterfactual {
+    /**
+     * Advances [alternative] up to [main]'s month. A decision that also exists on the player's path
+     * (same event, e.g. the same drawn rent rise) gets the player's answer; otherwise the engine's default
+     * answer (keep the housing, decline offers). A decision with neither stops the alternative.
+     */
+    fun catchUp(main: SimulationSession): Counterfactual {
+        val answers = main.selections.associate { it.eventId to it.optionId }
         var run = alternative
-        while (run.currentMonth < month) {
+        while (run.currentMonth < main.currentMonth) {
+            for (pending in SimulationSessions.pendingDecisions(run)) {
+                val answer = answers[pending.event.id] ?: AdventureRun.defaultAnswer(pending.event)
+                    ?: return copy(alternative = run)
+                run = SimulationSessions.submit(run, pending.event.id, answer)
+            }
             val next = AdventureRun.advance(run)
             if (next.currentMonth == run.currentMonth) break
             run = next
@@ -31,7 +42,7 @@ internal data class Counterfactual(
         fun afterAdvance(previous: Counterfactual?, draft: WhatIfDraft?, advanced: SimulationSession): Counterfactual? {
             val started = draft?.takeIf { it.selected.isNotEmpty() }
                 ?.let { Counterfactual(it.base.currentMonth, it.selected, it.base) }
-            return (started ?: previous)?.catchUp(advanced.currentMonth)
+            return (started ?: previous)?.catchUp(advanced)
         }
     }
 }

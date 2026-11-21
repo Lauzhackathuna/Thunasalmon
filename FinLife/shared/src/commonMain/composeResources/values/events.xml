@@ -25,7 +25,7 @@
     <string name="outcome_rent_rise">Maya’s rent rises by %1$s% now and again every 12 months.</string>
     <string name="outcome_rent_rise_already_rising">Another rent increase was announced, but Maya’s rent is already rising every year.</string>
     <string name="outcome_rent_rise_previous_home">The rent increase concerned Maya’s previous home.</string>
-    <string name="outcome_maintenance">An unexpected repair bill of %1$s had to be paid.</string>
+    <string name="outcome_maintenance">An unexpected repair bill of %1$s arrived.</string>
     <string name="outcome_maintenance_other_party">A major repair was needed; someone else paid for it.</string>
     <string name="outcome_plant_bought">Maya bought the plant.</string>
     <string name="outcome_plant_skipped">Maya didn’t buy the plant.</string>
@@ -43,4 +43,17 @@
     <string name="whatif_hint">Switch a situation on to apply it from this month. You can change your mind until you advance to the next month.</string>
     <string name="whatif_internship">A paid internship</string>
     <string name="whatif_shared_flat">Moving into a shared flat</string>
+    <string name="decision_rent_rise_title">The rent is going up</string>
+    <string name="decision_rent_rise_prompt">Maya’s rent rises by %1$s% now and again every 12 months. She can accept it or move into a shared flat at %2$s per month (moving cost %3$s).</string>
+    <string name="option_rent_rise_stay">Accept the new rent</string>
+    <string name="option_rent_rise_move">Move into a shared flat</string>
+    <string name="outcome_rent_rise_moved">Maya moved into a shared flat instead of paying the higher rent.</string>
+    <string name="decision_short_internship_title">A short paid internship</string>
+    <string name="decision_short_internship_prompt">A company offers Maya a %1$d-month internship paid %2$s per month, alongside her studies.</string>
+    <string name="option_short_internship_accept">Accept the internship</string>
+    <string name="option_short_internship_decline">Decline it</string>
+    <string name="outcome_short_internship_accepted">Maya accepted the short paid internship.</string>
+    <string name="outcome_short_internship_declined">Maya declined the short internship.</string>
+    <string name="outcome_short_internship_not_applicable">The short internship did not fit with Maya’s situation.</string>
+    <string name="unpaid_bills">Unpaid bills</string>
 </resources>

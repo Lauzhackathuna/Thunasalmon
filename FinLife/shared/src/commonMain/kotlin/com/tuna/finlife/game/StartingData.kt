@@ -29,8 +29,6 @@ internal data class StartingData(
         StartingField.SharedFlatMovingCost -> sharedFlatMovingCost
     }
 
-    val sharedFlatOffer: SharedFlatOffer get() = SharedFlatOffer(Money.chf(sharedFlatRent), Money.chf(sharedFlatMovingCost))
-
     companion object {
         // Synthetic demo assumptions (Maya profile and the shared-flat what-if), unchanged from before.
         val Default = StartingData(8_000, 1_200, 700, 250, 230, 300, 800, 6_000, 500, 500)
@@ -57,16 +55,9 @@ internal data class StartingData(
     }
 }
 
-/** Monthly rent and one-time moving cost offered by the shared-flat what-if. */
-internal data class SharedFlatOffer(val monthlyRent: Money, val movingCost: Money) {
-    companion object {
-        val Default get() = StartingData.Default.sharedFlatOffer
-    }
-}
-
-/** Opening cash may be negative (the engine allows it); every other field is an amount of 0 or more. */
+/** Every field is an amount of 0 or more (the V3 engine rejects negative cash). */
 internal enum class StartingField(val allowsNegative: Boolean = false) {
-    OpeningCash(allowsNegative = true),
+    OpeningCash,
     ParentIncome,
     Rent,
     HealthInsurance,

@@ -10,6 +10,7 @@ internal data class RunSummary(
     val netWorth: Money,
     val totalIncome: Money,
     val totalExpenses: Money,
+    val unpaid: Money,
 ) {
     companion object {
         fun of(session: SimulationSession): RunSummary {
@@ -20,6 +21,7 @@ internal data class RunSummary(
                 netWorth = session.currentState.netWorth,
                 totalIncome = flows.fold(Money.ZERO) { total, flow -> total + flow.income },
                 totalExpenses = flows.fold(Money.ZERO) { total, flow -> total + flow.expenses },
+                unpaid = session.currentState.unpaid.items.fold(Money.ZERO) { total, bill -> total + bill.missing },
             )
         }
     }

@@ -8,8 +8,21 @@ import com.tuna.finlife.game.rentRiseResult
 import com.tuna.finlife.simulation.DecisionOption
 import com.tuna.finlife.simulation.EventApplication
 import com.tuna.finlife.simulation.EventOutcome
+import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRecord
 import finlife.shared.generated.resources.Res
+import finlife.shared.generated.resources.decision_rent_rise_prompt
+import finlife.shared.generated.resources.decision_rent_rise_title
+import finlife.shared.generated.resources.decision_short_internship_prompt
+import finlife.shared.generated.resources.decision_short_internship_title
+import finlife.shared.generated.resources.option_rent_rise_move
+import finlife.shared.generated.resources.option_rent_rise_stay
+import finlife.shared.generated.resources.option_short_internship_accept
+import finlife.shared.generated.resources.option_short_internship_decline
+import finlife.shared.generated.resources.outcome_rent_rise_moved
+import finlife.shared.generated.resources.outcome_short_internship_accepted
+import finlife.shared.generated.resources.outcome_short_internship_declined
+import finlife.shared.generated.resources.outcome_short_internship_not_applicable
 import finlife.shared.generated.resources.decision_generic_prompt
 import finlife.shared.generated.resources.decision_housing_prompt
 import finlife.shared.generated.resources.decision_housing_title
@@ -48,9 +61,30 @@ import org.jetbrains.compose.resources.stringResource
 
 internal data class DecisionCopy(val title: String, val prompt: String)
 
-/** [month] is the zero-based engine month; it is shown one-based. */
+/**
+ * [month] is the zero-based engine month; it is shown one-based. [sharedRent] and [sharedMovingCost]
+ * describe the engine's shared-flat alternative offered with a rent rise.
+ */
 @Composable
-internal fun decisionCopy(kind: EventKind, month: Int): DecisionCopy = when (kind) {
+internal fun decisionCopy(
+    kind: EventKind,
+    month: Int,
+    sharedRent: Money = Money.ZERO,
+    sharedMovingCost: Money = Money.ZERO,
+): DecisionCopy = when (kind) {
+    is EventKind.RentRise -> DecisionCopy(
+        stringResource(Res.string.decision_rent_rise_title),
+        stringResource(
+            Res.string.decision_rent_rise_prompt,
+            percentLabel(kind.annualExtraRate),
+            money(sharedRent),
+            money(sharedMovingCost),
+        ),
+    )
+    is EventKind.ShortInternship -> DecisionCopy(
+        stringResource(Res.string.decision_short_internship_title),
+        stringResource(Res.string.decision_short_internship_prompt, kind.months, money(kind.monthlyIncome)),
+    )
     is EventKind.Internship -> DecisionCopy(
         stringResource(Res.string.decision_internship_title),
         stringResource(Res.string.decision_internship_prompt, kind.months, money(kind.monthlyIncome)),
@@ -77,6 +111,10 @@ internal fun decisionCopy(kind: EventKind, month: Int): DecisionCopy = when (kin
 internal fun optionLabel(kind: EventKind, option: DecisionOption): String = when {
     kind is EventKind.Internship && option.id == "accept" -> stringResource(Res.string.option_internship_accept)
     kind is EventKind.Internship && option.id == "decline" -> stringResource(Res.string.option_internship_decline)
+    kind is EventKind.ShortInternship && option.id == "accept" -> stringResource(Res.string.option_short_internship_accept)
+    kind is EventKind.ShortInternship && option.id == "decline" -> stringResource(Res.string.option_short_internship_decline)
+    kind is EventKind.RentRise && option.id == "stay" -> stringResource(Res.string.option_rent_rise_stay)
+    kind is EventKind.RentRise && option.id == "move" -> stringResource(Res.string.option_rent_rise_move)
     kind is EventKind.Housing && option.id == "stay" -> stringResource(Res.string.option_housing_stay)
     kind is EventKind.Housing && option.id == "move" -> stringResource(Res.string.option_housing_move)
     kind is EventKind.Plant && option.id == "first" -> stringResource(Res.string.option_plant_buy)
@@ -101,9 +139,17 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
         )
         is EventKind.RentRise -> when (rentRiseResult(kind.contractId, outcome, record)) {
             RentRiseResult.Applied -> stringResource(Res.string.outcome_rent_rise, percentLabel(kind.annualExtraRate))
+            RentRiseResult.MovedInstead -> stringResource(Res.string.outcome_rent_rise_moved)
             RentRiseResult.PreviousHome -> stringResource(Res.string.outcome_rent_rise_previous_home)
             RentRiseResult.AlreadyRising -> stringResource(Res.string.outcome_rent_rise_already_rising)
         }
+        is EventKind.ShortInternship -> stringResource(
+            when (outcome.application) {
+                EventApplication.APPLIED -> Res.string.outcome_short_internship_accepted
+                EventApplication.DECLINED -> Res.string.outcome_short_internship_declined
+                EventApplication.NOT_APPLICABLE -> Res.string.outcome_short_internship_not_applicable
+            },
+        )
         is EventKind.Maintenance ->
             if (applied) stringResource(Res.string.outcome_maintenance, money(outcome.chargedCost))
             else stringResource(Res.string.outcome_maintenance_other_party)

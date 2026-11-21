@@ -82,11 +82,18 @@ class EventKindTest {
     fun rentRiseResultDistinguishesAppliedAlreadyRisingAndPreviousHome() {
         val configuration = MonthlyConfiguration(horizonMonths = 24, randomEvents = RandomEventSettings(enabled = false))
         val home = com.tuna.finlife.simulation.MonthlyProfile.alexia().housing.id
-        fun runWith(vararg events: LifeEvent, move: Boolean = false): com.tuna.finlife.simulation.SimulationSession {
+        // Rent rises are decisions in the V3 engine: answer them like the player would.
+        fun runWith(vararg events: LifeEvent, answers: Map<String, String> = emptyMap()): com.tuna.finlife.simulation.SimulationSession {
             var session = SimulationSessions.start(configuration = configuration, events = events.toList())
-            session = SimulationSessions.advance(session)
-            if (move) session = AdventureRun.choose(session, "move", "move")
-            return SimulationSessions.runUntilBlocked(session, maxMonths = 3)
+            repeat(3) {
+                for ((id, option) in answers) {
+                    if (SimulationSessions.pendingDecisions(session).any { it.event.id == id }) {
+                        session = SimulationSessions.submit(session, id, option)
+                    }
+                }
+                session = SimulationSessions.advance(answerDefaults(session))
+            }
+            return session
         }
         fun result(session: com.tuna.finlife.simulation.SimulationSession, id: String): RentRiseResult {
             val record = session.history.single { record -> record.events.any { it.eventId == id } }
@@ -104,8 +111,11 @@ class EventKindTest {
         val movedSameMonth = runWith(
             LifeEvent.RentRise("rise", 0, MonthlyRentRule(home, 0)),
             LifeEvent.HousingChoice("move", 0, HousingContract("flat", Money.chf(500), 0), Money.ZERO, PaymentResponsibility.CHARACTER),
-            move = true,
+            answers = mapOf("move" to "move"),
         )
         assertEquals(RentRiseResult.PreviousHome, result(movedSameMonth, "rise"))
+
+        val movedInstead = runWith(LifeEvent.RentRise("rise", 0, MonthlyRentRule(home, 0)), answers = mapOf("rise" to "move"))
+        assertEquals(RentRiseResult.MovedInstead, result(movedInstead, "rise"))
     }
 }

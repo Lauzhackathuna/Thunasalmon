@@ -14,6 +14,8 @@ import com.tuna.finlife.simulation.PaymentResponsibility
  */
 internal sealed interface EventKind {
     data class Internship(val months: Int, val monthlyIncome: Money) : EventKind
+    /** Engine's internal 3-month offer: extra income, studies continue. */
+    data class ShortInternship(val months: Int, val monthlyIncome: Money) : EventKind
     data class RentRise(val annualExtraRate: Double, val contractId: String) : EventKind
     data class Maintenance(val amount: Money) : EventKind
     data class Plant(val cost: Money) : EventKind
@@ -31,6 +33,7 @@ private val ovenTitle = MicroEvents.oven("probe", 0, PaymentResponsibility.CHARA
 
 internal fun LifeEvent.kind(): EventKind = when (this) {
     is LifeEvent.Internship -> EventKind.Internship(durationMonths, monthlyIncome)
+    is LifeEvent.ShortInternshipOffer -> EventKind.ShortInternship(durationMonths, monthlyIncome)
     is LifeEvent.RentRise -> EventKind.RentRise(rule.annualExtraRate, rule.contractId)
     is LifeEvent.Maintenance -> EventKind.Maintenance(nominalAmount)
     is LifeEvent.PurchaseChoice -> when (title) {
@@ -49,10 +52,12 @@ internal fun percentLabel(rate: Double): String {
     return if (tenths % 10 == 0L) (tenths / 10).toString() else "${tenths / 10}.${kotlin.math.abs(tenths % 10)}"
 }
 
-internal enum class RentRiseResult { Applied, AlreadyRising, PreviousHome }
+internal enum class RentRiseResult { Applied, MovedInstead, AlreadyRising, PreviousHome }
 
 /** How a rent rise turned out in [record]'s month. A move in the same month is applied before the rise. */
 internal fun rentRiseResult(contractId: String, outcome: EventOutcome, record: MonthlyRecord): RentRiseResult = when {
+    // The engine now offers "move" (shared flat) as the answer to a rent rise.
+    outcome.application == EventApplication.APPLIED && outcome.optionId == "move" -> RentRiseResult.MovedInstead
     outcome.application == EventApplication.APPLIED -> RentRiseResult.Applied
     contractId != record.after.housing.id -> RentRiseResult.PreviousHome
     else -> RentRiseResult.AlreadyRising

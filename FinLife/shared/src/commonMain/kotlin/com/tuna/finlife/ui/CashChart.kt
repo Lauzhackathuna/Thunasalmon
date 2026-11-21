@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -50,13 +49,15 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.tuna.finlife.game.ChartScale
 import com.tuna.finlife.game.Counterfactual
 import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.LocalCurrencyCode
 import com.tuna.finlife.i18n.displayMoney
+import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.SimulationSession
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.cash_balance
@@ -74,6 +75,7 @@ import finlife.shared.generated.resources.money_group_separator
 import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
+import finlife.shared.generated.resources.unpaid_bills
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
@@ -240,12 +242,25 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
             val index = selected
             if (index != null) {
                 val tooltipWidthPx = with(density) { TooltipWidth.toPx() }
-                val gap = with(density) { 12.dp.toPx() }
+                // The pointer is at most half a month-step from the snapped point: keep the tooltip further
+                // away than that, so the pointer never lands on it (that used to hide and re-show it).
+                val halfStep = if (count <= 1) 0f else plotWidth / (count - 1) / 2f
+                val gap = with(density) { maxOf(16.dp.toPx(), halfStep + 8.dp.toPx()) }
                 val x = xOf(index.toFloat())
-                // Opposite side of the pointer so the tooltip never hides the point being read.
-                val left = if (x + gap + tooltipWidthPx <= widthPx) x + gap else (x - gap - tooltipWidthPx).coerceAtLeast(0f)
-                Surface(
-                    modifier = Modifier.zIndex(1f).width(TooltipWidth).offset { IntOffset(left.roundToInt(), 0) },
+                val heightPx = with(density) { ChartHeight.toPx() }
+                val position = when {
+                    x + gap + tooltipWidthPx <= widthPx -> IntOffset((x + gap).roundToInt(), 0)
+                    x - gap - tooltipWidthPx >= 0f -> IntOffset((x - gap - tooltipWidthPx).roundToInt(), 0)
+                    // No room beside the point: below the chart, where the pointer cannot be.
+                    else -> IntOffset(0, (heightPx + with(density) { 8.dp.toPx() }).roundToInt())
+                }
+                // A popup is drawn above the page, so a long tooltip is never cut off by the card.
+                Popup(
+                    alignment = Alignment.TopStart,
+                    offset = position,
+                    properties = PopupProperties(focusable = false),
+                ) { Surface(
+                    modifier = Modifier.width(TooltipWidth),
                     shape = MaterialTheme.shapes.small,
                     color = colors.surface,
                     border = BorderStroke(1.dp, colors.outlineVariant),
@@ -259,6 +274,8 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                         Text(monthLabel(index), style = MaterialTheme.typography.labelLarge)
                         TooltipLine(stringResource(Res.string.cash_balance), money(state.cash))
                         TooltipLine(stringResource(Res.string.net_worth), money(state.netWorth))
+                        val unpaid = state.unpaid.items.fold(Money.ZERO) { total, bill -> total + bill.missing }
+                        if (unpaid > Money.ZERO) TooltipLine(stringResource(Res.string.unpaid_bills), money(unpaid))
                         if (counterfactual != null && index in altRange && index > altFrom) {
                             val other = altStates[index]
                             TooltipLine(withoutLabel(counterfactual.removed), money(other.cash))
@@ -285,7 +302,7 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                             }
                         }
                     }
-                }
+                } }
             }
         }
         // X-axis title.
