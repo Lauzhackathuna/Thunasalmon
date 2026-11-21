@@ -1,6 +1,7 @@
 package com.tuna.finlife.i18n
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.money_decimal_separator
 import finlife.shared.generated.resources.money_group_separator
@@ -9,13 +10,14 @@ import kotlin.math.abs
 import kotlin.math.roundToLong
 import org.jetbrains.compose.resources.stringResource
 
-private const val DEFAULT_CURRENCY_CODE = "CHF"
+internal const val DEFAULT_CURRENCY_CODE = "CHF"
+internal val LocalCurrencyCode = staticCompositionLocalOf { DEFAULT_CURRENCY_CODE }
 
 @Composable
-internal fun displayMoney(amount: Double, currencyCode: String = DEFAULT_CURRENCY_CODE): String {
+internal fun displayMoney(amount: Double): String {
     val rounded = (amount * 100).roundToLong()
     val number = displayMagnitude(abs(rounded), 100, 2)
-    val formatted = stringResource(Res.string.money_pattern, number, currencyCode)
+    val formatted = stringResource(Res.string.money_pattern, number, LocalCurrencyCode.current)
     return if (rounded < 0) "−$formatted" else formatted
 }
 

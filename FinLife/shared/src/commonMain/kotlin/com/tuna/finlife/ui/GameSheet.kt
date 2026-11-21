@@ -28,9 +28,11 @@ internal fun GameSheet(
     sheetMaxWidth: Dp = FinLifeContentWidth,
     content: @Composable () -> Unit,
 ) {
-    val viewportHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val density = LocalDensity.current
+    val viewportHeight = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
     // Leave space for the sheet handle and system insets when content needs to scroll.
     val heightLimit = if (viewportHeight > 80.dp) Modifier.heightIn(max = viewportHeight - 80.dp) else Modifier
+    val bodyScrolls = viewportHeight == 0.dp || viewportHeight >= 360.dp * density.fontScale.coerceAtLeast(1f)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -38,15 +40,21 @@ internal fun GameSheet(
         contentColor = MaterialTheme.colorScheme.onSurface,
         sheetMaxWidth = sheetMaxWidth,
     ) {
+        val sheetScroll = if (bodyScrolls) Modifier else Modifier.verticalScroll(rememberScrollState())
         Column(
-            modifier = Modifier.fillMaxWidth().then(heightLimit)
+            modifier = Modifier.fillMaxWidth().then(heightLimit).then(sheetScroll)
                 .padding(horizontal = FinLifeSpacing.large, vertical = FinLifeSpacing.medium),
             verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
         ) {
-            Column(
-                modifier = Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-            ) {
+            if (bodyScrolls) {
+                Column(
+                    modifier = Modifier.weight(1f, fill = false).fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+                ) {
+                    content()
+                }
+            } else {
                 content()
             }
             SimulationNotice(Modifier.padding(top = FinLifeSpacing.small))

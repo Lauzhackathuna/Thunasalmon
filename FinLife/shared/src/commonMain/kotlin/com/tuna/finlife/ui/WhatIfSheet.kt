@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -33,6 +34,7 @@ import com.tuna.finlife.model.appliesTo
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.alternative
 import finlife.shared.generated.resources.baseline
+import finlife.shared.generated.resources.comparison_row_description
 import finlife.shared.generated.resources.constraint_breaches
 import finlife.shared.generated.resources.goal_feasibility
 import finlife.shared.generated.resources.liquidity_months
@@ -66,7 +68,7 @@ internal fun WhatIfSheet(
             Text(stringResource(Res.string.simulation_complete))
         }
         val controls: @Composable () -> Unit = {
-            ScenarioControls(state, selectedScenario, onSelect = { selectedScenario = it }, onAction)
+            ScenarioControls(state, selectedScenario, onSelect = { selectedScenario = it }, onAction = onAction)
         }
         val details: @Composable () -> Unit = {
             Text(scenarioDescription(selectedScenario), style = MaterialTheme.typography.bodyMedium)
@@ -175,7 +177,11 @@ private fun ScenarioMetrics(comparison: ScenarioComparison) {
 @Composable
 private fun ComparisonRow(label: String, baseline: String, alternative: String) {
     val style = MaterialTheme.typography.bodyMedium
-    Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+    val description = stringResource(Res.string.comparison_row_description, label, baseline, alternative)
+    Row(
+        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+        horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+    ) {
         Text(label, Modifier.weight(1.2f), style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(baseline, Modifier.weight(1f), style = style)
         Text(alternative, Modifier.weight(1f), style = style)

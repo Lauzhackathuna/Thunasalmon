@@ -3,6 +3,7 @@
     <string name="what_if">Et si ?</string>
     <string name="baseline">Référence</string>
     <string name="alternative">Variante</string>
+    <string name="comparison_row_description">%1$s. Référence : %2$s. Variante : %3$s.</string>
     <string name="scenario_rent">Hausse du loyer</string>
     <string name="scenario_property">Baisse immobilière</string>
     <string name="scenario_internship">Stage rémunéré</string>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="theme">Theme</string>
+    <string name="demo_currency">Demo currency: %1$s</string>
+    <string name="reset_run">Reset run</string>
+    <string name="reset_run_message">Return to the welcome screen and clear the current run, including furniture and scenarios.</string>
+    <string name="cancel">Cancel</string>
+    <string name="inventory_empty">No furniture in inventory yet.</string>
+</resources>

@@ -11,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.tuna.finlife.game.GameState
 import com.tuna.finlife.game.ClaimStatus
 import com.tuna.finlife.game.GameAction
@@ -22,14 +24,18 @@ import finlife.shared.generated.resources.armchair
 import finlife.shared.generated.resources.broken
 import finlife.shared.generated.resources.chair
 import finlife.shared.generated.resources.claim
+import finlife.shared.generated.resources.claim_item
 import finlife.shared.generated.resources.damaged
 import finlife.shared.generated.resources.flat
 import finlife.shared.generated.resources.intact
 import finlife.shared.generated.resources.inventory
+import finlife.shared.generated.resources.inventory_empty
 import finlife.shared.generated.resources.place
+import finlife.shared.generated.resources.place_item
 import finlife.shared.generated.resources.plant
 import finlife.shared.generated.resources.reading_lamp
 import finlife.shared.generated.resources.repair
+import finlife.shared.generated.resources.repair_item
 import finlife.shared.generated.resources.shared_room
 import finlife.shared.generated.resources.shop
 import finlife.shared.generated.resources.simulation_complete
@@ -69,19 +75,27 @@ internal fun RoomShopSheet(state: GameState.Playing, onAction: (GameAction) -> U
                     onAction = onAction,
                 )
             }
+        } else {
+            Text(
+                stringResource(Res.string.inventory_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
 private fun ShopItemRow(item: RoomItem, status: ClaimStatus, onClaim: () -> Unit) {
+    val name = stringResource(item.label)
+    val action = stringResource(Res.string.claim_item, name)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(item.label), style = MaterialTheme.typography.titleMedium)
+            Text(name, style = MaterialTheme.typography.titleMedium)
             if (status == ClaimStatus.Locked) {
                 Text(
                     stringResource(Res.string.unlocks_at, stringResource(item.requiredTier.label)),
@@ -92,6 +106,7 @@ private fun ShopItemRow(item: RoomItem, status: ClaimStatus, onClaim: () -> Unit
         }
         PrimaryButton(
             label = stringResource(Res.string.claim),
+            modifier = Modifier.semantics { contentDescription = action },
             enabled = status == ClaimStatus.Available,
             onClick = onClaim,
         )
@@ -105,8 +120,9 @@ private fun InventoryItemRow(
     displayed: Boolean,
     onAction: (GameAction) -> Unit,
 ) {
+    val name = stringResource(item.label)
     Column {
-        Text(stringResource(item.label), style = MaterialTheme.typography.titleMedium)
+        Text(name, style = MaterialTheme.typography.titleMedium)
         Text(
             stringResource(condition.label),
             style = MaterialTheme.typography.bodyMedium,
@@ -114,10 +130,20 @@ private fun InventoryItemRow(
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
             if (condition != ItemCondition.Intact) {
-                PrimaryButton(stringResource(Res.string.repair), onClick = { onAction(GameAction.RepairRoomItem(item)) })
+                val action = stringResource(Res.string.repair_item, name)
+                PrimaryButton(
+                    label = stringResource(Res.string.repair),
+                    onClick = { onAction(GameAction.RepairRoomItem(item)) },
+                    modifier = Modifier.semantics { contentDescription = action },
+                )
             }
             if (!displayed) {
-                PrimaryButton(stringResource(Res.string.place), onClick = { onAction(GameAction.PlaceRoomItem(item)) })
+                val action = stringResource(Res.string.place_item, name)
+                PrimaryButton(
+                    label = stringResource(Res.string.place),
+                    onClick = { onAction(GameAction.PlaceRoomItem(item)) },
+                    modifier = Modifier.semantics { contentDescription = action },
+                )
             }
         }
     }

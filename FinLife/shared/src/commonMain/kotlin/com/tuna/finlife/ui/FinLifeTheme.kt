@@ -101,6 +101,7 @@ fun FinLifeTheme(mode: ThemeMode = ThemeMode.System, content: @Composable () -> 
         ThemeMode.Light -> false
         ThemeMode.Dark -> true
     }
+    SystemBarAppearance(dark)
     CompositionLocalProvider(LocalDeltaColors provides if (dark) DarkDeltaColors else LightDeltaColors) {
         MaterialTheme(
             colorScheme = if (dark) DarkColors else LightColors,

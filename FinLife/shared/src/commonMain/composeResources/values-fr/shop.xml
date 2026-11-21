@@ -3,9 +3,12 @@
     <string name="shop">Boutique</string>
     <string name="inventory">Inventaire</string>
     <string name="claim">Obtenir</string>
+    <string name="claim_item">Obtenir : %1$s</string>
     <string name="unlocks_at">Se débloque au niveau « %1$s »</string>
     <string name="repair">Réparer</string>
+    <string name="repair_item">Réparer : %1$s</string>
     <string name="place">Placer</string>
+    <string name="place_item">Placer : %1$s</string>
     <string name="intact">Intact</string>
     <string name="damaged">Endommagé</string>
     <string name="broken">Cassé</string>

@@ -30,9 +30,6 @@ import finlife.shared.generated.resources.monthly_change
 import finlife.shared.generated.resources.preview_cash
 import finlife.shared.generated.resources.preview_delta
 import finlife.shared.generated.resources.simulation_note
-import finlife.shared.generated.resources.theme_dark
-import finlife.shared.generated.resources.theme_light
-import finlife.shared.generated.resources.theme_system
 import org.jetbrains.compose.resources.stringResource
 
 @Preview
@@ -54,15 +51,10 @@ fun DesignSystemPreview() {
                 ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
                         for (option in ThemeMode.entries) {
-                            val label = when (option) {
-                                ThemeMode.System -> Res.string.theme_system
-                                ThemeMode.Light -> Res.string.theme_light
-                                ThemeMode.Dark -> Res.string.theme_dark
-                            }
                             FilterChip(
                                 selected = mode == option,
                                 onClick = { mode = option },
-                                label = { Text(stringResource(label)) },
+                                label = { Text(stringResource(option.label)) },
                             )
                         }
                     }

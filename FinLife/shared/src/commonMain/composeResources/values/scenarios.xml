@@ -3,6 +3,7 @@
     <string name="what_if">What if?</string>
     <string name="baseline">Baseline</string>
     <string name="alternative">Alternative</string>
+    <string name="comparison_row_description">%1$s. Baseline: %2$s. Alternative: %3$s.</string>
     <string name="scenario_rent">Rent increase</string>
     <string name="scenario_property">Property decline</string>
     <string name="scenario_internship">Paid internship</string>

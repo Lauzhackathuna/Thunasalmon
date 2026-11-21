@@ -3,9 +3,12 @@
     <string name="shop">Shop</string>
     <string name="inventory">Inventory</string>
     <string name="claim">Claim</string>
+    <string name="claim_item">Claim %1$s</string>
     <string name="unlocks_at">Unlocks in %1$s</string>
     <string name="repair">Repair</string>
+    <string name="repair_item">Repair %1$s</string>
     <string name="place">Place</string>
+    <string name="place_item">Place %1$s</string>
     <string name="intact">Intact</string>
     <string name="damaged">Damaged</string>
     <string name="broken">Broken</string>

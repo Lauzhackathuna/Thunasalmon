@@ -13,13 +13,14 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import com.tuna.finlife.game.GameState
 import com.tuna.finlife.game.GameAction
 import com.tuna.finlife.game.LOW_LIQUIDITY_MONTHS
@@ -43,7 +44,9 @@ import finlife.shared.generated.resources.monthly_change
 import finlife.shared.generated.resources.net_worth
 import finlife.shared.generated.resources.opening_balance
 import finlife.shared.generated.resources.room_title
+import finlife.shared.generated.resources.settings
 import finlife.shared.generated.resources.shop
+import finlife.shared.generated.resources.simulation_complete
 import finlife.shared.generated.resources.speech_opening
 import finlife.shared.generated.resources.speech_gain
 import finlife.shared.generated.resources.speech_loss
@@ -60,10 +63,12 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun RoomScreen(
     state: GameState.Playing,
+    dismissedMonth: Int,
+    onSummaryDismissed: (Int) -> Unit,
+    onOpenSettings: () -> Unit,
     compare: (ScenarioId) -> ScenarioComparison?,
     onAction: (GameAction) -> Unit,
 ) {
-    var dismissedMonth by remember { mutableIntStateOf(-1) }
     var panel by remember { mutableStateOf<RoomPanel?>(null) }
     GameScreen(
         header = { FinanceHeader(state) },
@@ -75,6 +80,13 @@ internal fun RoomScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = state.canAdvanceMonth,
                 )
+                if (!state.canAdvanceMonth) {
+                    Text(
+                        stringResource(Res.string.simulation_complete),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
                     for (option in RoomPanel.entries) {
                         OutlinedButton(
@@ -85,6 +97,9 @@ internal fun RoomScreen(
                             Text(stringResource(option.label))
                         }
                     }
+                }
+                TextButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.End)) {
+                    Text(stringResource(Res.string.settings))
                 }
             }
         },
@@ -97,7 +112,7 @@ internal fun RoomScreen(
     }
     val summary = state.lastMonth
     if (summary != null && summary.snapshot.monthIndex > dismissedMonth) {
-        MonthSummarySheet(summary, state.lastRoomChanges) { dismissedMonth = summary.snapshot.monthIndex }
+        MonthSummarySheet(summary, state.lastRoomChanges) { onSummaryDismissed(summary.snapshot.monthIndex) }
     } else {
         when (panel) {
             RoomPanel.Shop -> RoomShopSheet(state, onAction, onDismiss = { panel = null })
