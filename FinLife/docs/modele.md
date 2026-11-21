@@ -121,3 +121,5 @@ La simulation est une fonction pure : mêmes entrées → mêmes sorties, aucun 
     Isolation : changer la réponse à Q7 ne modifie rien avant l'année d'achat k.
     Reproductibilité : deux appels identiques donnent des résultats identiques.
     Calcul à la main (scénario de référence, t = 0 → 1) : recettes_0 = 60 000 ; depenses_0 = 9 600 + 18 000 = 27 600 ; F_0 = 32 400 ; V_0 = 0 ; C_1 = 8 000 + 32 400 = 40 400 ; I_1 = 0 ; D_1 = 0 ; NW_1 = 40 400.
+
+AUtres idees
