@@ -105,20 +105,27 @@ class AdventureRunTest {
 
         val moved = AdventureRun.advance(switchedOn)
         assertEquals(1, moved.currentMonth)
-        assertEquals(Money.chf(500), moved.history.last().flow.rent)
-        assertEquals(Money.chf(500), moved.history.last().flow.decisionCosts)
+        assertEquals(Money.chf(StartingData.Default.sharedFlatRent), moved.history.last().flow.rent)
+        assertEquals(Money.chf(StartingData.Default.sharedFlatMovingCost), moved.history.last().flow.decisionCosts)
         assertEquals(HousingType.SHARED, moved.currentState.housing.type)
         // Still on in later months: the engine has no way back.
         assertEquals(WhatIfState.Active, AdventureRun.whatIfStates(advance(moved, 5))[WhatIf.SharedFlat])
     }
 
     @Test
-    fun internshipToggleAppliesFromThisMonthAndOnlyWhileStudying() {
+    fun internshipIsTheEnginesThreeMonthOfferAlongsideStudies() {
         val start = AdventureRun.start(seed = 3)
-        val interning = AdventureRun.advance(AdventureRun.applyWhatIf(start, WhatIf.Internship))
-        assertEquals(LifeStatus.INTERN, interning.currentState.status)
-        assertEquals(Money.chf(2_500), interning.history.last().flow.internshipIncome)
-        assertEquals(WhatIfState.Active, AdventureRun.whatIfStates(advance(interning, 5))[WhatIf.Internship])
+        val month1 = AdventureRun.advance(AdventureRun.applyWhatIf(start, WhatIf.Internship))
+        // Extra 300 CHF on top of the student income; studies continue.
+        assertEquals(LifeStatus.STUDENT, month1.currentState.status)
+        assertEquals(Money.chf(300), month1.history.last().flow.internshipIncome)
+        assertEquals(Money.chf(StartingData.Default.parentIncome), month1.history.last().flow.studentIncome)
+        assertEquals(WhatIfState.Active, AdventureRun.whatIfStates(month1)[WhatIf.Internship])
+        // Exactly three paid months, then the switch can be used again.
+        val month3 = advance(month1, 2)
+        assertEquals(listOf(300L, 300L, 300L), month3.history.map { it.flow.internshipIncome.cents / 100 })
+        assertEquals(Money.ZERO, advance(month3, 1).history.last().flow.internshipIncome)
+        assertEquals(WhatIfState.Available, AdventureRun.whatIfStates(answerDefaults(advance(month3, 1)))[WhatIf.Internship])
 
         val graduated = advance(start, 24)
         assertEquals(WhatIfState.Unavailable, AdventureRun.whatIfStates(graduated)[WhatIf.Internship])
@@ -152,7 +159,7 @@ class AdventureRunTest {
         val off = on.toggle(WhatIf.SharedFlat, false)
         assertFalse(off.isOn(WhatIf.SharedFlat))
         assertSame(base, off.session)
-        assertEquals(Money.chf(700), AdventureRun.advance(off.session).history.last().flow.rent)
+        assertEquals(Money.chf(StartingData.Default.rent), AdventureRun.advance(off.session).history.last().flow.rent)
     }
 
     @Test
@@ -163,7 +170,7 @@ class AdventureRunTest {
         assertTrue(SimulationSessions.pendingDecisions(both.session).isEmpty())
         val next = AdventureRun.advance(both.session)
         assertEquals(1, next.currentMonth)
-        assertEquals(LifeStatus.INTERN, next.currentState.status)
+        assertEquals(Money.chf(300), next.history.last().flow.internshipIncome)
         assertEquals(HousingType.SHARED, next.currentState.housing.type)
     }
 

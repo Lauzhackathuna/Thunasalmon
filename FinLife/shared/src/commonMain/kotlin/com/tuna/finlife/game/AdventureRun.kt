@@ -16,7 +16,10 @@ import com.tuna.finlife.simulation.SimulationSession
 import com.tuna.finlife.simulation.SimulationSessions
 import kotlin.random.Random
 
-/** Optional situations the player can switch on; each applies from the current month as a choice already made. */
+/**
+ * Optional situations the player can switch on; each applies from the current month as a choice already made.
+ * [Internship] is the engine's 3-month paid offer (LifeEvent.ShortInternshipOffer), alongside studies.
+ */
 internal enum class WhatIf { Internship, SharedFlat }
 
 internal enum class WhatIfState {
@@ -108,7 +111,8 @@ internal object AdventureRun {
         return WhatIf.entries.associateWith { whatIf ->
             val scheduled = session.calendar.any { it.id == whatIfId(whatIf, month) }
             val inEffect = when (whatIf) {
-                WhatIf.Internship -> state.status == LifeStatus.INTERN
+                // Accepted offer still running (its three months have not all passed).
+                WhatIf.Internship -> state.shortInternship?.let { it.active(month) || month < it.startMonth } == true
                 WhatIf.SharedFlat -> state.housing.type == HousingType.SHARED
             }
             val possible = when (whatIf) {
@@ -129,8 +133,10 @@ internal object AdventureRun {
         val month = session.currentMonth
         val id = whatIfId(whatIf, month)
         return when (whatIf) {
-            // interactive = false: the engine treats the internship as already accepted.
-            WhatIf.Internship -> withEvents(session, listOf(LifeEvent.Internship(id, month, interactive = false)))
+            // The engine's 3-month offer is a decision: accept it right away (switching on = accepting).
+            WhatIf.Internship -> SimulationSessions.submit(
+                withEvents(session, listOf(LifeEvent.ShortInternshipOffer(id, month))), id, "accept",
+            )
             // The engine's own shared-flat proposal; it is a decision, so the move is answered right away.
             WhatIf.SharedFlat -> SimulationSessions.submit(SimulationSessions.proposeSharedHousing(session), id, "move")
         }

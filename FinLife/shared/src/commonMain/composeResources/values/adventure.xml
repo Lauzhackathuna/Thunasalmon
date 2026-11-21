@@ -25,4 +25,6 @@
     <string name="chart_without_move">Without the move</string>
     <string name="chart_without_both">Without the internship and the move</string>
     <string name="chart_difference">Difference</string>
+    <string name="chart_axis_net_worth">Net worth, %1$s</string>
+    <string name="chart_other_answer">If she had chosen: %1$s</string>
 </resources>

@@ -114,7 +114,12 @@ fun App() {
                         onChoose = { eventId, optionId ->
                             if (session === current) {
                                 val next = AdventureRun.choose(current, eventId, optionId)
-                                counterfactual = counterfactual?.catchUp(next)
+                                // This answer is now the latest choice: the dotted line shows the other answer.
+                                counterfactual = try {
+                                    Counterfactual.afterChoice(current, eventId, optionId, next) ?: counterfactual?.catchUp(next)
+                                } catch (_: IllegalArgumentException) {
+                                    null
+                                }
                                 whatIfDraft = null
                                 session = next
                             }

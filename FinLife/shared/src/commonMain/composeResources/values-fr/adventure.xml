@@ -25,4 +25,6 @@
     <string name="chart_without_move">Sans le déménagement</string>
     <string name="chart_without_both">Sans le stage ni le déménagement</string>
     <string name="chart_difference">Écart</string>
+    <string name="chart_axis_net_worth">Patrimoine net, %1$s</string>
+    <string name="chart_other_answer">Si elle avait choisi : %1$s</string>
 </resources>

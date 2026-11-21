@@ -41,7 +41,7 @@
     <string name="unexpected_costs">Coûts imprévus</string>
     <string name="whatif_title">Et si… ?</string>
     <string name="whatif_hint">Activez une situation pour l’appliquer dès ce mois-ci. Vous pouvez changer d’avis jusqu’au passage au mois suivant.</string>
-    <string name="whatif_internship">Un stage rémunéré</string>
+    <string name="whatif_internship">Un stage rémunéré de 3 mois</string>
     <string name="whatif_shared_flat">Emménager en colocation</string>
     <string name="decision_rent_rise_title">Le loyer augmente</string>
     <string name="decision_rent_rise_prompt">Le loyer de Maya augmente de %1$s % maintenant, puis tous les 12 mois. Elle peut l’accepter ou emménager en colocation pour %2$s par mois (déménagement : %3$s).</string>

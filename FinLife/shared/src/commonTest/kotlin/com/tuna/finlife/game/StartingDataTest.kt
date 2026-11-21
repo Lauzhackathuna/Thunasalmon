@@ -46,10 +46,18 @@ class StartingDataTest {
     }
 
     @Test
-    fun defaultsReproduceThePreviousRun() {
+    fun defaultsAreTheEnginesReferenceValues() {
+        val engine = com.tuna.finlife.simulation.MonthlyProfile.alexia()
+        val configuration = com.tuna.finlife.simulation.MonthlyConfiguration()
+        assertEquals(
+            StartingData(8_000, 1_200, 1_000, 250, 250, 300, 800, 6_000, 800, 0),
+            StartingData.Default,
+        )
+        assertEquals(engine.housing.monthlyRent, Money.chf(StartingData.Default.rent))
+        assertEquals(configuration.sharedReferenceRent, Money.chf(StartingData.Default.sharedFlatRent))
         val run = AdventureRun.start(seed = 9)
-        assertEquals(Money.chf(8_000), run.currentState.cash)
-        assertEquals(Money.chf(1_200), run.profile.studentMonthlyIncome)
+        assertEquals(engine.cash, run.currentState.cash)
+        assertEquals(engine.studentMonthlyIncome, run.profile.studentMonthlyIncome)
         assertEquals(DataProvenance.TEAM_ASSUMPTION, run.profile.provenance)
     }
 

@@ -36,7 +36,7 @@ internal fun GameScreen(
     onOpenSettings: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TooltipHost {
         BoxWithConstraints(Modifier.fillMaxSize().background(LocalGameBackdrop.current).safeContentPadding()) {
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
             val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
@@ -90,7 +90,7 @@ internal fun GameScreen(
                 SettingsGearButton(onOpenSettings, Modifier.align(Alignment.TopEnd).padding(FinLifeSpacing.medium))
             }
         }
-    }
+    } }
 }
 
 private fun screenWidth(): Modifier =

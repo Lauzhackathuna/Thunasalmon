@@ -41,7 +41,7 @@
     <string name="unexpected_costs">Unexpected costs</string>
     <string name="whatif_title">What if…?</string>
     <string name="whatif_hint">Switch a situation on to apply it from this month. You can change your mind until you advance to the next month.</string>
-    <string name="whatif_internship">A paid internship</string>
+    <string name="whatif_internship">A 3-month paid internship</string>
     <string name="whatif_shared_flat">Moving into a shared flat</string>
     <string name="decision_rent_rise_title">The rent is going up</string>
     <string name="decision_rent_rise_prompt">Maya’s rent rises by %1$s% now and again every 12 months. She can accept it or move into a shared flat at %2$s per month (moving cost %3$s).</string>

@@ -2,8 +2,9 @@ package com.tuna.finlife.game
 
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyConfiguration
+import com.tuna.finlife.simulation.MonthlyProfile
 
-/** Player-editable starting data, in whole CHF. [Default] holds the previous fixed demo values. */
+/** Player-editable starting data, in whole CHF. [Default] is the engine's own reference profile. */
 internal data class StartingData(
     val openingCash: Long,
     val parentIncome: Long,
@@ -30,8 +31,27 @@ internal data class StartingData(
     }
 
     companion object {
-        // Synthetic demo assumptions (Maya profile and the shared-flat what-if), unchanged from before.
-        val Default = StartingData(8_000, 1_200, 700, 250, 230, 300, 800, 6_000, 500, 500)
+        /**
+         * Read from the engine's reference profile (MonthlyProfile.alexia) and default configuration,
+         * so the app follows the engine team's synthetic values instead of keeping its own copy.
+         */
+        val Default: StartingData by lazy {
+            val profile = MonthlyProfile.alexia()
+            val configuration = MonthlyConfiguration()
+            fun chf(money: Money) = money.cents / 100
+            StartingData(
+                openingCash = chf(profile.cash),
+                parentIncome = chf(profile.studentMonthlyIncome),
+                rent = chf(profile.housing.monthlyRent),
+                healthInsurance = chf(profile.healthInsurance),
+                groceries = chf(profile.groceries),
+                otherExpenses = chf(profile.otherExpenses),
+                tuition = chf(profile.tuitionPayment),
+                salaryAfterStudies = chf(profile.startingMonthlySalary),
+                sharedFlatRent = chf(configuration.sharedReferenceRent),
+                sharedFlatMovingCost = chf(configuration.sharedMovingCost),
+            )
+        }
 
         /**
          * Engine limit is ±9e12 cents (±90 billion CHF) for every amount and intermediate result.
