@@ -3,8 +3,21 @@ package com.tuna.finlife.simulation
 import kotlin.math.max
 import kotlin.math.pow
 
-/** Pure annual engine, with no UI, clock, randomness, persistence or implicit financing. */
+/** V1 compatibility API. All new simulations use MonthlySimulation / SimulationSessions. */
 object FinancialSimulation {
+    /** Shared rate conversion for the monthly V2 engine. Rates are illustrative annual effective rates. */
+    fun effectiveMonthlyRate(annualRate: Double): Double {
+        require(annualRate.isFinite() && annualRate > -1.0)
+        return (1.0 + annualRate).pow(1.0 / 12.0) - 1.0
+    }
+
+    /** V2 entry point; the legacy annual simulate overload remains unchanged. */
+    fun startSession(
+        profile: MonthlyProfile = MonthlyProfile.alexia(),
+        configuration: MonthlyConfiguration = MonthlyConfiguration(),
+        events: List<LifeEvent> = emptyList(),
+    ): SimulationSession = SimulationSessions.start(profile, configuration, events)
+
     /** Explicit conversion for costs quoted at t=0. Never apply to a payment-year nominal bill. */
     fun inflate(baseAmount: Double, annualInflation: Double, year: Int): Double {
         require(baseAmount.isFinite() && baseAmount >= 0.0)
