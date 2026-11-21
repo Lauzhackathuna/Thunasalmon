@@ -11,8 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
-enum class DeltaDirection { Up, Down, Unchanged }
-
 @Composable
 fun KeyFigureCard(
     label: String,
@@ -39,16 +37,10 @@ fun KeyFigureCard(
 /** [amount] is the localized magnitude, without a sign. */
 @Composable
 fun DeltaIndicator(amount: String, direction: DeltaDirection, modifier: Modifier = Modifier) {
-    val colors = LocalDeltaColors.current
-    val (prefix, color) = when (direction) {
-        DeltaDirection.Up -> "▲ +" to colors.gain
-        DeltaDirection.Down -> "▼ −" to colors.loss
-        DeltaDirection.Unchanged -> "" to colors.neutral
-    }
     Text(
-        text = prefix + amount,
+        text = formatDelta(amount, direction),
         modifier = modifier,
-        color = color,
+        color = LocalDeltaColors.current.colorFor(direction),
         style = MaterialTheme.typography.labelLarge,
     )
 }

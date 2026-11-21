@@ -54,7 +54,13 @@ private val DarkColors = darkColorScheme(
     onSecondaryContainer = Color(0xFFDBEAF7),
 )
 
-internal data class DeltaColors(val gain: Color, val loss: Color, val neutral: Color)
+internal data class DeltaColors(val gain: Color, val loss: Color, val neutral: Color) {
+    fun colorFor(direction: DeltaDirection): Color = when (direction) {
+        DeltaDirection.Up -> gain
+        DeltaDirection.Down -> loss
+        DeltaDirection.Unchanged -> neutral
+    }
+}
 
 private val LightDeltaColors = DeltaColors(Color(0xFF236342), Color(0xFFA5343C), LightColors.onSurfaceVariant)
 private val DarkDeltaColors = DeltaColors(Color(0xFF94D8AE), Color(0xFFFFABB1), DarkColors.onSurfaceVariant)
