@@ -18,7 +18,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import finlife.shared.generated.resources.Res
-import finlife.shared.generated.resources.close_summary
+import finlife.shared.generated.resources.close_settings
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +59,7 @@ internal fun GameSheet(
             }
             SimulationNotice(Modifier.padding(top = FinLifeSpacing.small))
             PrimaryButton(
-                label = stringResource(Res.string.close_summary),
+                label = stringResource(Res.string.close_settings),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             )

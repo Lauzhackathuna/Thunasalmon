@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="opening_balance">Solde d’ouverture</string>
+    <string name="month_number">Mois %1$d</string>
+    <string name="net_worth">Patrimoine net</string>
+    <string name="income">Revenus</string>
+    <string name="expenses">Dépenses</string>
+    <string name="simulation_complete">Simulation terminée</string>
+    <string name="adventure_title">La première année de %1$s</string>
+    <string name="adventure_arrival">Maya vient d’arriver pour son master. Son revenu étudiant mensuel est de %1$s.</string>
+    <string name="adventure_month">Ce mois-ci, Maya a reçu %1$s et dépensé %2$s.</string>
+    <string name="choose_housing">Une décision sur le logement</string>
+    <string name="housing_prompt">Mois %1$d. Le revenu mensuel de Maya est de %2$s. Son loyer passe à %3$s. Elle peut rester ou emménager en colocation.</string>
+    <string name="housing_stayed">Maya est restée dans son logement et a payé le loyer augmenté.</string>
+    <string name="housing_moved">Maya a emménagé en colocation et payé les frais de déménagement ponctuels.</string>
+    <string name="monthly_rent">Loyer mensuel</string>
+    <string name="moving_cost">Frais de déménagement</string>
+    <string name="closing_cash">Solde de fin de mois</string>
+    <string name="cash_history">Historique du solde</string>
+    <string name="stay_choice">Rester et payer le loyer augmenté</string>
+    <string name="move_choice">Emménager en colocation</string>
+</resources>

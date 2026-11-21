@@ -1,5 +1,6 @@
 package com.tuna.finlife.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -35,7 +36,7 @@ internal fun GameScreen(
     content: @Composable () -> Unit,
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        BoxWithConstraints(Modifier.safeContentPadding()) {
+        BoxWithConstraints(Modifier.fillMaxSize().background(LocalGameBackdrop.current).safeContentPadding()) {
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
             val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
             val pinControls = maxHeight >= 700.dp * fontScale

@@ -5,33 +5,28 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
-import com.tuna.finlife.game.GameAction
-import com.tuna.finlife.game.GameState
-import com.tuna.finlife.game.compareScenario
-import com.tuna.finlife.game.reduceGame
+import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.i18n.AppLanguage
 import com.tuna.finlife.i18n.LocalCurrencyCode
 import com.tuna.finlife.i18n.overrideAppLocale
-import com.tuna.finlife.model.Persona
-import com.tuna.finlife.twin.FakeTwinEngine
+import com.tuna.finlife.simulation.SimulationSession
+import com.tuna.finlife.simulation.SimulationSessions
+import com.tuna.finlife.ui.AdventureScreen
 import com.tuna.finlife.ui.DemoSettings
 import com.tuna.finlife.ui.FinLifeTheme
 import com.tuna.finlife.ui.PersonaSelectionScreen
-import com.tuna.finlife.ui.RoomScreen
 import com.tuna.finlife.ui.SettingsSheet
 
 @Composable
 @Preview
 fun App() {
-    val twin = remember { FakeTwinEngine() }
-    var state by remember { mutableStateOf<GameState>(GameState.ChoosingPersona) }
-    var dismissedMonth by remember { mutableIntStateOf(-1) }
+    val opening = remember { AdventureRun.start() }
+    var session by remember { mutableStateOf<SimulationSession?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
     var settings by remember {
         val language = if (Locale.current.language == "fr") AppLanguage.French else AppLanguage.English
@@ -46,34 +41,25 @@ fun App() {
     FinLifeTheme(settings.themeMode) {
         CompositionLocalProvider(LocalCurrencyCode provides settings.currencyCode) {
             key(settings.language) {
-                when (val current = state) {
-                    GameState.ChoosingPersona -> {
-                        val openingSnapshots = remember(twin) {
-                            mapOf(Persona.MastersStudent to twin.initialSnapshot(Persona.MastersStudent))
-                        }
+                when (val current = session) {
+                    null -> {
                         PersonaSelectionScreen(
-                            openingSnapshots = openingSnapshots,
+                            openingCash = opening.currentState.cash.cents / 100.0,
                             onOpenSettings = { settingsOpen = true },
-                            onSelect = { state = reduceGame(state, GameAction.SelectPersona(it), twin) },
+                            onSelect = { session = opening },
                         )
                     }
-                    is GameState.Playing -> RoomScreen(
-                        state = current,
-                        dismissedMonth = dismissedMonth,
-                        onSummaryDismissed = { dismissedMonth = it },
+                    else -> AdventureScreen(
+                        session = current,
                         onOpenSettings = { settingsOpen = true },
-                        compare = { compareScenario(current, it, twin) },
-                        onAction = { action ->
-                            if (action != GameAction.AdvanceMonth || state == current) {
-                                state = reduceGame(state, action, twin)
-                            }
-                        },
+                        onAdvance = { if (session === current) session = SimulationSessions.advance(current) },
+                        onChoose = { if (session === current) session = AdventureRun.choose(current, it) },
                     )
                 }
                 if (settingsOpen) {
                     SettingsSheet(
                         settings = settings,
-                        canReset = state is GameState.Playing,
+                        canReset = session != null,
                         onLanguageChange = { language ->
                             if (language != settings.language) {
                                 val restore = overrideAppLocale(language)
@@ -83,8 +69,7 @@ fun App() {
                         },
                         onThemeChange = { settings = settings.copy(themeMode = it) },
                         onReset = {
-                            state = GameState.ChoosingPersona
-                            dismissedMonth = -1
+                            session = null
                             settingsOpen = false
                         },
                         onDismiss = { settingsOpen = false },

@@ -7,7 +7,7 @@
     <string name="theme">Theme</string>
     <string name="demo_currency">Demo currency: %1$s</string>
     <string name="reset_run">Reset run</string>
-    <string name="reset_run_message">Return to the welcome screen and clear the current run, including furniture and scenarios.</string>
+    <string name="reset_run_message">Return to the welcome screen and clear the current story and decisions.</string>
     <string name="cancel">Cancel</string>
-    <string name="inventory_empty">No furniture in inventory yet.</string>
+    <string name="close_settings">Close</string>
 </resources>

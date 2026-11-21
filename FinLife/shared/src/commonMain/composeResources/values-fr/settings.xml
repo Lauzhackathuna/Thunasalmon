@@ -5,7 +5,7 @@
     <string name="theme">Thème</string>
     <string name="demo_currency">Devise de la simulation : %1$s</string>
     <string name="reset_run">Recommencer</string>
-    <string name="reset_run_message">Retourner à l’accueil et effacer la partie en cours, y compris les meubles et les scénarios.</string>
+    <string name="reset_run_message">Retourner à l’accueil et effacer l’histoire et les décisions de la partie en cours.</string>
     <string name="cancel">Annuler</string>
-    <string name="inventory_empty">Aucun meuble dans l’inventaire pour le moment.</string>
+    <string name="close_settings">Fermer</string>
 </resources>

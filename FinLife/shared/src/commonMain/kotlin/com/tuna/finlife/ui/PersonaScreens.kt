@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import com.tuna.finlife.i18n.displayMoney
-import com.tuna.finlife.model.FinancialSnapshot
 import com.tuna.finlife.model.Persona
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.camille_name
@@ -34,9 +33,9 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun PersonaSelectionScreen(
-    openingSnapshots: Map<Persona, FinancialSnapshot>,
+    openingCash: Double,
     onOpenSettings: () -> Unit,
-    onSelect: (Persona) -> Unit,
+    onSelect: () -> Unit,
 ) {
     GameScreen {
         Row(
@@ -48,26 +47,24 @@ internal fun PersonaSelectionScreen(
             TextButton(onClick = onOpenSettings) { Text(stringResource(Res.string.settings)) }
         }
         Text(stringResource(Res.string.choose_persona), style = MaterialTheme.typography.titleMedium)
-        for ((persona, opening) in openingSnapshots) {
-            val copy = personaCopy(persona)
-            OutlinedCard(
-                onClick = { onSelect(persona) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
+        val copy = personaCopy(Persona.MastersStudent)
+        OutlinedCard(
+            onClick = onSelect,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+        ) {
+            Column(
+                modifier = Modifier.padding(FinLifeSpacing.medium),
+                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
             ) {
-                Column(
-                    modifier = Modifier.padding(FinLifeSpacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-                ) {
-                    Text(stringResource(copy.name), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(copy.role), style = MaterialTheme.typography.labelLarge)
-                    Text(stringResource(copy.story), style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        text = stringResource(Res.string.opening_cash) + " · " + displayMoney(opening.cash),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+                Text(stringResource(copy.name), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(copy.role), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(copy.story), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = stringResource(Res.string.opening_cash) + " · " + displayMoney(openingCash),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }

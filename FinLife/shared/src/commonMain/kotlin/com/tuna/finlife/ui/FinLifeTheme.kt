@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -45,9 +46,9 @@ private val LightColors = lightColorScheme(
 private val DarkColors = darkColorScheme(
     primary = Color(0xFFA9CEF0),
     onPrimary = Color(0xFF17354E),
-    background = Color(0xFF1B1D21),
+    background = Color(0xFF25272E),
     onBackground = Color(0xFFF4F1EB),
-    surface = Color(0xFF25282D),
+    surface = Color(0xFF30333D),
     onSurface = Color(0xFFF4F1EB),
     onSurfaceVariant = Color(0xFFC5CCD5),
     outline = Color(0xFF9CA5B0),
@@ -67,6 +68,9 @@ internal data class DeltaColors(val gain: Color, val loss: Color, val neutral: C
 private val LightDeltaColors = DeltaColors(Color(0xFF236342), Color(0xFFA5343C), LightColors.onSurfaceVariant)
 private val DarkDeltaColors = DeltaColors(Color(0xFF94D8AE), Color(0xFFFFABB1), DarkColors.onSurfaceVariant)
 internal val LocalDeltaColors = staticCompositionLocalOf { LightDeltaColors }
+private val LightBackdrop = Brush.verticalGradient(listOf(Color(0xFFFDFCF9), LightColors.background))
+private val DarkBackdrop = Brush.verticalGradient(listOf(Color(0xFF353B4B), DarkColors.background, Color(0xFF202127)))
+internal val LocalGameBackdrop = staticCompositionLocalOf { LightBackdrop }
 
 private val FinLifeShapes = Shapes(
     small = RoundedCornerShape(8.dp),
@@ -102,7 +106,10 @@ fun FinLifeTheme(mode: ThemeMode = ThemeMode.System, content: @Composable () -> 
         ThemeMode.Dark -> true
     }
     SystemBarAppearance(dark)
-    CompositionLocalProvider(LocalDeltaColors provides if (dark) DarkDeltaColors else LightDeltaColors) {
+    CompositionLocalProvider(
+        LocalDeltaColors provides if (dark) DarkDeltaColors else LightDeltaColors,
+        LocalGameBackdrop provides if (dark) DarkBackdrop else LightBackdrop,
+    ) {
         MaterialTheme(
             colorScheme = if (dark) DarkColors else LightColors,
             shapes = FinLifeShapes,
