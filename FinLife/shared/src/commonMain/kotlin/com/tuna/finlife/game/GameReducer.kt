@@ -5,6 +5,8 @@ import com.tuna.finlife.model.FinancialSnapshot
 import com.tuna.finlife.model.GoalStatus
 import com.tuna.finlife.model.MonthOutcome
 import com.tuna.finlife.model.Persona
+import com.tuna.finlife.model.ScenarioId
+import com.tuna.finlife.model.appliesTo
 import com.tuna.finlife.twin.TwinEngine
 
 sealed interface GameState {
@@ -17,6 +19,7 @@ sealed interface GameState {
         val cashChange: Double? = null,
         val room: RoomProgress = RoomProgress(),
         val lastRoomChanges: RoomMonthChanges = RoomMonthChanges(),
+        val activeScenarios: Set<ScenarioId> = emptySet(),
     ) : GameState {
         val canAdvanceMonth: Boolean get() = snapshot.monthIndex < DEMO_HORIZON_MONTHS - 1
 
@@ -44,6 +47,7 @@ sealed interface GameAction {
     data class ClaimRoomItem(val item: RoomItem) : GameAction
     data class PlaceRoomItem(val item: RoomItem) : GameAction
     data class RepairRoomItem(val item: RoomItem) : GameAction
+    data class SetScenario(val scenario: ScenarioId, val enabled: Boolean) : GameAction
 }
 
 fun reduceGame(state: GameState, action: GameAction, twin: TwinEngine): GameState =
@@ -61,7 +65,7 @@ fun reduceGame(state: GameState, action: GameAction, twin: TwinEngine): GameStat
                     persona = state.persona,
                     current = state.snapshot,
                     playerSpendThisMonth = 0.0,
-                    activeScenarios = emptySet(),
+                    activeScenarios = state.activeScenarios,
                 )
                 val cashChange = outcome.snapshot.cash - state.snapshot.cash
                 val (room, changes) = state.room.advance(outcome.snapshot, cashChange)
@@ -85,6 +89,18 @@ fun reduceGame(state: GameState, action: GameAction, twin: TwinEngine): GameStat
         }
         is GameAction.PlaceRoomItem -> state.updateRoom { place(action.item) }
         is GameAction.RepairRoomItem -> state.updateRoom { repair(action.item) }
+        is GameAction.SetScenario -> {
+            if (state is GameState.Playing && state.canAdvanceMonth && action.scenario.appliesTo(state.persona)) {
+                val scenarios = if (action.enabled) {
+                    state.activeScenarios + action.scenario
+                } else {
+                    state.activeScenarios - action.scenario
+                }
+                state.copy(activeScenarios = scenarios)
+            } else {
+                state
+            }
+        }
     }
 
 private inline fun GameState.updateRoom(update: RoomProgress.() -> RoomProgress): GameState {

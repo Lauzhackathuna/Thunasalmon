@@ -18,6 +18,9 @@ import finlife.shared.generated.resources.room_changes
 import finlife.shared.generated.resources.furniture_condition_change
 import finlife.shared.generated.resources.room_upgrade
 import finlife.shared.generated.resources.tuition_due
+import finlife.shared.generated.resources.event_higher_rent
+import finlife.shared.generated.resources.event_lower_property
+import finlife.shared.generated.resources.event_paid_internship
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -33,6 +36,9 @@ internal fun MonthSummarySheet(outcome: MonthOutcome, roomChanges: RoomMonthChan
                 val label = when (event) {
                     LifeEvent.TuitionDue -> Res.string.tuition_due
                     LifeEvent.ArrivalCosts -> Res.string.arrival_costs
+                    LifeEvent.HigherRent -> Res.string.event_higher_rent
+                    LifeEvent.LowerPropertyValue -> Res.string.event_lower_property
+                    LifeEvent.PaidInternship -> Res.string.event_paid_internship
                 }
                 Text(stringResource(label))
             }

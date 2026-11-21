@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.close_summary
@@ -22,7 +23,11 @@ import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun GameSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+internal fun GameSheet(
+    onDismiss: () -> Unit,
+    sheetMaxWidth: Dp = FinLifeContentWidth,
+    content: @Composable () -> Unit,
+) {
     val viewportHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     // Leave space for the sheet handle and system insets when content needs to scroll.
     val heightLimit = if (viewportHeight > 80.dp) Modifier.heightIn(max = viewportHeight - 80.dp) else Modifier
@@ -31,7 +36,7 @@ internal fun GameSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        sheetMaxWidth = FinLifeContentWidth,
+        sheetMaxWidth = sheetMaxWidth,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().then(heightLimit)

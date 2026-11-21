@@ -23,9 +23,12 @@ import androidx.compose.ui.Modifier
 import com.tuna.finlife.game.GameState
 import com.tuna.finlife.game.GameAction
 import com.tuna.finlife.game.LOW_LIQUIDITY_MONTHS
+import com.tuna.finlife.game.ScenarioComparison
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.i18n.displayMonths
 import com.tuna.finlife.model.GoalStatus
+import com.tuna.finlife.model.LifeEvent
+import com.tuna.finlife.model.ScenarioId
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.advance_month
 import finlife.shared.generated.resources.cash_balance
@@ -46,16 +49,22 @@ import finlife.shared.generated.resources.speech_gain
 import finlife.shared.generated.resources.speech_loss
 import finlife.shared.generated.resources.speech_low_liquidity
 import finlife.shared.generated.resources.speech_unchanged
+import finlife.shared.generated.resources.speech_rent
+import finlife.shared.generated.resources.speech_property
+import finlife.shared.generated.resources.speech_internship
+import finlife.shared.generated.resources.what_if
 import kotlin.math.abs
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun RoomScreen(
     state: GameState.Playing,
+    compare: (ScenarioId) -> ScenarioComparison?,
     onAction: (GameAction) -> Unit,
 ) {
     var dismissedMonth by remember { mutableIntStateOf(-1) }
-    var shopOpen by remember { mutableStateOf(false) }
+    var panel by remember { mutableStateOf<RoomPanel?>(null) }
     GameScreen(
         header = { FinanceHeader(state) },
         actions = {
@@ -66,12 +75,16 @@ internal fun RoomScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = state.canAdvanceMonth,
                 )
-                OutlinedButton(
-                    onClick = { shopOpen = true },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = FinLifeSpacing.touchTarget),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text(stringResource(Res.string.shop))
+                Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+                    for (option in RoomPanel.entries) {
+                        OutlinedButton(
+                            onClick = { panel = option },
+                            modifier = Modifier.weight(1f).heightIn(min = FinLifeSpacing.touchTarget),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Text(stringResource(option.label))
+                        }
+                    }
                 }
             }
         },
@@ -85,17 +98,29 @@ internal fun RoomScreen(
     val summary = state.lastMonth
     if (summary != null && summary.snapshot.monthIndex > dismissedMonth) {
         MonthSummarySheet(summary, state.lastRoomChanges) { dismissedMonth = summary.snapshot.monthIndex }
-    } else if (shopOpen) {
-        RoomShopSheet(state, onAction, onDismiss = { shopOpen = false })
+    } else {
+        when (panel) {
+            RoomPanel.Shop -> RoomShopSheet(state, onAction, onDismiss = { panel = null })
+            RoomPanel.WhatIf -> WhatIfSheet(state, compare, onAction, onDismiss = { panel = null })
+            null -> Unit
+        }
     }
+}
+
+private enum class RoomPanel(val label: StringResource) {
+    Shop(Res.string.shop), WhatIf(Res.string.what_if),
 }
 
 @Composable
 private fun CharacterSpeech(state: GameState.Playing) {
     val change = state.cashChange
+    val events = state.lastMonth?.events.orEmpty()
     val message = when {
         change == null -> Res.string.speech_opening
         state.snapshot.liquidityMonths < LOW_LIQUIDITY_MONTHS -> Res.string.speech_low_liquidity
+        LifeEvent.HigherRent in events -> Res.string.speech_rent
+        LifeEvent.PaidInternship in events -> Res.string.speech_internship
+        LifeEvent.LowerPropertyValue in events -> Res.string.speech_property
         change < 0 -> Res.string.speech_loss
         change > 0 -> Res.string.speech_gain
         else -> Res.string.speech_unchanged
@@ -153,12 +178,11 @@ private fun FinanceHeader(state: GameState.Playing) {
             MetricTile(stringResource(Res.string.net_worth), displayMoney(snapshot.netWorth), Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
-            val goalLabel = when (snapshot.goalFeasibility) {
-                GoalStatus.OnTrack -> Res.string.goal_on_track
-                GoalStatus.AtRisk -> Res.string.goal_at_risk
-                GoalStatus.OffTrack -> Res.string.goal_off_track
-            }
-            MetricTile(stringResource(Res.string.goal_feasibility), stringResource(goalLabel), Modifier.weight(1f))
+            MetricTile(
+                stringResource(Res.string.goal_feasibility),
+                stringResource(snapshot.goalFeasibility.label),
+                Modifier.weight(1f),
+            )
             MetricTile(
                 stringResource(Res.string.constraint_breaches),
                 snapshot.constraintBreaches.toString(),
@@ -177,3 +201,10 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
         }
     }
 }
+
+internal val GoalStatus.label: StringResource
+    get() = when (this) {
+        GoalStatus.OnTrack -> Res.string.goal_on_track
+        GoalStatus.AtRisk -> Res.string.goal_at_risk
+        GoalStatus.OffTrack -> Res.string.goal_off_track
+    }

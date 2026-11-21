@@ -1,12 +1,15 @@
 package com.tuna.finlife.twin
 
+import com.tuna.finlife.model.DemoScenarios
 import com.tuna.finlife.model.FinancialSnapshot
 import com.tuna.finlife.model.GoalStatus
+import com.tuna.finlife.model.LifeEvent
 import com.tuna.finlife.model.MonthOutcome
 import com.tuna.finlife.model.Persona
 import com.tuna.finlife.model.ScenarioId
+import com.tuna.finlife.model.appliesTo
 
-/** Deterministic demo engine using synthetic CHF assumptions. Scenario effects are added in U7. */
+/** Deterministic demo engine using synthetic CHF assumptions. */
 class FakeTwinEngine : TwinEngine {
     override fun initialSnapshot(persona: Persona): FinancialSnapshot {
         val (profile, scenario) = syntheticPersona(persona)
@@ -14,6 +17,7 @@ class FakeTwinEngine : TwinEngine {
             monthIndex = -1,
             cash = profile.openingCashChf,
             recurringExpenses = scenario.phases.first().monthlyExpensesChf,
+            propertyValue = propertyValue(persona, decline = false),
         )
     }
 
@@ -29,17 +33,41 @@ class FakeTwinEngine : TwinEngine {
         require(playerSpendThisMonth.isFinite() && playerSpendThisMonth >= 0)
         val phase = scenario.phases.single { month in it.startMonth until it.endMonth }
         val oneOffCosts = scenario.oneOffCosts.filter { it.month == month }
-        val expenses = phase.monthlyExpensesChf + oneOffCosts.sumOf { it.amountChf }
-        val cash = current.cash + phase.monthlyIncomeChf - expenses - playerSpendThisMonth
+        fun isActive(id: ScenarioId): Boolean =
+            month >= DemoScenarios.FIRST_EFFECT_MONTH_INDEX && id in activeScenarios && id.appliesTo(persona)
+
+        val higherRent = isActive(ScenarioId.S037)
+        val propertyDecline = isActive(ScenarioId.S039)
+        val internship = isActive(ScenarioId.S005)
+        val recurringExpenses = phase.monthlyExpensesChf + if (higherRent) DemoScenarios.RENT_SURCHARGE_CHF else 0.0
+        val expenses = recurringExpenses + oneOffCosts.sumOf { it.amountChf }
+        val income = if (internship) DemoScenarios.INTERNSHIP_INCOME_CHF else phase.monthlyIncomeChf
+        val cash = current.cash + income - expenses - playerSpendThisMonth
         return MonthOutcome(
-            snapshot = snapshot(month, cash, phase.monthlyExpensesChf),
-            income = phase.monthlyIncomeChf,
+            snapshot = snapshot(month, cash, recurringExpenses, propertyValue(persona, propertyDecline)),
+            income = income,
             expenses = expenses,
-            events = oneOffCosts.map { it.event },
+            events = buildList {
+                addAll(oneOffCosts.map { it.event })
+                if (higherRent) add(LifeEvent.HigherRent)
+                if (propertyDecline) add(LifeEvent.LowerPropertyValue)
+                if (internship) add(LifeEvent.PaidInternship)
+            },
         )
     }
 
-    private fun snapshot(monthIndex: Int, cash: Double, recurringExpenses: Double): FinancialSnapshot {
+    private fun propertyValue(persona: Persona, decline: Boolean): Double = when {
+        !ScenarioId.S039.appliesTo(persona) -> 0.0
+        decline -> DemoScenarios.PROPERTY_ALTERNATIVE_CHF
+        else -> DemoScenarios.PROPERTY_BASELINE_CHF
+    }
+
+    private fun snapshot(
+        monthIndex: Int,
+        cash: Double,
+        recurringExpenses: Double,
+        propertyValue: Double,
+    ): FinancialSnapshot {
         // Synthetic definitions for the demo header, pending replacement by the real twin.
         val liquidity = cash / recurringExpenses
         val goalStatus = when {
@@ -50,7 +78,7 @@ class FakeTwinEngine : TwinEngine {
         return FinancialSnapshot(
             monthIndex = monthIndex,
             cash = cash,
-            netWorth = cash,
+            netWorth = cash + propertyValue,
             liquidityMonths = liquidity,
             goalFeasibility = goalStatus,
             constraintBreaches = if (cash < 0) 1 else 0,

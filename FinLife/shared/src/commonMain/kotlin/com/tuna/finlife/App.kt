@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.GameAction
 import com.tuna.finlife.game.GameState
+import com.tuna.finlife.game.compareScenario
 import com.tuna.finlife.game.reduceGame
 import com.tuna.finlife.model.Persona
 import com.tuna.finlife.twin.FakeTwinEngine
@@ -24,7 +25,9 @@ fun App() {
     FinLifeTheme {
         when (val current = state) {
             GameState.ChoosingPersona -> {
-                val openingSnapshots = remember(twin) { Persona.entries.associateWith(twin::initialSnapshot) }
+                val openingSnapshots = remember(twin) {
+                    mapOf(Persona.MastersStudent to twin.initialSnapshot(Persona.MastersStudent))
+                }
                 PersonaSelectionScreen(
                     openingSnapshots = openingSnapshots,
                     onSelect = { state = reduceGame(state, GameAction.SelectPersona(it), twin) },
@@ -32,6 +35,7 @@ fun App() {
             }
             is GameState.Playing -> RoomScreen(
                 state = current,
+                compare = { compareScenario(current, it, twin) },
                 onAction = { action ->
                     if (action != GameAction.AdvanceMonth || state == current) {
                         state = reduceGame(state, action, twin)

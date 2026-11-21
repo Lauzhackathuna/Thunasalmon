@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="what_if">Et si ?</string>
+    <string name="baseline">Référence</string>
+    <string name="alternative">Variante</string>
+    <string name="scenario_rent">Hausse du loyer</string>
+    <string name="scenario_property">Baisse immobilière</string>
+    <string name="scenario_internship">Stage rémunéré</string>
+    <string name="scenario_rent_description">À partir du mois %1$d, le loyer ajoute %2$s aux dépenses mensuelles.</string>
+    <string name="scenario_property_description">À partir du mois %1$d, la part du bien familial passe de %2$s à %3$s. Ce changement laisse le solde intact.</string>
+    <string name="scenario_internship_description">À partir du mois %1$d, le revenu mensuel passe à %2$s. Les dépenses restent les mêmes.</string>
+    <string name="event_higher_rent">Loyer plus élevé</string>
+    <string name="event_lower_property">Baisse de la valeur du bien familial</string>
+    <string name="event_paid_internship">Revenu du stage rémunéré</string>
+    <string name="speech_rent">Mon loyer est plus élevé ce mois-ci.</string>
+    <string name="speech_property">Ma part du bien familial vaut moins. Ce changement laisse mon solde intact.</string>
+    <string name="speech_internship">Mon stage rémunéré m’a rapporté davantage ce mois-ci.</string>
+</resources>

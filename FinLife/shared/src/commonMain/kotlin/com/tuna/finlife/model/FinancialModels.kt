@@ -8,7 +8,7 @@ enum class ScenarioId { S037, S039, S005 }
 
 enum class GoalStatus { OnTrack, AtRisk, OffTrack }
 
-enum class LifeEvent { TuitionDue, ArrivalCosts }
+enum class LifeEvent { TuitionDue, ArrivalCosts, HigherRent, LowerPropertyValue, PaidInternship }
 
 /** Month -1 is the opening balance. Month 0 is the first completed month. */
 data class FinancialSnapshot(

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="what_if">What if?</string>
+    <string name="baseline">Baseline</string>
+    <string name="alternative">Alternative</string>
+    <string name="scenario_rent">Rent increase</string>
+    <string name="scenario_property">Property decline</string>
+    <string name="scenario_internship">Paid internship</string>
+    <string name="scenario_rent_description">From Month %1$d, rent adds %2$s to monthly expenses.</string>
+    <string name="scenario_property_description">From Month %1$d, the family property stake falls from %2$s to %3$s. The property change leaves cash unchanged.</string>
+    <string name="scenario_internship_description">From Month %1$d, monthly income rises to %2$s. Expenses stay the same.</string>
+    <string name="event_higher_rent">Higher rent</string>
+    <string name="event_lower_property">Lower family property valuation</string>
+    <string name="event_paid_internship">Paid internship income</string>
+    <string name="speech_rent">My rent is higher this month.</string>
+    <string name="speech_property">My family property stake is worth less. That change leaves my cash alone.</string>
+    <string name="speech_internship">My paid internship brought in more income this month.</string>
+</resources>
