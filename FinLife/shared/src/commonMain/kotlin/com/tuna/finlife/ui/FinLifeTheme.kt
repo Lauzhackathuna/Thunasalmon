@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 
 enum class ThemeMode { System, Light, Dark }
 
+internal val FinLifeContentWidth = 480.dp
+
 internal object FinLifeSpacing {
     val small = 8.dp
     val medium = 16.dp

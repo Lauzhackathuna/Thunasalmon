@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="first_year_abroad">First Year Abroad</string>
+    <string name="choose_persona">Choose a persona</string>
+    <string name="room_title">Room</string>
+    <string name="synthetic_data">Synthetic data</string>
+    <string name="opening_cash">Opening cash</string>
+    <string name="money_pattern">%2$s %1$s</string>
+    <string name="money_group_separator">,</string>
+    <string name="money_decimal_separator">.</string>
+    <string name="maya_name">Maya</string>
+    <string name="maya_role">Master’s student</string>
+    <string name="maya_story">Maya is starting a master’s degree abroad and pays tuition twice a year.</string>
+    <string name="samir_name">Samir</string>
+    <string name="samir_role">Newly arrived worker</string>
+    <string name="samir_story">Samir’s first paycheck comes in Month 2, and he sends money home.</string>
+    <string name="camille_name">Camille</string>
+    <string name="camille_role">Apprentice</string>
+    <string name="camille_story">Camille is starting work as an apprentice with some family support.</string>
+</resources>

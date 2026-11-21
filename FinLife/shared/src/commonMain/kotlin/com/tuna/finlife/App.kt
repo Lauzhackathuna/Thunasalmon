@@ -1,49 +1,36 @@
 package com.tuna.finlife
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import finlife.shared.generated.resources.Res
-import finlife.shared.generated.resources.compose_multiplatform
+import com.tuna.finlife.game.GameAction
+import com.tuna.finlife.game.GameState
+import com.tuna.finlife.game.reduceGame
+import com.tuna.finlife.model.Persona
+import com.tuna.finlife.twin.FakeTwinEngine
+import com.tuna.finlife.ui.FinLifeTheme
+import com.tuna.finlife.ui.PersonaSelectionScreen
+import com.tuna.finlife.ui.RoomScreen
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+    val twin = remember { FakeTwinEngine() }
+    var state by remember { mutableStateOf<GameState>(GameState.ChoosingPersona) }
+
+    FinLifeTheme {
+        when (val current = state) {
+            GameState.ChoosingPersona -> {
+                val openingSnapshots = remember(twin) { Persona.entries.associateWith(twin::initialSnapshot) }
+                PersonaSelectionScreen(
+                    openingSnapshots = openingSnapshots,
+                    onSelect = { state = reduceGame(state, GameAction.SelectPersona(it), twin) },
+                )
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
+            is GameState.Playing -> RoomScreen(current)
         }
     }
 }

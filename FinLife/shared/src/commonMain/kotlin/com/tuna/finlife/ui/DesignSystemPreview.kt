@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.advance_month
 import finlife.shared.generated.resources.cash_balance
@@ -50,7 +49,7 @@ fun DesignSystemPreview() {
                 contentAlignment = Alignment.TopCenter,
             ) {
                 Column(
-                    modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth().padding(FinLifeSpacing.large),
+                    modifier = Modifier.widthIn(max = FinLifeContentWidth).fillMaxWidth().padding(FinLifeSpacing.large),
                     verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
                 ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
