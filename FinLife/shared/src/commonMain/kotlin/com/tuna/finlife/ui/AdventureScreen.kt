@@ -40,14 +40,12 @@ import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.advance_month
 import finlife.shared.generated.resources.adventure_arrival
 import finlife.shared.generated.resources.adventure_month
-import finlife.shared.generated.resources.adventure_title
 import finlife.shared.generated.resources.cash_balance
 import finlife.shared.generated.resources.closing_cash
 import finlife.shared.generated.resources.decision_costs
 import finlife.shared.generated.resources.end_simulation
 import finlife.shared.generated.resources.expenses
 import finlife.shared.generated.resources.income
-import finlife.shared.generated.resources.maya_name
 import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.monthly_rent
 import finlife.shared.generated.resources.net_worth
@@ -196,7 +194,6 @@ private fun AdventureFinances(
 ) {
     val cash by animateFloatAsState(session.currentState.theoreticalCash.cents.toFloat() / 100f, label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
-        ScreenHeading(stringResource(Res.string.adventure_title, stringResource(Res.string.maya_name)))
         KeyFigureCard(
             label = stringResource(Res.string.cash_balance),
             value = displayMoney(cash.toDouble()),

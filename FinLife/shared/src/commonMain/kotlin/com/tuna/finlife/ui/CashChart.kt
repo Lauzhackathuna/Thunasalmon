@@ -168,7 +168,7 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
 
             Canvas(
                 Modifier.matchParentSize()
-                    .pointerInput(Unit) {
+                    .pointerInput(session) {
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent()

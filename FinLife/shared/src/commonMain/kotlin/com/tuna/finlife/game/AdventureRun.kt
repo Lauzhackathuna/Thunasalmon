@@ -135,7 +135,8 @@ internal object AdventureRun {
         return when (whatIf) {
             // The engine's 3-month offer is a decision: accept it right away (switching on = accepting).
             WhatIf.Internship -> SimulationSessions.submit(
-                withEvents(session, listOf(LifeEvent.ShortInternshipOffer(id, month))), id, "accept",
+                withEvents(session, listOf(LifeEvent.ShortInternshipOffer(id, month, monthlyIncome = Money.chf(1_500)))),
+                id, "accept",
             )
             // The engine's own shared-flat proposal; it is a decision, so the move is answered right away.
             WhatIf.SharedFlat -> SimulationSessions.submit(SimulationSessions.proposeSharedHousing(session), id, "move")

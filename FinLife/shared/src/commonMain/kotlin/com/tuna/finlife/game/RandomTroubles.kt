@@ -2,17 +2,19 @@ package com.tuna.finlife.game
 
 import com.tuna.finlife.simulation.LifeEvent
 import com.tuna.finlife.simulation.MonthlyRentRule
+import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.PaymentResponsibility
 import kotlin.random.Random
 
 /**
  * Random problems drawn by the app (product rules, not engine rules):
- * each month, a rent rise and an unexpected maintenance bill each happen with probability 1/5,
+ * each month, rent rises at probability 1/5 and maintenance at probability 1/12,
  * with at most one rent rise and two maintenance bills per 12-month block (months 0–11, 12–23, …).
- * Amounts and rates are the engine's defaults for S037 and S040.
+ * Random maintenance uses a synthetic CHF 400 repair bill.
  */
 internal object RandomTroubles {
-    const val MONTHLY_PROBABILITY = 0.2
+    private const val MONTHLY_RENT_PROBABILITY = 0.2
+    private const val MONTHLY_MAINTENANCE_PROBABILITY = 1.0 / 12.0
     const val BLOCK_MONTHS = 12
     const val MAX_RENT_RISES_PER_BLOCK = 1
     const val MAX_MAINTENANCE_PER_BLOCK = 2
@@ -27,7 +29,7 @@ internal object RandomTroubles {
         return decide(rentRoll, maintenanceRoll, month, housingId, calendar)
     }
 
-    /** Rolls are uniform in [0, 1); a roll below [MONTHLY_PROBABILITY] is a hit. */
+    /** Rolls are uniform in [0, 1). Each event uses its own threshold. */
     fun decide(
         rentRoll: Double,
         maintenanceRoll: Double,
@@ -40,13 +42,13 @@ internal object RandomTroubles {
         val ids = calendar.map { it.id }.toSet()
         return buildList {
             val rentId = "$RENT_PREFIX$month"
-            if (rentRoll < MONTHLY_PROBABILITY && rentId !in ids &&
+            if (rentRoll < MONTHLY_RENT_PROBABILITY && rentId !in ids &&
                 inBlock.count { it.id.startsWith(RENT_PREFIX) } < MAX_RENT_RISES_PER_BLOCK
             ) add(LifeEvent.RentRise(rentId, month, MonthlyRentRule(housingId, month)))
             val maintenanceId = "$MAINTENANCE_PREFIX$month"
-            if (maintenanceRoll < MONTHLY_PROBABILITY && maintenanceId !in ids &&
+            if (maintenanceRoll < MONTHLY_MAINTENANCE_PROBABILITY && maintenanceId !in ids &&
                 inBlock.count { it.id.startsWith(MAINTENANCE_PREFIX) } < MAX_MAINTENANCE_PER_BLOCK
-            ) add(LifeEvent.Maintenance(maintenanceId, month, PaymentResponsibility.CHARACTER))
+            ) add(LifeEvent.Maintenance(maintenanceId, month, PaymentResponsibility.CHARACTER, Money.chf(400)))
         }
     }
 
