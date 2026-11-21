@@ -40,7 +40,7 @@
     <string name="decision_costs">Coûts des décisions</string>
     <string name="unexpected_costs">Coûts imprévus</string>
     <string name="whatif_title">Et si… ?</string>
-    <string name="whatif_hint">Activez une situation pour l’appliquer dès ce mois-ci. Elle ne peut plus être désactivée.</string>
+    <string name="whatif_hint">Activez une situation pour l’appliquer dès ce mois-ci. Vous pouvez changer d’avis jusqu’au passage au mois suivant.</string>
     <string name="whatif_internship">Un stage rémunéré</string>
     <string name="whatif_shared_flat">Emménager en colocation</string>
 </resources>

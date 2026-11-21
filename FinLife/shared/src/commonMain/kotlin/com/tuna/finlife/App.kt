@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.WhatIfDraft
 import com.tuna.finlife.i18n.AppLanguage
 import com.tuna.finlife.i18n.LocalCurrencyCode
 import com.tuna.finlife.i18n.overrideAppLocale
@@ -30,6 +31,8 @@ fun App() {
     var session by remember { mutableStateOf<SimulationSession?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
     var ended by remember { mutableStateOf(false) }
+    // What-ifs of the current month, still reversible. Cleared whenever time moves or the run changes.
+    var whatIfDraft by remember { mutableStateOf<WhatIfDraft?>(null) }
     var settings by remember {
         val language = if (Locale.current.language == "fr") AppLanguage.French else AppLanguage.English
         mutableStateOf(DemoSettings(language))
@@ -48,7 +51,10 @@ fun App() {
                         PersonaSelectionScreen(
                             openingCash = opening.currentState.cash.cents / 100.0,
                             onOpenSettings = { settingsOpen = true },
-                            onSelect = { session = AdventureRun.start() },
+                            onSelect = {
+                                whatIfDraft = null
+                                session = AdventureRun.start()
+                            },
                         )
                     }
                     else -> if (ended || current.status == SessionStatus.COMPLETED) {
@@ -58,18 +64,34 @@ fun App() {
                             onStartOver = {
                                 session = null
                                 ended = false
+                                whatIfDraft = null
                             },
                             onOpenSettings = { settingsOpen = true },
                         )
                     } else AdventureScreen(
                         session = current,
                         onOpenSettings = { settingsOpen = true },
-                        onAdvance = { if (session === current) session = AdventureRun.advance(current) },
+                        onAdvance = {
+                            if (session === current) {
+                                whatIfDraft = null
+                                session = AdventureRun.advance(current)
+                            }
+                        },
                         onEnd = { ended = true },
                         onChoose = { eventId, optionId ->
-                            if (session === current) session = AdventureRun.choose(current, eventId, optionId)
+                            if (session === current) {
+                                whatIfDraft = null
+                                session = AdventureRun.choose(current, eventId, optionId)
+                            }
                         },
-                        onWhatIf = { if (session === current) session = AdventureRun.applyWhatIf(current, it) },
+                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current),
+                        onWhatIfToggle = { whatIf, on ->
+                            if (session === current) {
+                                val draft = (whatIfDraft ?: WhatIfDraft(current)).toggle(whatIf, on)
+                                whatIfDraft = draft
+                                session = draft.session
+                            }
+                        },
                     )
                 }
                 if (settingsOpen) {
@@ -86,6 +108,7 @@ fun App() {
                         onThemeChange = { settings = settings.copy(themeMode = it) },
                         onReset = {
                             session = null
+                            whatIfDraft = null
                             ended = false
                             settingsOpen = false
                         },

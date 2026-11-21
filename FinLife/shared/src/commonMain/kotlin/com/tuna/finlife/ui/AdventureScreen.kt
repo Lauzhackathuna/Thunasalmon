@@ -33,7 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.WhatIf
-import com.tuna.finlife.game.WhatIfState
+import com.tuna.finlife.game.WhatIfDraft
 import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.simulation.Money
@@ -77,15 +77,15 @@ internal fun AdventureScreen(
     onAdvance: () -> Unit,
     onEnd: () -> Unit,
     onChoose: (eventId: String, optionId: String) -> Unit,
-    onWhatIf: (WhatIf) -> Unit,
+    whatIfDraft: WhatIfDraft,
+    onWhatIfToggle: (WhatIf, Boolean) -> Unit,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
     val pending = remember(session) {
         if (session.status == SessionStatus.AWAITING_DECISION) SimulationSessions.pendingDecisions(session) else emptyList()
     }
-    val whatIfs = remember(session) { AdventureRun.whatIfStates(session) }
     var whatIfOpen by remember { mutableStateOf(false) }
-    if (whatIfOpen) WhatIfDialog(whatIfs, onWhatIf, onDismiss = { whatIfOpen = false })
+    if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
     GameScreen(
         onOpenSettings = onOpenSettings,
         header = { AdventureFinances(session, record, showHistory = pending.isEmpty()) },
@@ -144,9 +144,9 @@ internal fun AdventureScreen(
     }
 }
 
-/** Pop-up with one switch per what-if. Switching on applies it this month; it cannot be switched off. */
+/** Pop-up with one switch per what-if. Switches can change freely until the month is advanced. */
 @Composable
-private fun WhatIfDialog(states: Map<WhatIf, WhatIfState>, onWhatIf: (WhatIf) -> Unit, onDismiss: () -> Unit) {
+private fun WhatIfDialog(draft: WhatIfDraft, onToggle: (WhatIf, Boolean) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.whatif_title)) },
@@ -157,25 +157,23 @@ private fun WhatIfDialog(states: Map<WhatIf, WhatIfState>, onWhatIf: (WhatIf) ->
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                for ((whatIf, state) in states) {
-                    val label = stringResource(whatIf.label)
+                for (whatIf in WhatIf.entries) {
+                    val on = draft.isOn(whatIf)
+                    val enabled = draft.canSwitch(whatIf)
                     Row(
                         modifier = Modifier.fillMaxWidth().heightIn(min = FinLifeSpacing.touchTarget)
                             .toggleable(
-                                value = state == WhatIfState.Active,
-                                enabled = state == WhatIfState.Available,
+                                value = on,
+                                enabled = enabled,
                                 role = Role.Switch,
-                                onValueChange = { if (it) onWhatIf(whatIf) },
+                                onValueChange = { onToggle(whatIf, it) },
                             ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
                     ) {
-                        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        Switch(
-                            checked = state == WhatIfState.Active,
-                            onCheckedChange = null,
-                            enabled = state == WhatIfState.Available || state == WhatIfState.Active,
-                        )
+                        Text(stringResource(whatIf.label), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        // Locked-on switches (in effect from an earlier month) keep their "on" colour.
+                        Switch(checked = on, onCheckedChange = null, enabled = enabled || on)
                     }
                 }
             }

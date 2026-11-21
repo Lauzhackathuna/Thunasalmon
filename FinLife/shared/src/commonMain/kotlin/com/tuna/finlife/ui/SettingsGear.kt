@@ -1,11 +1,10 @@
 package com.tuna.finlife.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,20 +56,15 @@ internal val SettingsGear: ImageVector by lazy {
     }.build()
 }
 
-/** Round outlined Settings button: white (dark surface in dark mode) with a blue outline and gear. */
+/** Settings button: a blue gear with no outline or background. */
 @Composable
 internal fun SettingsGearButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val blue = MaterialTheme.colorScheme.primary
-    OutlinedIconButton(
+    IconButton(
         onClick = onClick,
         modifier = modifier.size(FinLifeSpacing.touchTarget),
-        border = BorderStroke(1.dp, blue),
-        colors = IconButtonDefaults.outlinedIconButtonColors(
-            containerColor = LocalButtonContainer.current,
-            contentColor = blue,
-        ),
+        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
     ) {
-        Icon(SettingsGear, contentDescription = stringResource(Res.string.settings), modifier = Modifier.size(24.dp))
+        Icon(SettingsGear, contentDescription = stringResource(Res.string.settings), modifier = Modifier.size(28.dp))
     }
 }
 

@@ -12,6 +12,7 @@ import com.tuna.finlife.simulation.SimulationSession
 import com.tuna.finlife.simulation.SimulationSessions
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -131,5 +132,38 @@ class AdventureRunTest {
         assertEquals(preview?.after, chosen.history.last().after)
         assertTrue(waiting.selections.isEmpty())
         assertSame(chosen, AdventureRun.choose(chosen, "offer", "decline"))
+    }
+
+    @Test
+    fun switchesCanBeTurnedOffUntilTheMonthIsAdvanced() {
+        val base = AdventureRun.start(seed = 3)
+        val on = WhatIfDraft(base).toggle(WhatIf.SharedFlat, true)
+        assertTrue(on.isOn(WhatIf.SharedFlat))
+        assertTrue(on.canSwitch(WhatIf.SharedFlat))
+        val off = on.toggle(WhatIf.SharedFlat, false)
+        assertFalse(off.isOn(WhatIf.SharedFlat))
+        assertSame(base, off.session)
+        assertEquals(Money.chf(700), AdventureRun.advance(off.session).history.last().flow.rent)
+    }
+
+    @Test
+    fun bothWhatIfsTogetherKeepTheMoveAnswer() {
+        val both = WhatIfDraft(AdventureRun.start(seed = 3))
+            .toggle(WhatIf.SharedFlat, true)
+            .toggle(WhatIf.Internship, true)
+        assertTrue(SimulationSessions.pendingDecisions(both.session).isEmpty())
+        val next = AdventureRun.advance(both.session)
+        assertEquals(1, next.currentMonth)
+        assertEquals(LifeStatus.INTERN, next.currentState.status)
+        assertEquals(HousingType.SHARED, next.currentState.housing.type)
+    }
+
+    @Test
+    fun aWhatIfFromAnEarlierMonthIsLockedOn() {
+        val moved = AdventureRun.advance(WhatIfDraft(AdventureRun.start(seed = 3)).toggle(WhatIf.SharedFlat, true).session)
+        val draft = WhatIfDraft(moved)
+        assertTrue(draft.isOn(WhatIf.SharedFlat))
+        assertFalse(draft.canSwitch(WhatIf.SharedFlat))
+        assertEquals(draft, draft.toggle(WhatIf.SharedFlat, true))
     }
 }

@@ -134,6 +134,15 @@ internal object AdventureRun {
         }
     }
 
+    /**
+     * [base] with the selected what-ifs switched on for its current month. Rebuilt from [base] each time,
+     * so a what-if can be switched off again until the month is advanced.
+     * Internship first: adding an event forks the month, which drops answers already given in it
+     * (the shared flat's "move").
+     */
+    fun withWhatIfs(base: SimulationSession, selected: Set<WhatIf>): SimulationSession =
+        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf) }
+
     private fun whatIfId(whatIf: WhatIf, month: Int) = "whatif-${whatIf.name.lowercase()}-$month"
 
     private fun submit(session: SimulationSession, eventId: String, optionId: String): SimulationSession? {
