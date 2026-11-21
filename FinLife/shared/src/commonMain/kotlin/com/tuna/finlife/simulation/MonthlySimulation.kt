@@ -117,7 +117,7 @@ object MonthlySimulation {
                 }
                 is LifeEvent.RentRise -> {
                     if (choice == "move") {
-                        cost = configuration.sharedMovingCost
+                        cost = configuration.sharedMovingCostAt(month)
                         decisionCosts += cost
                         working = working.copy(housing = sharedContract(month, configuration), rentRule = null,
                             housingDecision = HousingDecision(month, "Hausse contractuelle S037", event.id))
@@ -213,7 +213,7 @@ object MonthlySimulation {
         "shared-$month", configuration.sharedReferenceRent.scaled(configuration.priceIndex(month)), month, HousingType.SHARED)
 
     fun sharedHousingChoice(month: Int, configuration: MonthlyConfiguration, id: String = "FINLIFE_SHARED_$month") =
-        LifeEvent.HousingChoice(id, month, sharedContract(month, configuration), configuration.sharedMovingCost, PaymentResponsibility.CHARACTER)
+        LifeEvent.HousingChoice(id, month, sharedContract(month, configuration), configuration.sharedMovingCostAt(month), PaymentResponsibility.CHARACTER)
 
     private fun inapplicableReason(event: LifeEvent, state: MonthlyState): String? = when (event) {
         is LifeEvent.ShortInternshipOffer -> if (state.status != LifeStatus.STUDENT ||
@@ -235,7 +235,7 @@ object MonthlySimulation {
 
     private fun options(event: LifeEvent, configuration: MonthlyConfiguration): List<DecisionOption> = when (event) {
         is LifeEvent.RentRise -> listOf(DecisionOption("stay", "Accepter le nouveau loyer", Money.ZERO),
-            DecisionOption("move", "Passer en colocation", configuration.sharedMovingCost))
+            DecisionOption("move", "Passer en colocation", configuration.sharedMovingCostAt(event.month)))
         is LifeEvent.ShortInternshipOffer -> listOf(DecisionOption("accept", "Accepter le stage de trois mois", Money.ZERO),
             DecisionOption("decline", "Refuser le stage", Money.ZERO))
         is LifeEvent.Internship -> listOf(DecisionOption("accept", "Accepter le stage", Money.ZERO), DecisionOption("decline", "Continuer les études", Money.ZERO))

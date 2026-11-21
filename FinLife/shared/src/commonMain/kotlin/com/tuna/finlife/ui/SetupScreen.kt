@@ -29,6 +29,7 @@ import finlife.shared.generated.resources.error_number
 import finlife.shared.generated.resources.error_too_large
 import finlife.shared.generated.resources.field_groceries
 import finlife.shared.generated.resources.field_health_insurance
+import finlife.shared.generated.resources.field_internship_salary
 import finlife.shared.generated.resources.field_moving_cost
 import finlife.shared.generated.resources.field_other_expenses
 import finlife.shared.generated.resources.field_parent_income
@@ -53,7 +54,7 @@ private val Sections: List<Pair<StringResource, List<StartingField>>> = listOf(
     Res.string.setup_section_expenses to listOf(
         StartingField.Rent, StartingField.HealthInsurance, StartingField.Groceries, StartingField.OtherExpenses,
     ),
-    Res.string.setup_section_studies to listOf(StartingField.Tuition, StartingField.SalaryAfterStudies),
+    Res.string.setup_section_studies to listOf(StartingField.Tuition, StartingField.SalaryAfterStudies, StartingField.InternshipSalary),
     Res.string.setup_section_whatif to listOf(StartingField.SharedFlatRent, StartingField.SharedFlatMovingCost),
 )
 
@@ -65,7 +66,6 @@ internal fun SetupScreen(
     onOpenSettings: () -> Unit,
 ) {
     var texts by remember(initial) { mutableStateOf(StartingDataForm.texts(initial)) }
-    val errors = StartingDataForm.errors(texts)
     val data = StartingDataForm.build(texts)
     GameScreen(
         onOpenSettings = onOpenSettings,
@@ -88,16 +88,17 @@ internal fun SetupScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        for ((title, fields) in Sections) {
-            Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
-            for (field in fields) {
-                AmountField(
-                    field = field,
-                    text = texts.getValue(field),
-                    error = errors[field],
-                    onChange = { texts = texts + (field to it) },
-                )
-            }
+        StartingAmountFields(texts) { field, value -> texts = texts + (field to value) }
+    }
+}
+
+@Composable
+internal fun StartingAmountFields(texts: Map<StartingField, String>, onChange: (StartingField, String) -> Unit) {
+    val errors = StartingDataForm.errors(texts)
+    for ((title, fields) in Sections) {
+        Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+        for (field in fields) {
+            AmountField(field, texts.getValue(field), errors[field]) { onChange(field, it) }
         }
     }
 }
@@ -139,6 +140,7 @@ private val StartingField.label: StringResource
         StartingField.OtherExpenses -> Res.string.field_other_expenses
         StartingField.Tuition -> Res.string.field_tuition
         StartingField.SalaryAfterStudies -> Res.string.field_salary
+        StartingField.InternshipSalary -> Res.string.field_internship_salary
         StartingField.SharedFlatRent -> Res.string.field_shared_rent
         StartingField.SharedFlatMovingCost -> Res.string.field_moving_cost
     }

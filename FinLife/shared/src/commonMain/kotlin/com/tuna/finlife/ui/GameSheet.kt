@@ -2,6 +2,7 @@ package com.tuna.finlife.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun GameSheet(
     onDismiss: () -> Unit,
     sheetMaxWidth: Dp = FinLifeContentWidth,
+    footerAction: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -58,10 +60,13 @@ internal fun GameSheet(
                 content()
             }
             SimulationNotice(Modifier.padding(top = FinLifeSpacing.small))
-            PrimaryButton(
-                label = stringResource(Res.string.close_settings),
-                onClick = onDismiss,
-            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+                footerAction?.invoke()
+                PrimaryButton(
+                    label = stringResource(Res.string.close_settings),
+                    onClick = onDismiss,
+                )
+            }
         }
     }
 }

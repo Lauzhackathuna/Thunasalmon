@@ -124,11 +124,33 @@ fun App() {
                                 session = next
                             }
                         },
-                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current),
+                        whatIfDraft = whatIfDraft ?: WhatIfDraft(current, internshipSalary = startingData.internshipSalary),
                         counterfactual = counterfactual,
+                        startingData = startingData,
+                        onUpdateAmounts = update@{ data ->
+                            if (data == startingData) return@update true
+                            val updated = try {
+                                val draft = whatIfDraft
+                                val base = AdventureRun.recalculate(draft?.base ?: current, data)
+                                base?.let {
+                                    val revisedDraft = draft?.copy(base = it, internshipSalary = data.internshipSalary)
+                                    (revisedDraft?.session ?: it) to revisedDraft
+                                }
+                            } catch (_: IllegalArgumentException) {
+                                null
+                            }
+                            if (updated == null) false else {
+                                startingData = data
+                                session = updated.first
+                                whatIfDraft = updated.second
+                                counterfactual = null
+                                true
+                            }
+                        },
                         onWhatIfToggle = { whatIf, on ->
                             if (session === current) {
-                                val draft = (whatIfDraft ?: WhatIfDraft(current)).toggle(whatIf, on)
+                                val draft = (whatIfDraft ?: WhatIfDraft(current, internshipSalary = startingData.internshipSalary))
+                                    .toggle(whatIf, on)
                                 whatIfDraft = draft
                                 session = draft.session
                             }

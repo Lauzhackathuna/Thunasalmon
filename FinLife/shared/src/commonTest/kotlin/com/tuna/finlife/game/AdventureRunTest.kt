@@ -13,10 +13,34 @@ import com.tuna.finlife.simulation.SimulationSessions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class AdventureRunTest {
+    @Test
+    fun expensesIndexAtTwoPercentAndSalariesStayFlat() {
+        val run = playDefaults(AdventureRun.start(seed = 42), 37)
+        assertEquals(Money.chf(StartingData.Default.groceries).scaled(1.02), run.history[12].flow.groceries)
+        assertEquals(run.history[24].flow.professionalIncome, run.history[36].flow.professionalIncome)
+        assertEquals(Money.chf(StartingData.Default.salaryAfterStudies), run.history[36].flow.professionalIncome)
+    }
+
+    @Test
+    fun editingReplaysTheSameMonthsAndChoicesWithRevisedAmounts() {
+        val start = AdventureRun.start(seed = 3)
+        val original = playDefaults(AdventureRun.applyWhatIf(start, WhatIf.Internship), 4)
+        val data = StartingData.Default.copy(internshipSalary = 1_700, groceries = 200)
+        val revised = assertNotNull(AdventureRun.recalculate(original, data))
+
+        assertEquals(original.currentMonth, revised.currentMonth)
+        assertEquals(original.selections.toSet(), revised.selections.toSet())
+        assertEquals(original.calendar.map { it.id }, revised.calendar.map { it.id })
+        assertEquals(Money.chf(1_700), revised.history.first().flow.internshipIncome)
+        assertEquals(Money.chf(200), revised.history.first().flow.groceries)
+        assertEquals(Money.chf(1_500), original.history.first().flow.internshipIncome)
+    }
+
     private fun advance(session: SimulationSession, months: Int): SimulationSession = playDefaults(session, months)
 
     private fun randomEvents(session: SimulationSession) = session.calendar.filter(RandomTroubles::isRandom)

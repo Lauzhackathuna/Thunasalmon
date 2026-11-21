@@ -16,6 +16,7 @@ internal data class StartingData(
     val salaryAfterStudies: Long,
     val sharedFlatRent: Long,
     val sharedFlatMovingCost: Long,
+    val internshipSalary: Long = 1_500,
 ) {
     operator fun get(field: StartingField): Long = when (field) {
         StartingField.OpeningCash -> openingCash
@@ -28,6 +29,7 @@ internal data class StartingData(
         StartingField.SalaryAfterStudies -> salaryAfterStudies
         StartingField.SharedFlatRent -> sharedFlatRent
         StartingField.SharedFlatMovingCost -> sharedFlatMovingCost
+        StartingField.InternshipSalary -> internshipSalary
     }
 
     companion object {
@@ -71,6 +73,7 @@ internal data class StartingData(
             values.getValue(StartingField.SalaryAfterStudies),
             values.getValue(StartingField.SharedFlatRent),
             values.getValue(StartingField.SharedFlatMovingCost),
+            values.getValue(StartingField.InternshipSalary),
         )
     }
 }
@@ -85,6 +88,7 @@ internal enum class StartingField(val allowsNegative: Boolean = false) {
     OtherExpenses,
     Tuition,
     SalaryAfterStudies,
+    InternshipSalary,
     SharedFlatRent,
     SharedFlatMovingCost,
 }

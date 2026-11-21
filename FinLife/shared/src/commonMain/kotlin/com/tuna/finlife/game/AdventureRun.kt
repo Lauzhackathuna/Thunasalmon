@@ -39,6 +39,10 @@ internal enum class WhatIfState {
 internal object AdventureRun {
     /** [seed] drives the random problems; a new one per run unless given (tests). */
     fun start(seed: Long = Random.nextLong(), data: StartingData = StartingData.Default): SimulationSession {
+        return openMonth(createSession(seed, data))
+    }
+
+    private fun createSession(seed: Long, data: StartingData, events: List<LifeEvent> = emptyList()): SimulationSession {
         val home = HousingContract("maya-home", Money.chf(data.rent), 0, HousingType.ALONE)
         val profile = MonthlyProfile.alexia().copy(
             profileId = "finlife-maya",
@@ -53,12 +57,13 @@ internal object AdventureRun {
             tuitionPayment = Money.chf(data.tuition),
             provenance = if (data == StartingData.Default) DataProvenance.TEAM_ASSUMPTION else DataProvenance.USER_INPUT,
         )
-        val session = SimulationSessions.start(
+        return SimulationSessions.start(
             profile = profile,
             configuration = MonthlyConfiguration(
                 // Open-ended for the player: the engine's maximum horizon. The player ends the run.
                 horizonMonths = MonthlyConfiguration.MAX_MONTHS,
-                annualInflation = 0.0,
+                annualInflation = 0.02,
+                annualSalaryGrowth = 0.0,
                 randomSeed = seed,
                 // The engine's shared-flat contract (what-if and answer to a rent rise) uses these values.
                 sharedReferenceRent = Money.chf(data.sharedFlatRent),
@@ -66,8 +71,40 @@ internal object AdventureRun {
                 // The engine's own random calendar is off: problems come from RandomTroubles only.
                 randomEvents = RandomEventSettings(enabled = false),
             ),
+            events = events,
         )
-        return openMonth(session)
+    }
+
+    /** Replays the same calendar and answers from opening with revised assumptions. */
+    fun recalculate(session: SimulationSession, data: StartingData): SimulationSession? {
+        val seed = session.configuration.randomSeed
+        val base = createSession(seed, data)
+        val configuration = base.configuration
+        val revisedEvents = session.calendar.map { event ->
+            when (event) {
+                is LifeEvent.ShortInternshipOffer -> event.copy(monthlyIncome = Money.chf(data.internshipSalary))
+                is LifeEvent.HousingChoice -> if (event.id == whatIfId(WhatIf.SharedFlat, event.month)) {
+                    MonthlySimulation.sharedHousingChoice(event.month, configuration, event.id)
+                } else event
+                else -> event
+            }
+        }
+        val answers = session.selections.associate { it.eventId to it.optionId }
+        var replay = SimulationSessions.start(base.profile, configuration, revisedEvents)
+        for (month in 0..session.currentMonth) {
+            while (true) {
+                val pending = SimulationSessions.pendingDecisions(replay).firstOrNull { it.event.id in answers } ?: break
+                replay = SimulationSessions.submit(replay, pending.event.id, answers.getValue(pending.event.id))
+            }
+            val waiting = SimulationSessions.pendingDecisions(replay).isNotEmpty()
+            if (month == session.currentMonth) {
+                if (replay.selections.toSet() != session.selections.toSet()) return null
+                return if (waiting) SimulationSessions.advance(replay) else replay
+            }
+            if (waiting) return null
+            replay = SimulationSessions.advance(replay)
+        }
+        return null
     }
 
     /** Advances one month, then draws the problems of the month that opens. */
@@ -128,14 +165,14 @@ internal object AdventureRun {
     }
 
     /** Switches the what-if on for the current month; it takes effect when the month is advanced. */
-    fun applyWhatIf(session: SimulationSession, whatIf: WhatIf): SimulationSession {
+    fun applyWhatIf(session: SimulationSession, whatIf: WhatIf, internshipSalary: Long = StartingData.Default.internshipSalary): SimulationSession {
         if (whatIfStates(session)[whatIf] != WhatIfState.Available) return session
         val month = session.currentMonth
         val id = whatIfId(whatIf, month)
         return when (whatIf) {
             // The engine's 3-month offer is a decision: accept it right away (switching on = accepting).
             WhatIf.Internship -> SimulationSessions.submit(
-                withEvents(session, listOf(LifeEvent.ShortInternshipOffer(id, month, monthlyIncome = Money.chf(1_500)))),
+                withEvents(session, listOf(LifeEvent.ShortInternshipOffer(id, month, monthlyIncome = Money.chf(internshipSalary)))),
                 id, "accept",
             )
             // The engine's own shared-flat proposal; it is a decision, so the move is answered right away.
@@ -147,8 +184,8 @@ internal object AdventureRun {
      * [base] with the selected what-ifs switched on for its current month. Rebuilt from [base] each time,
      * so a what-if can be switched off again until the month is advanced.
      */
-    fun withWhatIfs(base: SimulationSession, selected: Set<WhatIf>): SimulationSession =
-        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf) }
+    fun withWhatIfs(base: SimulationSession, selected: Set<WhatIf>, internshipSalary: Long): SimulationSession =
+        WhatIf.entries.filter { it in selected }.fold(base) { session, whatIf -> applyWhatIf(session, whatIf, internshipSalary) }
 
     /** False if a decision is pending or the engine rejects the coming month (amount limit reached). */
     private fun noPendingDecision(session: SimulationSession): Boolean = try {
@@ -180,7 +217,12 @@ internal object AdventureRun {
             session.calendar,
         )
         if (drawn.isEmpty()) return session
-        val scheduled = withEvents(session, drawn)
+        val indexed = drawn.map { event ->
+            if (event is LifeEvent.Maintenance) {
+                event.copy(nominalAmount = event.nominalAmount.scaled(session.configuration.priceIndex(event.month)))
+            } else event
+        }
+        val scheduled = withEvents(session, indexed)
         // A drawn rent rise can be a decision now: surface it before anything else happens this month.
         return if (noPendingDecision(scheduled)) scheduled else SimulationSessions.advance(scheduled)
     }

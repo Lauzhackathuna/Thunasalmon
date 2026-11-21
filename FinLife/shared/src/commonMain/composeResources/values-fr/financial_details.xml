@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="financial_details">Détails</string>
+    <string name="edit_financial_amounts">Modifier les montants</string>
+    <string name="save_financial_amounts">Enregistrer et recalculer</string>
+    <string name="financial_edit_hint">L’enregistrement recalcule cette partie depuis le premier mois en conservant vos choix. Les dépenses augmentent avec une inflation annuelle de 2 %. Les revenus restent fixes.</string>
+    <string name="financial_edit_error">Ces montants n’ont pas pu être appliqués à la partie en cours. Vérifiez les valeurs et réessayez.</string>
+    <string name="no_closed_month">Le détail apparaîtra à la clôture du premier mois.</string>
+    <string name="field_internship_salary">Salaire mensuel du stage</string>
+    <string name="interest_expense">Intérêts</string>
+    <string name="paid_expenses">Dépenses payées</string>
+</resources>

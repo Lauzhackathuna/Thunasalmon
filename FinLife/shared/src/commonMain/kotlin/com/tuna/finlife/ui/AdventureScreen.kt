@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.StartingData
 import com.tuna.finlife.game.Counterfactual
 import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.WhatIfDraft
@@ -45,6 +47,7 @@ import finlife.shared.generated.resources.closing_cash
 import finlife.shared.generated.resources.decision_costs
 import finlife.shared.generated.resources.end_simulation
 import finlife.shared.generated.resources.expenses
+import finlife.shared.generated.resources.financial_details
 import finlife.shared.generated.resources.income
 import finlife.shared.generated.resources.month_number
 import finlife.shared.generated.resources.monthly_rent
@@ -71,6 +74,8 @@ internal fun AdventureScreen(
     onChoose: (eventId: String, optionId: String) -> Unit,
     whatIfDraft: WhatIfDraft,
     counterfactual: Counterfactual?,
+    startingData: StartingData,
+    onUpdateAmounts: (StartingData) -> Boolean,
     onWhatIfToggle: (WhatIf, Boolean) -> Unit,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
@@ -78,10 +83,12 @@ internal fun AdventureScreen(
         if (session.status == SessionStatus.AWAITING_DECISION) SimulationSessions.pendingDecisions(session) else emptyList()
     }
     var whatIfOpen by remember { mutableStateOf(false) }
+    var detailsOpen by remember { mutableStateOf(false) }
     if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
+    if (detailsOpen) FinancialDetailsSheet(record, startingData, onUpdateAmounts) { detailsOpen = false }
     GameScreen(
         onOpenSettings = onOpenSettings,
-        header = { AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty()) },
+        header = { AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty()) { detailsOpen = true } },
         actions = {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
@@ -191,6 +198,7 @@ private fun AdventureFinances(
     record: MonthlyRecord?,
     counterfactual: Counterfactual?,
     showHistory: Boolean,
+    onShowDetails: () -> Unit,
 ) {
     val cash by animateFloatAsState(session.currentState.theoreticalCash.cents.toFloat() / 100f, label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
@@ -202,14 +210,18 @@ private fun AdventureFinances(
             if (record != null) {
                 val change = (record.after.theoreticalCash - record.before.theoreticalCash).cents / 100.0
                 DeltaIndicator(displayMoney(abs(change)), DeltaDirection.fromAmount(change))
-                if (showHistory) CashChart(session, counterfactual, Modifier.fillMaxWidth())
             }
             HorizontalDivider()
             LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))
             if (record != null && showHistory) {
                 LedgerLine(stringResource(Res.string.income), money(record.flow.income))
-                LedgerLine(stringResource(Res.string.expenses), money(record.flow.expenses))
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(Res.string.expenses), Modifier.weight(1f))
+                if (record != null) Text(money(record.flow.expenses), style = MaterialTheme.typography.labelLarge)
+                TextButton(onClick = onShowDetails) { Text(stringResource(Res.string.financial_details)) }
+            }
+            if (record != null && showHistory) CashChart(session, counterfactual, Modifier.fillMaxWidth())
         }
     }
 }
@@ -223,7 +235,7 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
     val shared = remember(session, decision) {
         MonthlySimulation.sharedContract(decision.event.month, session.configuration).monthlyRent
     }
-    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCost)
+    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month))
     if (copy.title.isNotEmpty()) Text(copy.title, style = MaterialTheme.typography.titleLarge)
     Text(copy.prompt, style = MaterialTheme.typography.bodyMedium)
     for (option in decision.options) {

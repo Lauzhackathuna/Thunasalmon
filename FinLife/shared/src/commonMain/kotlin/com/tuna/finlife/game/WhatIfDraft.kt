@@ -6,8 +6,12 @@ import com.tuna.finlife.simulation.SimulationSession
  * The what-ifs chosen for the current month, kept separate from [base] (the session before them)
  * so they can still be switched off. Discard it once the month is advanced.
  */
-internal data class WhatIfDraft(val base: SimulationSession, val selected: Set<WhatIf> = emptySet()) {
-    val session: SimulationSession get() = AdventureRun.withWhatIfs(base, selected)
+internal data class WhatIfDraft(
+    val base: SimulationSession,
+    val selected: Set<WhatIf> = emptySet(),
+    val internshipSalary: Long = StartingData.Default.internshipSalary,
+) {
+    val session: SimulationSession get() = AdventureRun.withWhatIfs(base, selected, internshipSalary)
 
     fun toggle(whatIf: WhatIf, on: Boolean): WhatIfDraft {
         if (on && AdventureRun.whatIfStates(base)[whatIf] != WhatIfState.Available) return this

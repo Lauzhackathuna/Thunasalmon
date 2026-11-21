@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="financial_details">Details</string>
+    <string name="edit_financial_amounts">Edit amounts</string>
+    <string name="save_financial_amounts">Save and recalculate</string>
+    <string name="financial_edit_hint">Saving recalculates this run from the opening month using your existing decisions. Expenses rise with 2% annual inflation. Income amounts stay fixed.</string>
+    <string name="financial_edit_error">These amounts could not be applied to the current run. Check the values and try again.</string>
+    <string name="no_closed_month">The breakdown will appear after the first month closes.</string>
+    <string name="field_internship_salary">Monthly internship salary</string>
+    <string name="interest_expense">Interest</string>
+    <string name="paid_expenses">Cash paid</string>
+</resources>

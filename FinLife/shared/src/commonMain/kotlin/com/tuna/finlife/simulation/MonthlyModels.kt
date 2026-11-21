@@ -155,6 +155,7 @@ data class MonthlyConfiguration(
         require(month >= 0)
         return (1.0 + annualInflation).pow(month / 12.0).also { require(it.isFinite() && it > 0) }
     }
+    internal fun sharedMovingCostAt(month: Int): Money = sharedMovingCost.scaled(priceIndex(month))
     companion object { const val MAX_MONTHS = 1_200 }
 }
 
