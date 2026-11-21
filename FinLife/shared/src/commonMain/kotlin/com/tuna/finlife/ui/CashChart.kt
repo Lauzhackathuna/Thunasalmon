@@ -49,7 +49,11 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.tuna.finlife.game.ChartScale
 import com.tuna.finlife.game.Counterfactual
@@ -93,11 +97,11 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
     val states = remember(session) { session.states }
     val history = remember(session) { session.history }
     val events = remember(session) { session.calendar.associateBy { it.id } }
-    val cash = remember(states) { states.map { it.cash.cents / 100 } }
+    val cash = remember(states) { states.map { it.theoreticalCash.cents / 100 } }
     // Alternative path (dotted): from the month it branched off to the last month it reached.
     val altStates = remember(counterfactual) { counterfactual?.alternative?.states.orEmpty() }
     val altFrom = counterfactual?.month ?: 0
-    val altCash = remember(altStates) { altStates.map { it.cash.cents / 100 } }
+    val altCash = remember(altStates) { altStates.map { it.theoreticalCash.cents / 100 } }
     val altLast = minOf(altStates.lastIndex, cash.lastIndex)
     val altRange = if (altLast > altFrom) altFrom..altLast else IntRange.EMPTY
     val axis = remember(cash, altCash, altRange) {
@@ -241,23 +245,16 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
 
             val index = selected
             if (index != null) {
-                val tooltipWidthPx = with(density) { TooltipWidth.toPx() }
                 // The pointer is at most half a month-step from the snapped point: keep the tooltip further
                 // away than that, so the pointer never lands on it (that used to hide and re-show it).
                 val halfStep = if (count <= 1) 0f else plotWidth / (count - 1) / 2f
-                val gap = with(density) { maxOf(16.dp.toPx(), halfStep + 8.dp.toPx()) }
-                val x = xOf(index.toFloat())
-                val heightPx = with(density) { ChartHeight.toPx() }
-                val position = when {
-                    x + gap + tooltipWidthPx <= widthPx -> IntOffset((x + gap).roundToInt(), 0)
-                    x - gap - tooltipWidthPx >= 0f -> IntOffset((x - gap - tooltipWidthPx).roundToInt(), 0)
-                    // No room beside the point: below the chart, where the pointer cannot be.
-                    else -> IntOffset(0, (heightPx + with(density) { 8.dp.toPx() }).roundToInt())
-                }
-                // A popup is drawn above the page, so a long tooltip is never cut off by the card.
+                val gap = with(density) { maxOf(16.dp.toPx(), halfStep + 8.dp.toPx()) }.roundToInt()
+                val margin = with(density) { 8.dp.toPx() }.roundToInt()
+                val pointX = xOf(index.toFloat()).roundToInt()
+                val placement = remember(pointX, gap, margin) { TooltipPlacement(pointX, gap, margin) }
+                // A popup is drawn above the page and placed within the whole window, never cut off.
                 Popup(
-                    alignment = Alignment.TopStart,
-                    offset = position,
+                    popupPositionProvider = placement,
                     properties = PopupProperties(focusable = false),
                 ) { Surface(
                     modifier = Modifier.width(TooltipWidth),
@@ -272,14 +269,14 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                     ) {
                         val state = states[index]
                         Text(monthLabel(index), style = MaterialTheme.typography.labelLarge)
-                        TooltipLine(stringResource(Res.string.cash_balance), money(state.cash))
+                        TooltipLine(stringResource(Res.string.cash_balance), money(state.theoreticalCash))
                         TooltipLine(stringResource(Res.string.net_worth), money(state.netWorth))
                         val unpaid = state.unpaid.items.fold(Money.ZERO) { total, bill -> total + bill.missing }
                         if (unpaid > Money.ZERO) TooltipLine(stringResource(Res.string.unpaid_bills), money(unpaid))
                         if (counterfactual != null && index in altRange && index > altFrom) {
                             val other = altStates[index]
-                            TooltipLine(withoutLabel(counterfactual.removed), money(other.cash))
-                            val difference = (state.cash - other.cash).cents / 100.0
+                            TooltipLine(withoutLabel(counterfactual.removed), money(other.theoreticalCash))
+                            val difference = (state.theoreticalCash - other.theoreticalCash).cents / 100.0
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
                                 Text(
                                     stringResource(Res.string.chart_difference),
@@ -307,6 +304,31 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
         }
         // X-axis title.
         Text(stringResource(Res.string.chart_axis_months), style = labelStyle, modifier = Modifier.align(Alignment.End))
+    }
+}
+
+/**
+ * Places the tooltip in window coordinates: right of the point, else left, else above or below the
+ * chart. Always inside the window and at least [gap] px horizontally from the point (beside), or
+ * outside the chart (above/below), so the pointer is never over it.
+ */
+private class TooltipPlacement(private val pointX: Int, private val gap: Int, private val margin: Int) :
+    PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset {
+        val (width, height) = popupContentSize
+        val x = anchorBounds.left + pointX
+        fun clampY(y: Int) = y.coerceIn(0, maxOf(0, windowSize.height - height))
+        if (x + gap + width <= windowSize.width) return IntOffset(x + gap, clampY(anchorBounds.top))
+        if (x - gap - width >= 0) return IntOffset(x - gap - width, clampY(anchorBounds.top))
+        val left = (x - width / 2).coerceIn(0, maxOf(0, windowSize.width - width))
+        val below = anchorBounds.bottom + margin
+        return if (below + height <= windowSize.height) IntOffset(left, below)
+        else IntOffset(left, maxOf(0, anchorBounds.top - margin - height))
     }
 }
 

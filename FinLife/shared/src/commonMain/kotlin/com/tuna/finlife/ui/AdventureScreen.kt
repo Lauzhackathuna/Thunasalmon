@@ -194,7 +194,7 @@ private fun AdventureFinances(
     counterfactual: Counterfactual?,
     showHistory: Boolean,
 ) {
-    val cash by animateFloatAsState(session.currentState.cash.cents.toFloat() / 100f, label = "cash balance")
+    val cash by animateFloatAsState(session.currentState.theoreticalCash.cents.toFloat() / 100f, label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
         ScreenHeading(stringResource(Res.string.adventure_title, stringResource(Res.string.maya_name)))
         KeyFigureCard(
@@ -203,7 +203,7 @@ private fun AdventureFinances(
             modifier = Modifier.fillMaxWidth(),
         ) {
             if (record != null) {
-                val change = (record.after.cash - record.before.cash).cents / 100.0
+                val change = (record.after.theoreticalCash - record.before.theoreticalCash).cents / 100.0
                 DeltaIndicator(displayMoney(abs(change)), DeltaDirection.fromAmount(change))
                 if (showHistory) CashChart(session, counterfactual, Modifier.fillMaxWidth())
             }
@@ -239,7 +239,7 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
                 if (outcome != null) {
                     LedgerLine(stringResource(Res.string.monthly_rent), money(outcome.flow.rent))
                     LedgerLine(stringResource(Res.string.decision_costs), money(outcome.flow.decisionCosts))
-                    LedgerLine(stringResource(Res.string.closing_cash), money(outcome.after.cash))
+                    LedgerLine(stringResource(Res.string.closing_cash), money(outcome.after.theoreticalCash))
                 } else {
                     LedgerLine(stringResource(Res.string.decision_costs), money(option.immediateCost))
                 }
