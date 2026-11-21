@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.kind
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.simulation.Money
@@ -52,7 +53,14 @@ import finlife.shared.generated.resources.opening_balance
 import finlife.shared.generated.resources.settings
 import finlife.shared.generated.resources.simulation_complete
 import finlife.shared.generated.resources.unexpected_costs
+import finlife.shared.generated.resources.whatif_hint
+import finlife.shared.generated.resources.whatif_internship
+import finlife.shared.generated.resources.whatif_oven
+import finlife.shared.generated.resources.whatif_plant
+import finlife.shared.generated.resources.whatif_shared_flat
+import finlife.shared.generated.resources.whatif_title
 import kotlin.math.abs
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -62,6 +70,7 @@ internal fun AdventureScreen(
     onAdvance: () -> Unit,
     onEnd: () -> Unit,
     onChoose: (eventId: String, optionId: String) -> Unit,
+    onWhatIf: (WhatIf) -> Unit,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
     val pending = remember(session) {
@@ -118,9 +127,42 @@ internal fun AdventureScreen(
                     if (session.status == SessionStatus.COMPLETED) Text(stringResource(Res.string.simulation_complete))
                 }
             }
+            val whatIfs = remember(session) { AdventureRun.availableWhatIfs(session) }
+            if (whatIfs.isNotEmpty()) WhatIfSection(whatIfs, onWhatIf)
         }
     }
 }
+
+@Composable
+private fun WhatIfSection(whatIfs: List<WhatIf>, onWhatIf: (WhatIf) -> Unit) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+        Column(
+            modifier = Modifier.padding(FinLifeSpacing.medium),
+            verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+        ) {
+            Text(stringResource(Res.string.whatif_title), style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(Res.string.whatif_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            ) {
+                for (whatIf in whatIfs) PrimaryButton(stringResource(whatIf.label), { onWhatIf(whatIf) })
+            }
+        }
+    }
+}
+
+private val WhatIf.label: StringResource
+    get() = when (this) {
+        WhatIf.Internship -> Res.string.whatif_internship
+        WhatIf.SharedFlat -> Res.string.whatif_shared_flat
+        WhatIf.Plant -> Res.string.whatif_plant
+        WhatIf.Oven -> Res.string.whatif_oven
+    }
 
 @Composable
 private fun AdventureFinances(session: SimulationSession, record: MonthlyRecord?, showHistory: Boolean) {

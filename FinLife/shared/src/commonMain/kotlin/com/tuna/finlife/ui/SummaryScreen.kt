@@ -16,7 +16,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.RunSummary
 import com.tuna.finlife.simulation.SimulationSession
-import com.tuna.finlife.simulation.SimulationSessions
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.cash_balance
 import finlife.shared.generated.resources.continue_simulation
@@ -72,8 +71,8 @@ internal fun SummaryScreen(
 @Preview
 @Composable
 private fun SummaryScreenPreview() {
-    // Synthetic demo run: the first three months of the existing adventure.
-    val session = remember { SimulationSessions.runUntilBlocked(AdventureRun.start(), maxMonths = 3) }
+    // Synthetic demo run: the first three months of the adventure with a fixed seed.
+    val session = remember { (1..3).fold(AdventureRun.start(seed = 1)) { run, _ -> AdventureRun.advance(run) } }
     FinLifeTheme {
         SummaryScreen(session, onContinue = {}, onStartOver = {}, onOpenSettings = {})
     }

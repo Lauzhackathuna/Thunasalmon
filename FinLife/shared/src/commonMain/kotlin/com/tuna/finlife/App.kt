@@ -16,7 +16,6 @@ import com.tuna.finlife.i18n.LocalCurrencyCode
 import com.tuna.finlife.i18n.overrideAppLocale
 import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
-import com.tuna.finlife.simulation.SimulationSessions
 import com.tuna.finlife.ui.AdventureScreen
 import com.tuna.finlife.ui.DemoSettings
 import com.tuna.finlife.ui.FinLifeTheme
@@ -49,7 +48,7 @@ fun App() {
                         PersonaSelectionScreen(
                             openingCash = opening.currentState.cash.cents / 100.0,
                             onOpenSettings = { settingsOpen = true },
-                            onSelect = { session = opening },
+                            onSelect = { session = AdventureRun.start() },
                         )
                     }
                     else -> if (ended || current.status == SessionStatus.COMPLETED) {
@@ -65,11 +64,12 @@ fun App() {
                     } else AdventureScreen(
                         session = current,
                         onOpenSettings = { settingsOpen = true },
-                        onAdvance = { if (session === current) session = SimulationSessions.advance(current) },
+                        onAdvance = { if (session === current) session = AdventureRun.advance(current) },
                         onEnd = { ended = true },
                         onChoose = { eventId, optionId ->
                             if (session === current) session = AdventureRun.choose(current, eventId, optionId)
                         },
+                        onWhatIf = { if (session === current) session = AdventureRun.addWhatIf(current, it) },
                     )
                 }
                 if (settingsOpen) {

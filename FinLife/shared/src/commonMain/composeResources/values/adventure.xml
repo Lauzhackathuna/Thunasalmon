@@ -9,16 +9,9 @@
     <string name="adventure_title">%1$s’s journey</string>
     <string name="adventure_arrival">Maya has just arrived for her master’s degree. Her monthly student income is %1$s.</string>
     <string name="adventure_month">Maya received %1$s and had %2$s in expenses this month.</string>
-    <string name="choose_housing">A decision about rent</string>
-    <string name="housing_prompt">Month %1$d. Maya’s monthly income is %2$s. Her rent is rising to %3$s. She can stay or move into a shared flat.</string>
-    <string name="housing_stayed">Maya stayed in her home and paid the higher rent.</string>
-    <string name="housing_moved">Maya moved into a shared flat and paid the one-time moving cost.</string>
     <string name="monthly_rent">Monthly rent</string>
-    <string name="moving_cost">Moving cost</string>
     <string name="closing_cash">Closing cash</string>
     <string name="cash_history">Cash balance history</string>
-    <string name="stay_choice">Stay and pay the higher rent</string>
-    <string name="move_choice">Move into a shared flat</string>
     <string name="end_simulation">End simulation</string>
     <string name="summary_title">Simulation ended</string>
     <string name="months_simulated">Months simulated: %1$d</string>

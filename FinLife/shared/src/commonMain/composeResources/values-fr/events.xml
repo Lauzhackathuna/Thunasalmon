@@ -39,4 +39,10 @@
     <!-- Registre -->
     <string name="decision_costs">Coûts des décisions</string>
     <string name="unexpected_costs">Coûts imprévus</string>
+    <string name="whatif_title">Et si… ?</string>
+    <string name="whatif_hint">Essayez une situation ce mois-ci. Sa décision s’affiche aussitôt.</string>
+    <string name="whatif_internship">Un stage rémunéré</string>
+    <string name="whatif_shared_flat">Emménager en colocation</string>
+    <string name="whatif_plant">Acheter une plante</string>
+    <string name="whatif_oven">Le four tombe en panne</string>
 </resources>
