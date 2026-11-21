@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ import finlife.shared.generated.resources.cash_balance
 import finlife.shared.generated.resources.cash_history
 import finlife.shared.generated.resources.choose_housing
 import finlife.shared.generated.resources.closing_cash
+import finlife.shared.generated.resources.end_simulation
 import finlife.shared.generated.resources.expenses
 import finlife.shared.generated.resources.housing_moved
 import finlife.shared.generated.resources.housing_prompt
@@ -61,6 +63,7 @@ internal fun AdventureScreen(
     session: SimulationSession,
     onOpenSettings: () -> Unit,
     onAdvance: () -> Unit,
+    onEnd: () -> Unit,
     onChoose: (HousingDecision) -> Unit,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
@@ -74,10 +77,14 @@ internal fun AdventureScreen(
     GameScreen(
         header = { AdventureFinances(session, record, showHistory = preview.isEmpty()) },
         actions = {
-            Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            ) {
                 if (session.status == SessionStatus.READY) {
                     PrimaryButton(stringResource(Res.string.advance_month), onAdvance)
                 }
+                PrimaryButton(stringResource(Res.string.end_simulation), onEnd)
                 PrimaryButton(stringResource(Res.string.settings), onOpenSettings)
             }
         },
@@ -208,7 +215,7 @@ private fun HousingOption(decision: HousingDecision, record: MonthlyRecord, onCh
 }
 
 @Composable
-private fun LedgerLine(label: String, value: String) {
+internal fun LedgerLine(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
@@ -219,4 +226,4 @@ private fun LedgerLine(label: String, value: String) {
 }
 
 @Composable
-private fun money(value: Money): String = displayMoney(value.cents / 100.0)
+internal fun money(value: Money): String = displayMoney(value.cents / 100.0)

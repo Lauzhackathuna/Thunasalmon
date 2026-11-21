@@ -6,7 +6,7 @@
     <string name="income">Revenus</string>
     <string name="expenses">Dépenses</string>
     <string name="simulation_complete">Simulation terminée</string>
-    <string name="adventure_title">La première année de %1$s</string>
+    <string name="adventure_title">Le parcours de %1$s</string>
     <string name="adventure_arrival">Maya vient d’arriver pour son master. Son revenu étudiant mensuel est de %1$s.</string>
     <string name="adventure_month">Ce mois-ci, Maya a reçu %1$s et dépensé %2$s.</string>
     <string name="choose_housing">Une décision sur le logement</string>
@@ -19,4 +19,11 @@
     <string name="cash_history">Historique du solde</string>
     <string name="stay_choice">Rester et payer le loyer augmenté</string>
     <string name="move_choice">Emménager en colocation</string>
+    <string name="end_simulation">Terminer la simulation</string>
+    <string name="summary_title">Simulation terminée</string>
+    <string name="months_simulated">Mois simulés : %1$d</string>
+    <string name="total_income">Revenus totaux</string>
+    <string name="total_expenses">Dépenses totales</string>
+    <string name="continue_simulation">Continuer la simulation</string>
+    <string name="start_over">Recommencer</string>
 </resources>

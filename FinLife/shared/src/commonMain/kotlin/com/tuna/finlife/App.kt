@@ -14,6 +14,7 @@ import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.i18n.AppLanguage
 import com.tuna.finlife.i18n.LocalCurrencyCode
 import com.tuna.finlife.i18n.overrideAppLocale
+import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
 import com.tuna.finlife.simulation.SimulationSessions
 import com.tuna.finlife.ui.AdventureScreen
@@ -21,6 +22,7 @@ import com.tuna.finlife.ui.DemoSettings
 import com.tuna.finlife.ui.FinLifeTheme
 import com.tuna.finlife.ui.PersonaSelectionScreen
 import com.tuna.finlife.ui.SettingsSheet
+import com.tuna.finlife.ui.SummaryScreen
 
 @Composable
 @Preview
@@ -28,6 +30,7 @@ fun App() {
     val opening = remember { AdventureRun.start() }
     var session by remember { mutableStateOf<SimulationSession?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
+    var ended by remember { mutableStateOf(false) }
     var settings by remember {
         val language = if (Locale.current.language == "fr") AppLanguage.French else AppLanguage.English
         mutableStateOf(DemoSettings(language))
@@ -49,10 +52,21 @@ fun App() {
                             onSelect = { session = opening },
                         )
                     }
-                    else -> AdventureScreen(
+                    else -> if (ended || current.status == SessionStatus.COMPLETED) {
+                        SummaryScreen(
+                            session = current,
+                            onContinue = if (current.status == SessionStatus.COMPLETED) null else ({ ended = false }),
+                            onStartOver = {
+                                session = null
+                                ended = false
+                            },
+                            onOpenSettings = { settingsOpen = true },
+                        )
+                    } else AdventureScreen(
                         session = current,
                         onOpenSettings = { settingsOpen = true },
                         onAdvance = { if (session === current) session = SimulationSessions.advance(current) },
+                        onEnd = { ended = true },
                         onChoose = { if (session === current) session = AdventureRun.choose(current, it) },
                     )
                 }
@@ -70,6 +84,7 @@ fun App() {
                         onThemeChange = { settings = settings.copy(themeMode = it) },
                         onReset = {
                             session = null
+                            ended = false
                             settingsOpen = false
                         },
                         onDismiss = { settingsOpen = false },

@@ -32,7 +32,8 @@ internal object AdventureRun {
         return SimulationSessions.start(
             profile = profile,
             configuration = MonthlyConfiguration(
-                horizonMonths = 12,
+                // Open-ended for the player: the engine's maximum horizon. The player ends the run.
+                horizonMonths = MonthlyConfiguration.MAX_MONTHS,
                 annualInflation = 0.0,
                 randomEvents = RandomEventSettings(enabled = false),
             ),
