@@ -17,8 +17,13 @@ internal data class StartingData(
     val sharedFlatRent: Long,
     val sharedFlatMovingCost: Long,
     val internshipSalary: Long = 300,
+    /** Legacy saves had no name; new runs explicitly ask for one. */
+    val firstName: String = FirstName.LegacyDefault,
 ) {
-    init { StartingField.entries.forEach { require(this[it] in 0..MAX_ABS_CHF) { "Invalid starting amount: $it" } } }
+    init {
+        StartingField.entries.forEach { require(this[it] in 0..MAX_ABS_CHF) { "Invalid starting amount: $it" } }
+        require(FirstName.normalize(firstName) == firstName) { "Invalid first name" }
+    }
 
     operator fun get(field: StartingField): Long = when (field) {
         StartingField.OpeningCash -> openingCash
@@ -64,7 +69,7 @@ internal data class StartingData(
          */
         const val MAX_ABS_CHF = Money.MAX_CENTS / 100 / MonthlyConfiguration.MAX_MONTHS / 10
 
-        fun of(values: Map<StartingField, Long>) = StartingData(
+        fun of(values: Map<StartingField, Long>, firstName: String = FirstName.LegacyDefault) = StartingData(
             values.getValue(StartingField.OpeningCash),
             values.getValue(StartingField.ParentIncome),
             values.getValue(StartingField.Rent),
@@ -76,6 +81,7 @@ internal data class StartingData(
             values.getValue(StartingField.SharedFlatRent),
             values.getValue(StartingField.SharedFlatMovingCost),
             values.getValue(StartingField.InternshipSalary),
+            firstName,
         )
     }
 }
@@ -121,10 +127,12 @@ internal object StartingDataForm {
         }.toMap()
 
     /** The starting data, or null while any field is invalid. */
-    fun build(texts: Map<StartingField, String>): StartingData? {
+    fun build(texts: Map<StartingField, String>, firstName: String = FirstName.LegacyDefault): StartingData? {
         val values = StartingField.entries.associateWith { parse(texts[it].orEmpty(), it) }
         if (values.values.any { it is Result.Invalid }) return null
-        return StartingData.of(values.mapValues { (it.value as Result.Valid).value })
+        return FirstName.normalize(firstName)?.let { valid ->
+            StartingData.of(values.mapValues { (it.value as Result.Valid).value }, valid)
+        }
     }
 
     fun texts(data: StartingData): Map<StartingField, String> = StartingField.entries.associateWith { data[it].toString() }
@@ -132,5 +140,21 @@ internal object StartingDataForm {
     sealed interface Result<out T> {
         data class Valid<T>(val value: T) : Result<T>
         data class Invalid(val error: FieldError) : Result<Nothing>
+    }
+}
+
+
+/** A short, human first name, safe to insert into localized UI and AI prompts. */
+internal object FirstName {
+    const val LegacyDefault = "Maya"
+    const val MAX_LENGTH = 32
+
+    fun normalize(raw: String): String? {
+        val value = raw.trim().replace(Regex("\\s+"), " ")
+        if (value.length !in 1..MAX_LENGTH || !value.first().isLetter() || !value.last().isLetter()) return null
+        val separators = " -'’"
+        if (!value.all { it.isLetter() || it in separators }) return null
+        if (value.windowed(2).any { it[0] in separators && it[1] in separators }) return null
+        return value
     }
 }
