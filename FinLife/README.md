@@ -1,6 +1,6 @@
 # FinLife — interactive financial digital twin
 
-FinLife is a fictional financial journey for the UBS × LauzHack and JetBrains challenges.
+FinLife is a fictional financial journey for the UBS and JetBrains challenges.
 It follows a student in Lausanne. Configure their starting circumstances, follow completed months, explore
 alternative futures, advance one month to commit selected actions, and finish or resume the journey.
 All displayed financial results come from the shared monthly V3 engine. No UBS customer data is used.
