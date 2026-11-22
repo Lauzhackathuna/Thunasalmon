@@ -1,16 +1,5 @@
 package com.tuna.finlife.assistant
 
-import java.io.IOException
-import java.net.ConnectException
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpConnectTimeoutException
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.net.http.HttpTimeoutException
-import java.time.Duration
-import kotlin.coroutines.cancellation.CancellationException
-import kotlinx.coroutines.future.await
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -29,22 +18,21 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
 /**
- * The local Ollama chat API (`/api/chat`). No cloud endpoint and no credentials: the address is fixed to this
- * machine; only the model can be changed, with the FINLIFE_OLLAMA_MODEL environment variable.
+ * The Ollama chat API (`/api/chat`) on the developer's own machine. No cloud endpoint and no credentials:
+ * desktop uses localhost, the Android emulator the host machine's 10.0.2.2. Each platform supplies the
+ * [transport] that sends the requests; everything else is shared.
  */
 internal class OllamaAssistantModel(
     override val modelName: String = DEFAULT_MODEL,
     private val baseUrl: String = LOCAL_URL,
-    private val checkTimeout: Duration = Duration.ofSeconds(3),
-    private val requestTimeout: Duration = Duration.ofSeconds(120),
+    private val transport: OllamaTransport,
+    private val checkTimeoutMillis: Long = 3_000,
+    private val requestTimeoutMillis: Long = 120_000,
 ) : AssistantModel {
-    private val client: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build()
-
     override suspend fun check(): ModelFailure? {
-        val request = HttpRequest.newBuilder(URI("$baseUrl/api/tags")).timeout(checkTimeout).GET().build()
-        val body = when (val outcome = send(request)) {
-            is Outcome.Failed -> return outcome.failure
-            is Outcome.Response -> if (outcome.status == 200) outcome.body else return ModelFailure.ServerError
+        val body = when (val outcome = transport.get("$baseUrl/api/tags", checkTimeoutMillis)) {
+            is HttpOutcome.Failed -> return outcome.failure
+            is HttpOutcome.Response -> if (outcome.status == 200) outcome.body else return ModelFailure.ServerError
         }
         val names = try {
             Json.parseToJsonElement(body).jsonObject["models"]?.jsonArray.orEmpty()
@@ -78,14 +66,14 @@ internal class OllamaAssistantModel(
     }
 
     private suspend fun chat(system: String, turns: List<ChatTurn>, format: JsonObject?): ModelResult<String> {
-        var outcome = send(chatRequest(chatBody(system, turns, format, think = false)))
+        var outcome = post(chatBody(system, turns, format, think = false))
         // Models without a thinking mode may refuse the "think" field: ask again without it.
-        if (outcome is Outcome.Response && outcome.status == 400 && "think" in outcome.body) {
-            outcome = send(chatRequest(chatBody(system, turns, format, think = null)))
+        if (outcome is HttpOutcome.Response && outcome.status == 400 && "think" in outcome.body) {
+            outcome = post(chatBody(system, turns, format, think = null))
         }
         val body = when (outcome) {
-            is Outcome.Failed -> return ModelResult.Failed(outcome.failure)
-            is Outcome.Response -> when (outcome.status) {
+            is HttpOutcome.Failed -> return ModelResult.Failed(outcome.failure)
+            is HttpOutcome.Response -> when (outcome.status) {
                 200 -> outcome.body
                 404 -> return ModelResult.Failed(ModelFailure.ModelMissing)
                 else -> return ModelResult.Failed(ModelFailure.ServerError)
@@ -119,35 +107,17 @@ internal class OllamaAssistantModel(
         }
     }
 
-    private fun chatRequest(body: JsonObject): HttpRequest = HttpRequest.newBuilder(URI("$baseUrl/api/chat"))
-        .timeout(requestTimeout)
-        .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
-        .build()
-
-    private sealed interface Outcome {
-        class Response(val status: Int, val body: String) : Outcome
-        class Failed(val failure: ModelFailure) : Outcome
-    }
-
-    private suspend fun send(request: HttpRequest): Outcome = try {
-        val response = client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
-        Outcome.Response(response.statusCode(), response.body())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        Outcome.Failed(failureOf(e))
-    }
+    private suspend fun post(body: JsonObject): HttpOutcome =
+        transport.post("$baseUrl/api/chat", body.toString(), requestTimeoutMillis)
 
     companion object {
         const val LOCAL_URL = "http://localhost:11434"
+        /** The Android emulator's address for the host machine (where Ollama runs). */
+        const val EMULATOR_HOST_URL = "http://10.0.2.2:11434"
         const val DEFAULT_MODEL = "qwen3:4b"
         const val MODEL_VARIABLE = "FINLIFE_OLLAMA_MODEL"
         const val MAX_ANSWER_TOKENS = 700
         const val CONTEXT_TOKENS = 8192
-
-        fun fromEnvironment(): OllamaAssistantModel =
-            OllamaAssistantModel(System.getenv(MODEL_VARIABLE)?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_MODEL)
 
         /** JSON schema Ollama constrains the routing answer to. */
         val EXTRACTION_SCHEMA: JsonObject = buildJsonObject {
@@ -204,19 +174,6 @@ internal class OllamaAssistantModel(
             if (primitive is JsonNull) return null
             val value = primitive.content.trim().toDoubleOrNull() ?: primitive.doubleOrNull ?: return null
             return value.takeIf { it == kotlin.math.floor(it) && it in -1e6..1e6 }?.toInt()
-        }
-
-        private fun failureOf(error: Throwable): ModelFailure {
-            var cause: Throwable? = error
-            while (cause != null) {
-                when (cause) {
-                    is HttpConnectTimeoutException -> return ModelFailure.NotRunning
-                    is HttpTimeoutException -> return ModelFailure.Timeout
-                    is ConnectException -> return ModelFailure.NotRunning
-                }
-                cause = cause.cause
-            }
-            return if (error is IOException || error.cause is IOException) ModelFailure.NotRunning else ModelFailure.ServerError
         }
     }
 }

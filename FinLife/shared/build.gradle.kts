@@ -42,9 +42,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-        }
-        // Desktop only: reads and writes the local Ollama JSON API (JsonElement API, no compiler plugin).
-        jvmMain.dependencies {
+            // Reads and writes the local Ollama JSON API on desktop and Android (JsonElement API, no compiler plugin).
             implementation(libs.kotlinx.serialization.json)
         }
         jvmTest.dependencies {

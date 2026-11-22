@@ -3,6 +3,7 @@ package com.tuna.finlife
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.tuna.finlife.assistant.OllamaAssistantModel
+import com.tuna.finlife.assistant.fromEnvironment
 
 /** The desktop app: the shared app plus the explain-only assistant on the local Ollama model. */
 @Composable

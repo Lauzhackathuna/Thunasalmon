@@ -43,7 +43,7 @@ class OllamaAssistantModelTest {
     }
 
     private fun model(name: String = "qwen3:4b", timeout: Duration = Duration.ofSeconds(10)) =
-        OllamaAssistantModel(name, "http://127.0.0.1:${server.address.port}", checkTimeout = timeout, requestTimeout = timeout)
+        OllamaAssistantModel(name, "http://127.0.0.1:${server.address.port}", JdkOllamaTransport(), timeout.toMillis(), timeout.toMillis())
 
     @AfterTest
     fun stop() = server.stop(0)
@@ -68,7 +68,7 @@ class OllamaAssistantModelTest {
     @Test
     fun nothingListeningIsNotRunning() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
-        val absent = OllamaAssistantModel("qwen3:4b", "http://127.0.0.1:$port")
+        val absent = OllamaAssistantModel("qwen3:4b", "http://127.0.0.1:$port", JdkOllamaTransport())
         assertEquals(ModelFailure.NotRunning, absent.check())
         assertEquals(ModelResult.Failed(ModelFailure.NotRunning), absent.explain("system", "question"))
     }
