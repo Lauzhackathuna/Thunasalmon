@@ -192,6 +192,7 @@ data class MonthlyState(
     /** Unpaid voluntary career break: counts down from six to zero. */
     val careerBreakRemaining: Int = 0,
     val employerType: EmployerType = EmployerType.PRIVATE,
+    val epflMonthlySalary: Money = Money.chf(4_500),
     /** A company collapse removes future wages, never existing savings. */
     val jobLost: Boolean = false,
 ) {
@@ -215,7 +216,7 @@ data class MonthlyState(
         require(internshipMonthsRemaining == 0 || studyMonthsRemaining > 0)
         require(careerStartMonth == null || careerStartMonth in 0..month)
         require((studyMonthsRemaining == 0) == (careerStartMonth != null))
-        requireCost(investments); requireCost(debt); requireCost(internshipMonthlyIncome)
+        requireCost(investments); requireCost(debt); requireCost(internshipMonthlyIncome); requireCost(epflMonthlySalary)
     }
 }
 

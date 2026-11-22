@@ -49,7 +49,7 @@ object MonthlySimulation {
     fun professionalIncome(profile: MonthlyProfile, configuration: MonthlyConfiguration, state: MonthlyState): Money {
         if (state.status != LifeStatus.EMPLOYED || state.careerBreakRemaining > 0 || state.jobLost) return Money.ZERO
         return when (state.employerType) {
-            EmployerType.EPFL -> Money.chf(4_500)
+            EmployerType.EPFL -> state.epflMonthlySalary
             EmployerType.PRIVATE -> profile.startingMonthlySalary.scaled(
                 (1.0 + configuration.annualSalaryGrowth).pow((state.month - requireNotNull(state.careerStartMonth)) / 12))
         }
@@ -153,7 +153,7 @@ object MonthlySimulation {
                 is LifeEvent.CareerBreak -> working = working.copy(careerBreakRemaining = event.durationMonths)
                 is LifeEvent.EpflJobOffer -> {
                     declined = choice == "stay"
-                    if (!declined) working = working.copy(employerType = EmployerType.EPFL)
+                    if (!declined) working = working.copy(employerType = EmployerType.EPFL, epflMonthlySalary = event.monthlySalary)
                 }
                 is LifeEvent.CompanyClosure -> working = working.copy(jobLost = true)
             }
