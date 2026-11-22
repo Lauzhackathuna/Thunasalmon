@@ -1,14 +1,21 @@
 package com.tuna.finlife.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import com.tuna.finlife.i18n.displayMoney
 import com.tuna.finlife.model.Persona
 import finlife.shared.generated.resources.Res
@@ -42,18 +49,30 @@ internal fun PersonaSelectionScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
         ) {
-            Column(
-                modifier = Modifier.padding(FinLifeSpacing.medium),
-                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            Row(
+                modifier = Modifier.padding(FinLifeSpacing.large),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
             ) {
-                Text(stringResource(copy.name), style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(copy.role), style = MaterialTheme.typography.labelLarge)
-                Text(stringResource(copy.story), style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = stringResource(Res.string.opening_cash) + " · " + displayMoney(openingCash),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                // A restrained signature stripe keeps the character screen recognizable.
+                Box(
+                    Modifier.width(4.dp).height(104.dp)
+                        .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small),
                 )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(copy.name), style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(copy.role), style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(copy.story), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = stringResource(Res.string.opening_cash) + " · " + displayMoney(openingCash),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
