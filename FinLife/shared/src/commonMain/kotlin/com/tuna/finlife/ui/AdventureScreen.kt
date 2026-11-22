@@ -234,7 +234,6 @@ private fun AdventureFinances(
 ) {
     var explainEquality by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
-        Text(stringResource(Res.string.journey_heading, session.profile.name, session.currentMonth), style = MaterialTheme.typography.titleLarge)
         KeyFigureCard(
             label = stringResource(Res.string.actual_cash),
             value = money(session.currentState.cash),

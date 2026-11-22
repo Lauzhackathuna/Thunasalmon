@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.simulation_note
@@ -184,13 +185,25 @@ private fun GameBody(
                     Box(screenWidth().padding(vertical = FinLifeSpacing.small)) { actions() }
                 }
             }
-            SimulationNotice(screenWidth().padding(vertical = FinLifeSpacing.small))
+            SimulationNoticeLine()
         }
     }
 }
 
 private fun screenWidth(): Modifier =
     Modifier.widthIn(max = FinLifeContentWidth).fillMaxWidth().padding(horizontal = FinLifeSpacing.large)
+
+/** The same notice on a single line at the very bottom of the game screens (wraps only if the window is too narrow). */
+@Composable
+private fun SimulationNoticeLine() {
+    Text(
+        text = stringResource(Res.string.synthetic_data) + " · " + stringResource(Res.string.simulation_note),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = FinLifeSpacing.large, vertical = 4.dp),
+    )
+}
 
 @Composable
 internal fun SimulationNotice(modifier: Modifier = Modifier) {

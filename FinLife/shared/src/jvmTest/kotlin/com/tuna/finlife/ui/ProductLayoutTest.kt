@@ -43,7 +43,10 @@ class ProductLayoutTest {
                 }
             }
             assertTrue(text.any { it.contains("8") })
-            assertTrue(text.any { it.contains("FinLife") })
+            // No "FinLife · Maya · Month n" heading any more (any language).
+            assertTrue(text.none { it.startsWith("FinLife · ") }, text.toString())
+            // The synthetic-data notice and the simulation note share one text at the bottom.
+            assertTrue(text.any { it.contains(" · ") && it.length > 60 }, text.toString())
         }
     }
 
