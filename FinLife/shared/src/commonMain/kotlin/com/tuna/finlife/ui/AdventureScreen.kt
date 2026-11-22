@@ -230,6 +230,11 @@ private fun AdventureFinances(
             HorizontalDivider()
             LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))
             LedgerLine(stringResource(Res.string.theoretical_balance), money(session.currentState.theoreticalCash))
+            if (session.currentState.netWorth == session.currentState.theoreticalCash &&
+                session.currentState.investments == Money.ZERO && session.currentState.debt == Money.ZERO) {
+                Text(stringResource(Res.string.equal_metrics_hint),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             if (session.currentState.unpaid.items.isNotEmpty()) {
                 Text(stringResource(Res.string.shortfall_hint), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
