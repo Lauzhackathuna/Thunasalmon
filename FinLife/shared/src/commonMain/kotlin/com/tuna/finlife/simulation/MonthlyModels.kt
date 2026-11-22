@@ -62,6 +62,7 @@ data class HistoricalMonthlyObservation(
 enum class HousingType { UNKNOWN, ALONE, SHARED, OTHER }
 enum class PaymentResponsibility { CHARACTER, OTHER_PARTY }
 enum class LifeStatus { STUDENT, INTERN, EMPLOYED }
+enum class EmployerType { PRIVATE, EPFL }
 enum class InvestmentProfile(val annualReturn: Double) { PRUDENT(0.01), BALANCED(0.03), DYNAMIC(0.05) }
 
 data class FinancialGoal(val nominalAmount: Money = Money.chf(350_000), val dueMonth: Int = 120) {
@@ -188,6 +189,12 @@ data class MonthlyState(
     val unpaid: UnpaidObligations = UnpaidObligations(),
     val shortInternship: ShortInternship? = null,
     val housingDecision: HousingDecision? = null,
+    /** Unpaid voluntary career break: counts down from six to zero. */
+    val careerBreakRemaining: Int = 0,
+    val employerType: EmployerType = EmployerType.PRIVATE,
+    val epflMonthlySalary: Money = Money.chf(4_500),
+    /** A company collapse removes future wages, never existing savings. */
+    val jobLost: Boolean = false,
 ) {
     /** Legacy lastPaidTuitionProgress now tracks the last assessed deadline; payment lives in unpaid/ledger. */
     val lastAssessedTuitionProgress: Int get() = lastPaidTuitionProgress
@@ -204,10 +211,12 @@ data class MonthlyState(
         require(month >= 0 && studyMonthsCompleted >= 0 && studyMonthsRemaining >= 0)
         require(lastPaidTuitionProgress in -1..studyMonthsCompleted)
         require(internshipMonthsRemaining >= 0)
+        require(careerBreakRemaining in 0..6)
+        require(careerBreakRemaining == 0 || studyMonthsRemaining == 0)
         require(internshipMonthsRemaining == 0 || studyMonthsRemaining > 0)
         require(careerStartMonth == null || careerStartMonth in 0..month)
         require((studyMonthsRemaining == 0) == (careerStartMonth != null))
-        requireCost(investments); requireCost(debt); requireCost(internshipMonthlyIncome)
+        requireCost(investments); requireCost(debt); requireCost(internshipMonthlyIncome); requireCost(epflMonthlySalary)
     }
 }
 

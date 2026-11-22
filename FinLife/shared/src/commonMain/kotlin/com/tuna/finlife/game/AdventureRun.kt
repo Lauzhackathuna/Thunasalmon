@@ -20,7 +20,7 @@ import kotlin.random.Random
  * Optional situations the player can switch on; each applies from the current month as a choice already made.
  * [Internship] is the engine's 3-month paid offer (LifeEvent.ShortInternshipOffer), alongside studies.
  */
-internal enum class WhatIf { Internship, SharedFlat }
+internal enum class WhatIf { Internship, SharedFlat, CareerBreak }
 
 internal enum class WhatIfState {
     /** Can be switched on this month. */
@@ -136,13 +136,13 @@ internal object AdventureRun {
      * the month is advanced. Returns [session] unchanged if the decision or option is not pending.
      */
     fun choose(session: SimulationSession, eventId: String, optionId: String): SimulationSession {
-        val answered = submit(session, eventId, optionId) ?: return session
+        val answered = commitDecision(session, eventId, optionId) ?: return session
         return if (SimulationSessions.pendingDecisions(answered).isEmpty()) advance(answered) else answered
     }
 
     /** The month that would result from this option, or null if other decisions of the month remain open. */
     fun preview(session: SimulationSession, eventId: String, optionId: String): MonthlyRecord? {
-        val answered = submit(session, eventId, optionId) ?: return null
+        val answered = commitDecision(session, eventId, optionId) ?: return null
         if (SimulationSessions.pendingDecisions(answered).isNotEmpty()) return null
         val next = SimulationSessions.advance(answered)
         return if (next.history.size > session.history.size) next.history.last() else null
@@ -153,7 +153,7 @@ internal object AdventureRun {
      * decline new offers). Null for decisions without such a default (purchases).
      */
     fun defaultAnswer(event: LifeEvent): String? = when (event) {
-        is LifeEvent.RentRise, is LifeEvent.HousingChoice -> "stay"
+        is LifeEvent.RentRise, is LifeEvent.HousingChoice, is LifeEvent.EpflJobOffer -> "stay"
         is LifeEvent.Internship, is LifeEvent.ShortInternshipOffer -> "decline"
         else -> null
     }
@@ -169,10 +169,13 @@ internal object AdventureRun {
                 // Accepted offer still running (its three months have not all passed).
                 WhatIf.Internship -> state.shortInternship?.let { it.active(month) || month < it.startMonth } == true
                 WhatIf.SharedFlat -> state.housing.type == HousingType.SHARED
+                WhatIf.CareerBreak -> state.careerBreakRemaining > 0
             }
             val possible = when (whatIf) {
                 WhatIf.Internship -> state.status == LifeStatus.STUDENT && month <= MonthlyConfiguration.MAX_MONTHS - 3
                 WhatIf.SharedFlat -> true
+                WhatIf.CareerBreak -> state.status == LifeStatus.EMPLOYED && !state.jobLost &&
+                    state.careerBreakRemaining == 0 && month <= MonthlyConfiguration.MAX_MONTHS - 6
             }
             when {
                 scheduled || inEffect -> WhatIfState.Active
@@ -195,6 +198,7 @@ internal object AdventureRun {
             )
             // The engine's own shared-flat proposal; it is a decision, so the move is answered right away.
             WhatIf.SharedFlat -> SimulationSessions.submit(SimulationSessions.proposeSharedHousing(session), id, "move")
+            WhatIf.CareerBreak -> withEvents(session, listOf(LifeEvent.CareerBreak(id, month)))
         }
     }
 
@@ -218,6 +222,23 @@ internal object AdventureRun {
         else -> "whatif-${whatIf.name.lowercase()}-$month"
     }
 
+    /**
+     * Store a choice without advancing time. Keeping the private-sector job exposes that run
+     * to one independently seeded 30% failure draw over the following twelve months.
+     * The drawn event is committed to the calendar so saves and counterfactuals replay exactly.
+     */
+    internal fun commitDecision(session: SimulationSession, eventId: String, optionId: String): SimulationSession? {
+        val answered = submit(session, eventId, optionId) ?: return null
+        val offer = session.calendar.filterIsInstance<LifeEvent.EpflJobOffer>()
+            .singleOrNull { it.id == eventId } ?: return answered
+        if (optionId != "stay") return answered
+        val draw = Random(session.configuration.randomSeed xor offer.id.hashCode().toLong() xor 0x4550464cL)
+        if (draw.nextDouble() >= offer.privateCompanyFailureProbability) return answered
+        val month = offer.month + draw.nextInt(1, offer.riskHorizonMonths + 1)
+        if (month >= session.configuration.horizonMonths) return answered
+        return SimulationSessions.schedule(answered, LifeEvent.CompanyClosure("company-closure-${offer.id}", month, offer.id))
+    }
+
     private fun submit(session: SimulationSession, eventId: String, optionId: String): SimulationSession? {
         val pending = SimulationSessions.pendingDecisions(session).singleOrNull { it.event.id == eventId }
         if (session.status != SessionStatus.AWAITING_DECISION || pending == null ||
@@ -234,13 +255,22 @@ internal object AdventureRun {
             session.currentState.housing.id,
             session.calendar,
         )
-        if (drawn.isEmpty()) return session
+        val state = session.currentState
+        val jobOffer = if (state.status == LifeStatus.EMPLOYED && !state.jobLost &&
+            state.employerType == com.tuna.finlife.simulation.EmployerType.PRIVATE &&
+            state.careerBreakRemaining == 0 &&
+            state.careerStartMonth != null && session.currentMonth >= state.careerStartMonth + 3 &&
+            session.currentMonth + 12 < session.configuration.horizonMonths &&
+            session.calendar.none { it is LifeEvent.EpflJobOffer }
+        ) listOf(LifeEvent.EpflJobOffer("epfl-offer-${session.currentMonth}", session.currentMonth))
+        else emptyList()
+        if (drawn.isEmpty() && jobOffer.isEmpty()) return session
         val indexed = drawn.map { event ->
             if (event is LifeEvent.OneOffExpense) {
                 event.copy(amount = event.amount.scaled(session.configuration.priceIndex(event.month)))
             } else event
         }
-        val scheduled = withEvents(session, indexed)
+        val scheduled = withEvents(session, indexed + jobOffer)
         // A drawn rent rise can be a decision now: surface it before anything else happens this month.
         return if (noPendingDecision(scheduled)) scheduled else SimulationSessions.advance(scheduled)
     }

@@ -27,6 +27,9 @@ internal object JourneySave {
                     is LifeEvent.OneOffExpense -> "expense|${hex(e.label)}|${e.amount.cents}|${e.responsibility.name}"
                     is LifeEvent.Maintenance -> "maintenance|${e.nominalAmount.cents}|${e.responsibility.name}"
                     is LifeEvent.ShortInternshipOffer -> "short|${e.startMonth}|${e.monthlyIncome.cents}"
+                    is LifeEvent.CareerBreak -> "break|${e.durationMonths}"
+                    is LifeEvent.EpflJobOffer -> "epfl|${e.monthlySalary.cents}|${e.privateCompanyFailureProbability}|${e.riskHorizonMonths}"
+                    is LifeEvent.CompanyClosure -> "closure|${hex(e.offerId)}"
                     is LifeEvent.HousingChoice -> {
                         require(e.newRentRule == null) { "Unsupported app housing rule" }
                         "housing|${hex(e.newContract.id)}|${e.newContract.monthlyRent.cents}|${e.newContract.priceMonth}|${e.newContract.type.name}|${e.movingCost.cents}|${e.responsibility.name}"
@@ -70,6 +73,10 @@ internal object JourneySave {
                 "expense" -> { require(fields.size == 7); LifeEvent.OneOffExpense(id, month, unhex(fields[4]), Money(fields[5].toLong()), PaymentResponsibility.valueOf(fields[6])) }
                 "maintenance" -> { require(fields.size == 6); LifeEvent.Maintenance(id, month, PaymentResponsibility.valueOf(fields[5]), Money(fields[4].toLong())) }
                 "short" -> { require(fields.size == 6); LifeEvent.ShortInternshipOffer(id, month, fields[4].toInt(), Money(fields[5].toLong())) }
+                "break" -> { require(fields.size == 5); LifeEvent.CareerBreak(id, month, fields[4].toInt()) }
+                "epfl" -> { require(fields.size == 7); LifeEvent.EpflJobOffer(id, month,
+                    Money(fields[4].toLong()), fields[5].toDouble(), fields[6].toInt()) }
+                "closure" -> { require(fields.size == 5); LifeEvent.CompanyClosure(id, month, unhex(fields[4])) }
                 "housing" -> { require(fields.size == 10); LifeEvent.HousingChoice(id, month,
                     HousingContract(unhex(fields[4]), Money(fields[5].toLong()), fields[6].toInt(), HousingType.valueOf(fields[7])),
                     Money(fields[8].toLong()), PaymentResponsibility.valueOf(fields[9])) }

@@ -37,7 +37,7 @@ internal data class Counterfactual(
             for (pending in SimulationSessions.pendingDecisions(run)) {
                 val answer = answers[pending.event.id] ?: AdventureRun.defaultAnswer(pending.event)
                     ?: return copy(alternative = run)
-                run = SimulationSessions.submit(run, pending.event.id, answer)
+                run = AdventureRun.commitDecision(run, pending.event.id, answer) ?: return copy(alternative = run)
             }
             val next = AdventureRun.advance(run)
             if (next.currentMonth == run.currentMonth) break
@@ -64,7 +64,7 @@ internal data class Counterfactual(
         fun afterChoice(before: SimulationSession, eventId: String, optionId: String, after: SimulationSession): Counterfactual? {
             val pending = SimulationSessions.pendingDecisions(before).singleOrNull { it.event.id == eventId } ?: return null
             val other = pending.options.filter { it.id != optionId }.singleOrNull() ?: return null
-            val branched = SimulationSessions.submit(before, eventId, other.id)
+            val branched = AdventureRun.commitDecision(before, eventId, other.id) ?: return null
             return Counterfactual(before.currentMonth, AlternativeChoice.OtherAnswer(pending.event, other), branched)
                 .catchUp(after)
         }

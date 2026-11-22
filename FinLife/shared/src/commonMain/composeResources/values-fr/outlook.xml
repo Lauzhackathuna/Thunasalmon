@@ -5,7 +5,7 @@
     <string name="shortfall_hint">Les factures impayées sont de l’argent dû, pas un découvert autorisé.</string>
     <string name="outlook_title">Vos 12 prochains mois</string>
     <string name="outlook_baseline">Si rien ne change</string>
-    <string name="outlook_assumptions">Inflation annuelle de 2 % sur les coûts ; revenus fixes. Les engagements connus continuent. Aucun nouvel événement aléatoire.</string>
+    <string name="outlook_assumptions">Inflation annuelle de 2 % sur les coûts ; les engagements connus continuent. Aucun nouvel événement aléatoire n’est prévu. Un éventuel tirage de faillite non encore révélé n’est pas inclus dans cette projection.</string>
     <string name="outlook_unavailable">La projection ne peut pas être calculée avec ces montants ou cet horizon restant. Votre parcours est inchangé.</string>
     <string name="preview_only">Aperçu uniquement. Avancer le mois confirme vos choix ; ils restent réversibles jusque-là.</string>
     <string name="future_path">Projection future — choix sélectionnés</string>
@@ -81,4 +81,6 @@
     <string name="chart_future_range">Mois à venir · horizon de prévision</string>
     <string name="dashboard_timeline_title">Votre trajectoire financière</string>
     <string name="equal_metrics_toggle">Pourquoi ces montants sont-ils identiques ?</string>
+    <string name="scenario_career_break">Pause professionnelle de six mois</string>
+    <string name="career_break_temporary">La pause professionnelle suspend le salaire pendant six mois, mais pas le loyer ni les dépenses courantes.</string>
 </resources>

@@ -11,6 +11,15 @@ import com.tuna.finlife.simulation.EventOutcome
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRecord
 import finlife.shared.generated.resources.event_minor_repair
+import finlife.shared.generated.resources.decision_epfl_title
+import finlife.shared.generated.resources.decision_epfl_prompt
+import finlife.shared.generated.resources.option_epfl_stay
+import finlife.shared.generated.resources.option_epfl_accept
+import finlife.shared.generated.resources.outcome_career_break
+import finlife.shared.generated.resources.outcome_epfl_not_applicable
+import finlife.shared.generated.resources.outcome_epfl_accepted
+import finlife.shared.generated.resources.outcome_epfl_stayed
+import finlife.shared.generated.resources.outcome_company_closure
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.decision_rent_rise_prompt
 import finlife.shared.generated.resources.decision_rent_rise_title
@@ -72,6 +81,7 @@ internal fun decisionCopy(
     month: Int,
     sharedRent: Money = Money.ZERO,
     sharedMovingCost: Money = Money.ZERO,
+    currentSalary: Money = Money.ZERO,
 ): DecisionCopy = when (kind) {
     is EventKind.RentRise -> DecisionCopy(
         playerStringResource(Res.string.decision_rent_rise_title),
@@ -89,6 +99,11 @@ internal fun decisionCopy(
     is EventKind.Internship -> DecisionCopy(
         playerStringResource(Res.string.decision_internship_title),
         playerStringResource(Res.string.decision_internship_prompt, kind.months, money(kind.monthlyIncome)),
+    )
+    is EventKind.EpflJobOffer -> DecisionCopy(
+        playerStringResource(Res.string.decision_epfl_title),
+        playerStringResource(Res.string.decision_epfl_prompt,
+            money(currentSalary), money(kind.salary), percentLabel(kind.risk), kind.horizon),
     )
     is EventKind.Housing -> DecisionCopy(
         playerStringResource(Res.string.decision_housing_title),
@@ -122,6 +137,8 @@ internal fun optionLabel(kind: EventKind, option: DecisionOption): String = when
     kind is EventKind.Plant && option.id == "second" -> playerStringResource(Res.string.option_plant_skip)
     kind is EventKind.Oven && option.id == "first" -> playerStringResource(Res.string.option_oven_repair)
     kind is EventKind.Oven && option.id == "second" -> playerStringResource(Res.string.option_oven_replace)
+    kind is EventKind.EpflJobOffer && option.id == "stay" -> playerStringResource(Res.string.option_epfl_stay)
+    kind is EventKind.EpflJobOffer && option.id == "epfl" -> playerStringResource(Res.string.option_epfl_accept)
     else -> option.label
 }
 
@@ -182,5 +199,12 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
             else playerStringResource(Res.string.outcome_other_party)
         is EventKind.Financing ->
             playerStringResource(Res.string.outcome_financing, money(kind.borrowing), money(kind.principalRepayment))
+        is EventKind.CareerBreak -> if (applied) playerStringResource(Res.string.outcome_career_break, kind.months) else null
+        is EventKind.EpflJobOffer -> when {
+            notApplicable -> playerStringResource(Res.string.outcome_epfl_not_applicable)
+            outcome.optionId == "epfl" -> playerStringResource(Res.string.outcome_epfl_accepted, money(kind.salary))
+            else -> playerStringResource(Res.string.outcome_epfl_stayed)
+        }
+        EventKind.CompanyClosure -> if (applied) playerStringResource(Res.string.outcome_company_closure) else null
     }
 }

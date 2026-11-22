@@ -196,7 +196,9 @@ private fun WhatIfDialog(draft: WhatIfDraft, onToggle: (WhatIf, Boolean) -> Unit
     GameSheet(onDismiss = onDismiss, sheetMaxWidth = 900.dp) {
         ScreenHeading(playerStringResource(Res.string.whatif_title))
         Text(playerStringResource(Res.string.preview_only))
-        Text(playerStringResource(Res.string.stage_assumption, money(Money.chf(draft.internshipSalary)), money(Money.chf(draft.internshipSalary).scaled(3.0))))
+        if (draft.canSwitch(WhatIf.Internship) || draft.isOn(WhatIf.Internship)) {
+            Text(playerStringResource(Res.string.stage_assumption, money(Money.chf(draft.internshipSalary)), money(Money.chf(draft.internshipSalary).scaled(3.0))))
+        }
         for (whatIf in WhatIf.entries) {
             val on = draft.isOn(whatIf)
             val enabled = draft.canSwitch(whatIf)
@@ -218,6 +220,7 @@ private val WhatIf.label: StringResource
     get() = when (this) {
         WhatIf.Internship -> Res.string.whatif_internship
         WhatIf.SharedFlat -> Res.string.whatif_shared_flat
+        WhatIf.CareerBreak -> Res.string.whatif_career_break
     }
 
 @Composable
@@ -313,7 +316,8 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
     val shared = remember(session, decision) {
         MonthlySimulation.sharedContract(decision.event.month, session.configuration).monthlyRent
     }
-    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month))
+    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month),
+        session.profile.startingMonthlySalary)
     if (copy.title.isNotEmpty()) Text(copy.title, style = MaterialTheme.typography.titleLarge)
     Text(copy.prompt, style = MaterialTheme.typography.bodyMedium)
     for (option in decision.options) {

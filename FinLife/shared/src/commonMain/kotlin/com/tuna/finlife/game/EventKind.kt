@@ -25,6 +25,9 @@ internal sealed interface EventKind {
     data class Housing(val newRent: Money, val movingCost: Money) : EventKind
     data class OneOffExpense(val label: String, val amount: Money) : EventKind
     data class Financing(val borrowing: Money, val principalRepayment: Money) : EventKind
+    data class CareerBreak(val months: Int) : EventKind
+    data class EpflJobOffer(val salary: Money, val risk: Double, val horizon: Int) : EventKind
+    data object CompanyClosure : EventKind
 }
 
 // The engine distinguishes its plant and oven micro-events only by title, so compare with its factories.
@@ -44,6 +47,9 @@ internal fun LifeEvent.kind(): EventKind = when (this) {
     is LifeEvent.HousingChoice -> EventKind.Housing(newContract.monthlyRent, movingCost)
     is LifeEvent.OneOffExpense -> EventKind.OneOffExpense(label, amount)
     is LifeEvent.Financing -> EventKind.Financing(borrowing, principalRepayment)
+    is LifeEvent.CareerBreak -> EventKind.CareerBreak(durationMonths)
+    is LifeEvent.EpflJobOffer -> EventKind.EpflJobOffer(monthlySalary, privateCompanyFailureProbability, riskHorizonMonths)
+    is LifeEvent.CompanyClosure -> EventKind.CompanyClosure
 }
 
 /** Whole percentages without decimals (0.03 -> "3"), otherwise one decimal (0.025 -> "2.5"). */

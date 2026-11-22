@@ -100,10 +100,13 @@ class AdventureRunTest {
     }
 
     @Test
-    fun runIsOpenEndedAndOnlyRandomRentRisesAskForADecision() {
+    fun runIsOpenEndedWithRentRiseAndOneProfessionalOffer() {
         val run = advance(AdventureRun.start(seed = 7), 30)
         assertEquals(30, run.currentMonth)
-        assertTrue(run.calendar.filter { it.interactive }.all { it is LifeEvent.RentRise && RandomTroubles.isRandom(it) })
+        assertTrue(run.calendar.filter { it.interactive }.all {
+            (it is LifeEvent.RentRise && RandomTroubles.isRandom(it)) || it is LifeEvent.EpflJobOffer
+        })
+        assertEquals(1, run.calendar.count { it is LifeEvent.EpflJobOffer })
     }
 
     @Test
@@ -120,7 +123,9 @@ class AdventureRunTest {
     @Test
     fun sharedFlatToggleMovesMayaWithoutADecisionScreen() {
         val start = AdventureRun.start(seed = 3)
-        assertEquals(WhatIf.entries.associateWith { WhatIfState.Available }, AdventureRun.whatIfStates(start))
+        assertEquals(WhatIf.entries.associateWith {
+            if (it == WhatIf.CareerBreak) WhatIfState.Unavailable else WhatIfState.Available
+        }, AdventureRun.whatIfStates(start))
         val switchedOn = AdventureRun.applyWhatIf(start, WhatIf.SharedFlat)
         assertEquals(SessionStatus.READY, switchedOn.status)
         assertTrue(SimulationSessions.pendingDecisions(switchedOn).isEmpty())
