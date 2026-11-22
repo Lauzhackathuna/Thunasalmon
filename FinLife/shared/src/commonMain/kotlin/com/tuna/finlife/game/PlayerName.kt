@@ -9,7 +9,7 @@ internal object PlayerName {
         val value = input.trim().replace(Regex("\\s+"), " ")
         return value.takeIf {
             it.length in 1..MAX_LENGTH &&
-                it.any(Char::isLetter) &&
+                it.any { char -> char.isLetter() } &&
                 it.all { char -> char.isLetter() || char == ' ' || char == '-' || char == '\'' || char == '’' }
         }
     }
