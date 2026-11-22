@@ -60,6 +60,9 @@ class AssistantLiveEvaluation {
             Case("Quelles sont les options pour la hausse de loyer ?", waiting, fr, topic(Topic.PendingDecision), "pending_decision", fullAnswer = true),
             Case("What happens over the next 12 months if nothing changes?", played, en, topic(Topic.Projection), "projection", fullAnswer = true),
             Case("Sur les 12 prochains mois, la colocation change quoi ?", played, fr, topic(Topic.Projection), "projection", fullAnswer = true),
+            Case("What happens over the next 3 months?", played, en, { it.topic == Topic.Projection && it.monthsAhead == 3 }, "projection, 3 months ahead", fullAnswer = true),
+            Case("Et sur les 2 prochaines années ?", played, fr, { it.topic == Topic.Projection && (it.monthsAhead ?: 0) > 12 }, "projection, more than 12 months ahead", fullAnswer = true),
+            Case("Is Maya the owner of her flat?", played, en, { it.topic == Topic.Current || it.topic == Topic.Concept }, "current or concept", fullAnswer = true),
             Case("What does net worth mean?", played, en, topic(Topic.Concept), "concept", fullAnswer = true),
             Case("Comment fonctionnent les problèmes aléatoires ?", played, fr, topic(Topic.Concept), "concept"),
             Case("Should I buy Tesla stock with my savings?", played, en, topic(Topic.OutOfScope), "out_of_scope", fullAnswer = true),
@@ -91,7 +94,7 @@ class AssistantLiveEvaluation {
                     val t = System.nanoTime()
                     val answer = Assistant(model).answer(case.question, case.history, case.context, case.language)
                     val seconds = (System.nanoTime() - t) / 1e9
-                    val shown = answer is AssistantAnswer.Explanation || answer == AssistantAnswer.OutOfScope
+                    val shown = answer is AssistantAnswer.Explanation || answer == AssistantAnswer.OutOfScope || answer == AssistantAnswer.ProjectionTooFar
                     if (shown) answered++
                     report.appendLine("    answer (${"%.1f".format(seconds)} s): $answer")
                 }

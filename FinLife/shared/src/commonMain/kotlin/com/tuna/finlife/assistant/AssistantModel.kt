@@ -33,6 +33,8 @@ internal data class Extraction(
     val month: Int? = null,
     val endMonth: Int? = null,
     val clarification: String? = null,
+    /** For a projection: how many months ahead the question asks about ("next 3 months" = 3). */
+    val monthsAhead: Int? = null,
 )
 
 internal enum class Speaker { User, Assistant }

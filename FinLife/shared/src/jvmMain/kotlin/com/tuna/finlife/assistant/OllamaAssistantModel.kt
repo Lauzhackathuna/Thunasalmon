@@ -159,9 +159,10 @@ internal class OllamaAssistantModel(
                 }
                 putJsonObject("month") { putJsonArray("type") { add("integer"); add("null") } }
                 putJsonObject("end_month") { putJsonArray("type") { add("integer"); add("null") } }
+                putJsonObject("months_ahead") { putJsonArray("type") { add("integer"); add("null") } }
                 putJsonObject("clarification") { putJsonArray("type") { add("string"); add("null") } }
             }
-            putJsonArray("required") { listOf("topic", "month", "end_month", "clarification").forEach { add(it) } }
+            putJsonArray("required") { listOf("topic", "month", "end_month", "months_ahead", "clarification").forEach { add(it) } }
         }
 
         /** JSON schema of an explanation. */
@@ -194,7 +195,7 @@ internal class OllamaAssistantModel(
             } ?: return null
             val topic = (json["topic"] as? JsonPrimitive)?.contentOrNull?.let { Topic.fromWire(it.trim()) } ?: return null
             return Extraction(topic, json["month"].asMonth(), json["end_month"].asMonth(),
-                (json["clarification"] as? JsonPrimitive)?.takeIf { it.isString }?.content)
+                (json["clarification"] as? JsonPrimitive)?.takeIf { it.isString }?.content, json["months_ahead"].asMonth())
         }
 
         /** Whole numbers only (3, 3.0 or "3"); anything else counts as missing. */

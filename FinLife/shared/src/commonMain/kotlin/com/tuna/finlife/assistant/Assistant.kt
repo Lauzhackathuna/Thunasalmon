@@ -5,8 +5,8 @@ import com.tuna.finlife.simulation.SimulationSessions
 
 /** What the panel shows for one question. Everything except [Explanation] and [Clarification] is app wording. */
 internal sealed interface AssistantAnswer {
-    /** Model wording of engine facts, checked by [ReplyGuard]. [projection]: show the projection caption. */
-    data class Explanation(val text: String, val projection: Boolean) : AssistantAnswer
+    /** Model wording of engine facts, checked by [ReplyGuard]. [projectionMonths]: show the projection caption. */
+    data class Explanation(val text: String, val projectionMonths: Int? = null) : AssistantAnswer
     /** The model's clarification question, or null for the app's generic one. */
     data class Clarification(val text: String?) : AssistantAnswer
     data class AskWhichMonth(val lastPlayed: Int) : AssistantAnswer
@@ -16,6 +16,8 @@ internal sealed interface AssistantAnswer {
     data object NoDottedLine : AssistantAnswer
     data object NoPendingDecision : AssistantAnswer
     data object ProjectionUnavailable : AssistantAnswer
+    /** The question asks further ahead than the engine simulates. */
+    data object ProjectionTooFar : AssistantAnswer
     data object OutOfScope : AssistantAnswer
     /** The model's wording failed the checks twice, or could not be read. */
     data object Unreliable : AssistantAnswer
@@ -25,7 +27,7 @@ internal sealed interface AssistantAnswer {
 /** Either an app answer without the model, or the facts the model must explain. */
 internal sealed interface Plan {
     data class Answer(val answer: AssistantAnswer) : Plan
-    data class Explain(val facts: FactSheet, val projection: Boolean = false) : Plan
+    data class Explain(val facts: FactSheet, val projectionMonths: Int? = null) : Plan
 }
 
 internal const val MAX_MONTHS_PER_QUESTION = 12
@@ -58,7 +60,7 @@ internal class Assistant(private val model: AssistantModel) {
             val numbers = ReplyGuard.unsupportedNumbers(reply, plan.facts.text)
             val advice = ReplyGuard.advicePhrases(reply)
             if (reply.isNotEmpty() && numbers.isEmpty() && advice.isEmpty()) {
-                return AssistantAnswer.Explanation(reply, plan.projection)
+                return AssistantAnswer.Explanation(reply, plan.projectionMonths)
             }
             correction = AssistantPrompts.correction(numbers, advice)
         }
@@ -98,9 +100,13 @@ internal class Assistant(private val model: AssistantModel) {
                 Topic.PendingDecision ->
                     if (SimulationSessions.pendingDecisions(context.session).isEmpty()) Plan.Answer(AssistantAnswer.NoPendingDecision)
                     else Plan.Explain(AssistantFacts.pendingDecisions(context))
-                Topic.Projection -> AssistantFacts.projection(context)
-                    ?.let { Plan.Explain(it, projection = true) }
-                    ?: Plan.Answer(AssistantAnswer.ProjectionUnavailable)
+                Topic.Projection -> {
+                    val months = extraction.monthsAhead?.takeIf { it >= 1 } ?: AssistantFacts.PROJECTION_MONTHS
+                    if (months > AssistantFacts.PROJECTION_MONTHS) return Plan.Answer(AssistantAnswer.ProjectionTooFar)
+                    AssistantFacts.projection(context, months)
+                        ?.let { Plan.Explain(it, projectionMonths = months) }
+                        ?: Plan.Answer(AssistantAnswer.ProjectionUnavailable)
+                }
                 Topic.Concept -> Plan.Explain(AssistantFacts.concepts(context))
                 Topic.OutOfScope -> Plan.Answer(AssistantAnswer.OutOfScope)
                 Topic.Unclear -> Plan.Answer(AssistantAnswer.Clarification(clarification(extraction.clarification, played, question)))

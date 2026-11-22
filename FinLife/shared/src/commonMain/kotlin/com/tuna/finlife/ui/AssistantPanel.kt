@@ -59,6 +59,7 @@ import finlife.shared.generated.resources.assistant_nothing_played
 import finlife.shared.generated.resources.assistant_out_of_scope
 import finlife.shared.generated.resources.assistant_placeholder
 import finlife.shared.generated.resources.assistant_projection_caption
+import finlife.shared.generated.resources.assistant_projection_too_far
 import finlife.shared.generated.resources.assistant_range_too_long
 import finlife.shared.generated.resources.assistant_rephrase
 import finlife.shared.generated.resources.assistant_retry
@@ -206,9 +207,9 @@ private fun AnswerBubble(answer: AssistantAnswer, modelName: String) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(answerText(answer, modelName), style = MaterialTheme.typography.bodyMedium)
-        if (answer is AssistantAnswer.Explanation && answer.projection) {
+        if (answer is AssistantAnswer.Explanation && answer.projectionMonths != null) {
             Text(
-                stringResource(Res.string.assistant_projection_caption),
+                stringResource(Res.string.assistant_projection_caption, answer.projectionMonths),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -227,6 +228,7 @@ private fun answerText(answer: AssistantAnswer, modelName: String): String = whe
     AssistantAnswer.NoDottedLine -> stringResource(Res.string.assistant_no_dotted_line)
     AssistantAnswer.NoPendingDecision -> stringResource(Res.string.assistant_no_decision)
     AssistantAnswer.ProjectionUnavailable -> stringResource(Res.string.assistant_no_projection)
+    AssistantAnswer.ProjectionTooFar -> stringResource(Res.string.assistant_projection_too_far)
     AssistantAnswer.OutOfScope -> stringResource(Res.string.assistant_out_of_scope)
     AssistantAnswer.Unreliable -> stringResource(Res.string.assistant_unreliable)
     is AssistantAnswer.Unavailable -> problemText(answer.failure, modelName)

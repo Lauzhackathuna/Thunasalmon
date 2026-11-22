@@ -50,6 +50,9 @@ internal class FactSheet(val lines: List<String>) {
 }
 
 internal object AssistantFacts {
+    /** The engine's projection length (FinancialProjections always simulates 12 months). */
+    const val PROJECTION_MONTHS = 12
+
     /** Played months [from]..[to] (player numbering, both included). */
     fun playedMonths(context: AssistantContext, from: Int, to: Int): FactSheet {
         val session = context.session
@@ -96,7 +99,7 @@ internal object AssistantFacts {
         val applied = outcome.application == EventApplication.APPLIED
         return when (val kind = event.kind()) {
             is EventKind.RentRise -> when (rentRiseResult(kind.contractId, outcome, record)) {
-                RentRiseResult.Applied -> "Rent rise of ${percentLabel(kind.annualExtraRate)}% per year on the home: Maya kept the home and accepted the new rent."
+                RentRiseResult.Applied -> "Rent rise of ${percentLabel(kind.annualExtraRate)}% per year on the flat Maya rents: she stayed and accepted the new rent."
                 RentRiseResult.MovedInstead -> "Rent rise announced: Maya moved to the shared flat instead."
                 RentRiseResult.AlreadyRising, RentRiseResult.PreviousHome -> "A rent rise was announced but did not apply."
             }
@@ -110,7 +113,7 @@ internal object AssistantFacts {
                 "Maya accepted a ${kind.months}-month internship at ${m(kind.monthlyIncome, c)} per month." else "Maya continued her studies instead of an internship."
             is EventKind.Housing -> when {
                 applied && outcome.optionId == "move" -> "Maya moved to the shared flat: rent ${m(kind.newRent, c)} per month, moving cost ${m(outcome.chargedCost, c)}."
-                outcome.optionId == "stay" -> "Maya kept her home instead of moving."
+                outcome.optionId == "stay" -> "Maya stayed in the flat she rents instead of moving."
                 else -> "The move did not apply."
             }
             is EventKind.OneOffExpense -> if (applied) "One-off expense: ${m(outcome.chargedCost, c)} charged." else null
@@ -136,13 +139,13 @@ internal object AssistantFacts {
             addAll(statusLines(state, c))
             add(when (state.housing.type) {
                 HousingType.SHARED -> "Housing: shared flat."
-                else -> "Housing: Maya's own home."
+                else -> "Housing: Maya rents a flat on her own (she is a tenant; she does not own it)."
             })
             session.history.lastOrNull()?.let { last ->
                 add("Last played month (month ${last.month + 1}): income ${m(last.flow.income, c)}, expenses ${m(last.flow.expenses, c)}, rent ${m(last.flow.rent, c)}.")
             }
             state.rentRule?.takeIf { it.contractId == state.housing.id }?.let { rule ->
-                add("The rent of the current home rises by ${percentLabel(rule.annualExtraRate)}% per year since month ${rule.startMonth + 1}.")
+                add("The rent of the flat Maya rents rises by ${percentLabel(rule.annualExtraRate)}% per year since month ${rule.startMonth + 1}.")
             }
             if (context.whatIfs.isNotEmpty()) {
                 add("What-ifs switched on for month ${played + 1} (not played yet): ${context.whatIfs.joinToString { whatIfName(it) }}.")
@@ -177,7 +180,7 @@ internal object AssistantFacts {
                 is AlternativeChoice.WithoutWhatIfs ->
                     "Latest choice: in month ${counterfactual.month + 1} Maya switched on ${choice.whatIfs.joinToString { whatIfName(it) }}. " +
                         "The dotted line is the same run without it" +
-                        (if (WhatIf.SharedFlat in choice.whatIfs) " (on the dotted line Maya keeps her own home)" else "") +
+                        (if (WhatIf.SharedFlat in choice.whatIfs) " (on the dotted line Maya stays in the flat she rents alone)" else "") +
                         (if (WhatIf.Internship in choice.whatIfs) " (on the dotted line Maya does not do the internship)" else "") + "."
                 is AlternativeChoice.OtherAnswer -> {
                     val answer = main.selections.firstOrNull { it.eventId == choice.event.id }?.optionId
@@ -230,20 +233,21 @@ internal object AssistantFacts {
     private fun eventDetails(event: LifeEvent, configuration: MonthlyConfiguration, c: String): String? = when (event) {
         is LifeEvent.RentRise -> {
             val shared = MonthlySimulation.sharedHousingChoice(event.month, configuration)
-            "The rent of the home would rise by ${percentLabel(event.rule.annualExtraRate)}% per year. " +
+            "The rent of the flat Maya rents would rise by ${percentLabel(event.rule.annualExtraRate)}% per year. " +
                 "Moving instead goes to the shared flat at ${m(shared.newContract.monthlyRent, c)} per month."
         }
         is LifeEvent.ShortInternshipOffer -> "The offer lasts ${event.durationMonths} months at ${m(event.monthlyIncome, c)} per month, alongside studies."
-        is LifeEvent.HousingChoice -> "The new home costs ${m(event.newContract.monthlyRent, c)} per month; moving costs ${m(event.movingCost, c)}."
+        is LifeEvent.HousingChoice -> "The new rented home costs ${m(event.newContract.monthlyRent, c)} per month; moving costs ${m(event.movingCost, c)}."
         else -> null
     }
 
     /**
-     * The engine's 12-month projection from now under its own assumptions (no random events, nothing
-     * changes), plus its comparison of staying or moving and accepting or declining the 3-month offer.
-     * Null if the engine cannot project from here.
+     * The engine's projection from now under its own assumptions (no random events, nothing changes), plus
+     * its comparison of staying or moving and accepting or declining the 3-month offer. The engine always
+     * simulates 12 months; only the first [months] (1-12) are given. Null if the engine cannot project here.
      */
-    fun projection(context: AssistantContext): FactSheet? {
+    fun projection(context: AssistantContext, months: Int = PROJECTION_MONTHS): FactSheet? {
+        require(months in 1..PROJECTION_MONTHS)
         val session = context.session
         val state = session.currentState
         if (state.month + 12 > MonthlyConfiguration.MAX_MONTHS) return null
@@ -256,29 +260,31 @@ internal object AssistantFacts {
             return null
         }
         val first = state.month + 1
-        val last = state.month + 12
+        val last = state.month + months
         return FactSheet(buildList {
             add("Amounts are in ${c}.")
-            add("12-month projection by the engine, months $first to $last, starting from the current situation. It is a simulation under these assumptions, not a prediction:")
+            add("Projection by the engine for the next $months months, months $first to $last, starting from the current situation. It is a simulation under these assumptions, not a prediction:")
             ProjectionAssumptions.english(session.configuration.annualInflation).forEach { add("- $it") }
-            add(if (state.housing.type == HousingType.SHARED) "Maya lives in the shared flat now." else "Maya lives alone in her own home now (not a shared flat).")
+            add(if (state.housing.type == HousingType.SHARED) "Maya lives in the shared flat now." else "Maya rents a flat on her own now (she is a tenant, not an owner; not a shared flat).")
             add("If nothing changes:")
-            addAll(projectionLines(reference, c))
+            addAll(projectionLines(reference, months, c))
             val scenarios = studiedScenarios(context)
             if (scenarios != null && scenarios.size >= 2) {
-                add("The engine also compared these alternatives over the same 12 months (choices made in month $first):")
+                add("The engine also compared these alternatives over the same $months months (choices made in month $first):")
                 for ((label, projection) in scenarios) {
                     add("$label:")
-                    addAll(projectionLines(projection, c))
+                    addAll(projectionLines(projection, months, c))
                 }
             }
         })
     }
 
-    private fun projectionLines(projection: TwelveMonthProjection, c: String): List<String> {
-        val end = projection.finalState
-        val lowest = projection.states.drop(1).minBy { it.theoreticalCash.cents }
-        val deficit = projection.deficitMonths.map { it + 1 }
+    /** The first [months] months of the engine's 12-month [projection]. */
+    private fun projectionLines(projection: TwelveMonthProjection, months: Int, c: String): List<String> {
+        val states = projection.states.take(months + 1)
+        val end = states.last()
+        val lowest = states.drop(1).minBy { it.theoreticalCash.cents }
+        val deficit = projection.records.take(months).filter { it.needsFinancing }.map { it.month + 1 }
         return listOf(
             "- End of month ${end.month}: net worth ${m(end.netWorth, c)}.",
             "- End of month ${end.month}: balance ${m(end.theoreticalCash, c)}.",
@@ -314,7 +320,7 @@ internal object AssistantFacts {
 
     /** English label for the engine's French scenario label ("Colocation, stage accepté", …). */
     internal fun scenarioLabel(engineLabel: String, offerStudied: Boolean): String {
-        val housing = if (engineLabel.startsWith("Colocation")) "Shared flat" else "Own home (not shared)"
+        val housing = if (engineLabel.startsWith("Colocation")) "Shared flat" else "Current rented flat, alone"
         val internship = when {
             engineLabel.contains("stage accepté") -> "with the 3-month internship"
             offerStudied -> "without the internship"
@@ -332,6 +338,7 @@ internal object AssistantFacts {
         return FactSheet(listOf(
             "Amounts are in ${c}.",
             "FinLife simulates the budget of Maya, a fictional student, month by month, with synthetic data.",
+            "Maya is a tenant: she rents her housing and does not own it.",
             "Net worth = cash + investments − debt − unpaid bills. The chart shows net worth.",
             "Balance = cash on the account minus unpaid bills; it can go below zero. Cash itself never goes below zero: what cannot be paid stays as unpaid bills, and there is no automatic loan.",
             "Prices are indexed at ${percentLabel(configuration.annualInflation)}% inflation per year.",
@@ -340,7 +347,7 @@ internal object AssistantFacts {
             "What-ifs are choices the player can switch on before playing a month: the 3-month internship at ${m(Money.chf(context.internshipSalary), c)} per month alongside studies, " +
                 "and moving to the shared flat at ${m(shared.newContract.monthlyRent, c)} per month with a moving cost of ${m(shared.movingCost, c)}. Once the month is played they cannot be undone.",
             "The dotted line on the chart is the same run with the other side of the latest choice, simulated by the same engine with the same random events. It never goes beyond the months played.",
-            "The 12-month projection is the engine's simulation of the next 12 months if nothing changes, with no random events. It is not a prediction.",
+            "The projection is the engine's simulation of up to the next 12 months if nothing changes, with no random events. It is not a prediction, and nothing beyond 12 months ahead is simulated.",
             "FinLife is a simulation, not financial advice.",
         ))
     }
@@ -373,8 +380,8 @@ internal object AssistantFacts {
     }
 
     private fun optionName(event: LifeEvent, optionId: String): String = when (event) {
-        is LifeEvent.RentRise -> if (optionId == "move") "move to the shared flat" else "keep the home and accept the new rent"
-        is LifeEvent.HousingChoice -> if (optionId == "move") "move" else "keep the home"
+        is LifeEvent.RentRise -> if (optionId == "move") "move to the shared flat" else "stay in her rented flat and accept the new rent"
+        is LifeEvent.HousingChoice -> if (optionId == "move") "move" else "stay in her rented flat"
         is LifeEvent.ShortInternshipOffer, is LifeEvent.Internship -> if (optionId == "accept") "accept the internship" else "decline the internship"
         else -> if (optionId == "first") "first option" else "second option"
     }

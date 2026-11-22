@@ -125,7 +125,7 @@ class AssistantTest {
     @Test
     fun projectionFactsAreTheEngineProjection() {
         val explain = assertIs<Plan.Explain>(plan(Extraction(Topic.Projection)))
-        assertTrue(explain.projection)
+        assertEquals(12, explain.projectionMonths)
         val reference = FinancialProjections.nothingChanges(played)
         val end = reference.finalState
         assertTrue("End of month ${played.currentMonth + 12}: net worth ${m(end.netWorth, "CHF")}" in explain.facts.text, explain.facts.text)
@@ -134,10 +134,29 @@ class AssistantTest {
     }
 
     @Test
+    fun aShorterHorizonGivesOnlyThoseMonthsOfTheEngineProjection() {
+        val explain = assertIs<Plan.Explain>(plan(Extraction(Topic.Projection, monthsAhead = 3)))
+        assertEquals(3, explain.projectionMonths)
+        val third = FinancialProjections.nothingChanges(played).states[3]
+        assertTrue("End of month ${played.currentMonth + 3}: net worth ${m(third.netWorth, "CHF")}" in explain.facts.text, explain.facts.text)
+        assertTrue("months ${played.currentMonth + 1} to ${played.currentMonth + 3}" in explain.facts.text)
+        assertTrue("End of month ${played.currentMonth + 4}:" !in explain.facts.text)
+        assertEquals(Plan.Answer(AssistantAnswer.ProjectionTooFar), plan(Extraction(Topic.Projection, monthsAhead = 24)))
+        assertEquals(12, assertIs<Plan.Explain>(plan(Extraction(Topic.Projection, monthsAhead = 0))).projectionMonths)
+    }
+
+    @Test
+    fun housingIsDescribedAsRented() {
+        val text = AssistantFacts.current(context(played)).text + AssistantFacts.concepts(context(played)).text
+        assertTrue("does not own it" in text, text)
+        assertTrue(listOf("own home", "Own home", "keep the home", "kept the home").none { it in text }, text)
+    }
+
+    @Test
     fun studiedScenariosGetEnglishLabels() {
         val scenarios = assertNotNull(AssistantFacts.studiedScenarios(context(played)))
         assertEquals(
-            setOf("Own home (not shared), without the internship", "Own home (not shared), with the 3-month internship",
+            setOf("Current rented flat, alone, without the internship", "Current rented flat, alone, with the 3-month internship",
                 "Shared flat, without the internship", "Shared flat, with the 3-month internship"),
             scenarios.map { it.first }.toSet(),
         )
@@ -159,7 +178,7 @@ class AssistantTest {
         val difference = MonthlyComparisons.compare(main, counterfactual.alternative, main.currentMonth).nominalNetWorth
         val words = if (difference.cents > 0) "more" else "less"
         assertTrue("Maya's path has ${m(Money(kotlin.math.abs(difference.cents)), "CHF")} $words net worth than the dotted line" in facts, facts)
-        assertTrue("on the dotted line Maya keeps her own home" in facts, facts)
+        assertTrue("on the dotted line Maya stays in the flat she rents alone" in facts, facts)
         assertTrue("switched on the move to the shared flat" in facts, facts)
     }
 
@@ -203,7 +222,7 @@ class AssistantTest {
     fun aCheckedReplyIsShown() {
         val income = m(played.history[1].flow.income, "CHF")
         val model = FakeModel(extractions = listOf(month2), replies = listOf(ModelResult.Ok("In month 2 Maya received $income.")))
-        assertEquals(AssistantAnswer.Explanation("In month 2 Maya received $income.", projection = false), ask(model))
+        assertEquals(AssistantAnswer.Explanation("In month 2 Maya received $income."), ask(model))
         val (system, user) = model.explainCalls.single()
         assertTrue("Never calculate new numbers" in system && "English" in system)
         assertTrue(user.startsWith("QUESTION:\nWhat happened in month 2?") && "FACTS:\n" in user)

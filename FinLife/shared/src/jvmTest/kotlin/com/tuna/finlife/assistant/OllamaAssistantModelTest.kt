@@ -98,6 +98,8 @@ class OllamaAssistantModelTest {
             OllamaAssistantModel.parseExtraction("""{"topic":"played_months","month":2.0,"end_month":"4","clarification":null}"""))
         assertEquals(Extraction(Topic.Unclear, clarification = "Which month?"),
             OllamaAssistantModel.parseExtraction("""{"topic":"unclear","month":null,"end_month":null,"clarification":"Which month?"}"""))
+        assertEquals(Extraction(Topic.Projection, monthsAhead = 3),
+            OllamaAssistantModel.parseExtraction("""{"topic":"projection","month":null,"end_month":null,"months_ahead":3,"clarification":null}"""))
         assertEquals(Extraction(Topic.Current, month = null),
             OllamaAssistantModel.parseExtraction("""{"topic":"current","month":2.5,"end_month":null,"clarification":null}"""))
         assertEquals("{}", OllamaAssistantModel.stripThinking("<think>\nhmm 1200\n</think>\n{}"))
