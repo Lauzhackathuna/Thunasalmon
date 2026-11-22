@@ -40,47 +40,47 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit) {
     GameSheet(onDismiss = onDismiss) {
-        ScreenHeading(stringResource(Res.string.assumptions_title))
-        Text(stringResource(Res.string.assumptions_intro), style = MaterialTheme.typography.bodyMedium)
+        ScreenHeading(playerStringResource(Res.string.assumptions_title))
+        Text(playerStringResource(Res.string.assumptions_intro), style = MaterialTheme.typography.bodyMedium)
         Section(Res.string.assumptions_section_start) {
-            LedgerLine(stringResource(Res.string.assumptions_opening_cash), money(values.openingCash))
+            LedgerLine(playerStringResource(Res.string.assumptions_opening_cash), money(values.openingCash))
         }
         Section(Res.string.assumptions_section_income) {
-            LedgerLine(stringResource(Res.string.assumptions_parent_income), money(values.parentIncome))
-            LedgerLine(stringResource(Res.string.assumptions_internship, values.internshipMonths), money(values.internshipMonthlyPay))
-            LedgerLine(stringResource(Res.string.assumptions_salary), money(values.salaryAfterStudies))
-            LedgerLine(stringResource(Res.string.assumptions_salary_growth), percent(values.annualSalaryGrowth))
-            LedgerLine(stringResource(Res.string.assumptions_salary_tax), percent(values.salaryTaxRate))
+            LedgerLine(playerStringResource(Res.string.assumptions_parent_income), money(values.parentIncome))
+            LedgerLine(playerStringResource(Res.string.assumptions_internship, values.internshipMonths), money(values.internshipMonthlyPay))
+            LedgerLine(playerStringResource(Res.string.assumptions_salary), money(values.salaryAfterStudies))
+            LedgerLine(playerStringResource(Res.string.assumptions_salary_growth), percent(values.annualSalaryGrowth))
+            LedgerLine(playerStringResource(Res.string.assumptions_salary_tax), percent(values.salaryTaxRate))
         }
         Section(Res.string.assumptions_section_studies) {
-            LedgerLine(stringResource(Res.string.assumptions_study_length), stringResource(Res.string.assumptions_months, values.studyMonths))
-            LedgerLine(stringResource(Res.string.assumptions_tuition, values.tuitionEveryMonths), money(values.tuition))
+            LedgerLine(playerStringResource(Res.string.assumptions_study_length), playerStringResource(Res.string.assumptions_months, values.studyMonths))
+            LedgerLine(playerStringResource(Res.string.assumptions_tuition, values.tuitionEveryMonths), money(values.tuition))
         }
         Section(Res.string.assumptions_section_costs) {
-            LedgerLine(stringResource(Res.string.assumptions_rent), money(values.rent))
-            LedgerLine(stringResource(Res.string.assumptions_insurance), money(values.healthInsurance))
-            LedgerLine(stringResource(Res.string.assumptions_groceries), money(values.groceries))
-            LedgerLine(stringResource(Res.string.assumptions_other), money(values.otherExpenses))
-            LedgerLine(stringResource(Res.string.assumptions_inflation), percent(values.annualInflation))
+            LedgerLine(playerStringResource(Res.string.assumptions_rent), money(values.rent))
+            LedgerLine(playerStringResource(Res.string.assumptions_insurance), money(values.healthInsurance))
+            LedgerLine(playerStringResource(Res.string.assumptions_groceries), money(values.groceries))
+            LedgerLine(playerStringResource(Res.string.assumptions_other), money(values.otherExpenses))
+            LedgerLine(playerStringResource(Res.string.assumptions_inflation), percent(values.annualInflation))
         }
         Section(Res.string.assumptions_section_housing) {
-            LedgerLine(stringResource(Res.string.assumptions_shared_rent), money(values.sharedFlatRent))
-            LedgerLine(stringResource(Res.string.assumptions_moving), money(values.sharedFlatMovingCost))
-            LedgerLine(stringResource(Res.string.assumptions_rent_rise), percent(values.rentRiseAnnualRate))
+            LedgerLine(playerStringResource(Res.string.assumptions_shared_rent), money(values.sharedFlatRent))
+            LedgerLine(playerStringResource(Res.string.assumptions_moving), money(values.sharedFlatMovingCost))
+            LedgerLine(playerStringResource(Res.string.assumptions_rent_rise), percent(values.rentRiseAnnualRate))
         }
         Section(Res.string.assumptions_section_random) {
-            Text(stringResource(Res.string.assumptions_rent_rise_odds, values.rentRiseOdds, values.maxRentRisesPerBlock, values.blockMonths))
-            Text(stringResource(Res.string.assumptions_repair_odds, money(values.repairCost), values.repairOdds,
+            Text(playerStringResource(Res.string.assumptions_rent_rise_odds, values.rentRiseOdds, values.maxRentRisesPerBlock, values.blockMonths))
+            Text(playerStringResource(Res.string.assumptions_repair_odds, money(values.repairCost), values.repairOdds,
                 values.maxRepairsPerBlock, values.blockMonths))
         }
         Section(Res.string.assumptions_section_goal) {
-            Text(stringResource(Res.string.goal_target, money(values.goal.nominalAmount), values.goal.dueMonth))
+            Text(playerStringResource(Res.string.goal_target, money(values.goal.nominalAmount), values.goal.dueMonth))
         }
         Section(Res.string.assumptions_section_rules) {
-            Text(stringResource(Res.string.assumptions_rule_cash))
-            if (values.investmentShare == 0.0) Text(stringResource(Res.string.assumptions_rule_savings))
-            Text(stringResource(if (values.salaryTaxRate > 0.0) Res.string.assumptions_rule_taxes_salary else Res.string.assumptions_rule_taxes))
-            Text(stringResource(Res.string.assumptions_rule_outlook))
+            Text(playerStringResource(Res.string.assumptions_rule_cash))
+            if (values.investmentShare == 0.0) Text(playerStringResource(Res.string.assumptions_rule_savings))
+            Text(playerStringResource(if (values.salaryTaxRate > 0.0) Res.string.assumptions_rule_taxes_salary else Res.string.assumptions_rule_taxes))
+            Text(playerStringResource(Res.string.assumptions_rule_outlook))
         }
     }
 }
@@ -88,7 +88,7 @@ internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit) {
 @Composable
 private fun Section(title: StringResource, content: @Composable () -> Unit) {
     HorizontalDivider()
-    Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+    Text(playerStringResource(title), style = MaterialTheme.typography.titleMedium)
     content()
 }
 
@@ -99,14 +99,14 @@ private fun percent(rate: Double) = percentLabel(rate) + " %"
 internal fun GoalProgressView(progress: GoalProgress) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Title on its own line: beside a long target, a narrow screen would squeeze it into a column.
-        Text(stringResource(Res.string.goal_title), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(stringResource(Res.string.goal_target, money(progress.goal.nominalAmount), progress.goal.dueMonth),
+        Text(playerStringResource(Res.string.goal_title), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(playerStringResource(Res.string.goal_target, money(progress.goal.nominalAmount), progress.goal.dueMonth),
             style = MaterialTheme.typography.labelLarge)
         val fraction = (progress.percentage / 100.0).coerceIn(0.0, 1.0).toFloat()
         LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
         Text(
-            stringResource(Res.string.goal_progress, progress.percentage.coerceAtLeast(0.0).toInt()) +
-                if (progress.dueDateSimulated) " " + stringResource(Res.string.goal_due) else "",
+            playerStringResource(Res.string.goal_progress, progress.percentage.coerceAtLeast(0.0).toInt()) +
+                if (progress.dueDateSimulated) " " + playerStringResource(Res.string.goal_due) else "",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -128,28 +128,28 @@ internal fun SensitivityPanel(draft: WhatIfDraft, unchanged: AdventureOutlook) {
         if (sensitivity.isNeutral) null
         else runCatching { AdventureOutlook.calculate(draft.base, draft.internshipSalary, sensitivity) }.getOrNull()
     }
-    Text(stringResource(Res.string.sensitivity_title), style = MaterialTheme.typography.titleMedium)
-    Text(stringResource(Res.string.sensitivity_hint), style = MaterialTheme.typography.bodySmall,
+    Text(playerStringResource(Res.string.sensitivity_title), style = MaterialTheme.typography.titleMedium)
+    Text(playerStringResource(Res.string.sensitivity_hint), style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
-    PercentSlider(stringResource(Res.string.sensitivity_rent, signedPercent(rent)), rent) { rent = it }
-    PercentSlider(stringResource(Res.string.sensitivity_income, signedPercent(income)), income) { income = it }
+    PercentSlider(playerStringResource(Res.string.sensitivity_rent, signedPercent(rent)), rent) { rent = it }
+    PercentSlider(playerStringResource(Res.string.sensitivity_income, signedPercent(income)), income) { income = it }
     if (!sensitivity.isNeutral) {
-        TextButton(onClick = { rent = 0; income = 0 }) { Text(stringResource(Res.string.sensitivity_reset)) }
+        TextButton(onClick = { rent = 0; income = 0 }) { Text(playerStringResource(Res.string.sensitivity_reset)) }
     }
     if (adjusted != null) {
         val option = adjusted.selected(draft.selected)
         val reference = unchanged.selected(draft.selected)
-        Text(stringResource(Res.string.sensitivity_result), style = MaterialTheme.typography.labelLarge)
+        Text(playerStringResource(Res.string.sensitivity_result), style = MaterialTheme.typography.labelLarge)
         Text(metricLabel(metric), style = MaterialTheme.typography.labelSmall)
         for (offset in listOf(3, 6, 12)) {
-            LedgerLine(stringResource(Res.string.checkpoint, offset), money(metric.value(option.at(offset))))
+            LedgerLine(playerStringResource(Res.string.checkpoint, offset), money(metric.value(option.at(offset))))
             Text(
-                stringResource(Res.string.sensitivity_difference,
+                playerStringResource(Res.string.sensitivity_difference,
                     signedMoney(metric.value(option.at(offset)) - metric.value(reference.at(offset)))),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
-        Text(stringResource(Res.string.sensitivity_stability, stabilityLabel(option.stability.category)),
+        Text(playerStringResource(Res.string.sensitivity_stability, stabilityLabel(option.stability.category)),
             style = MaterialTheme.typography.labelLarge)
     }
 }
@@ -183,17 +183,17 @@ private fun signedMoney(value: Money): String =
 internal fun DifferenceBreakdownCard(breakdown: DifferenceBreakdown, modifier: Modifier = Modifier) {
     OutlinedCard(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(FinLifeSpacing.medium), verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
-            Text(stringResource(Res.string.breakdown_title), style = MaterialTheme.typography.titleMedium)
+            Text(playerStringResource(Res.string.breakdown_title), style = MaterialTheme.typography.titleMedium)
             Text(when {
-                breakdown.total > Money.ZERO -> stringResource(Res.string.breakdown_more, breakdown.month, money(breakdown.total))
-                breakdown.total < Money.ZERO -> stringResource(Res.string.breakdown_less, breakdown.month, money(-breakdown.total))
-                else -> stringResource(Res.string.breakdown_same, breakdown.month)
+                breakdown.total > Money.ZERO -> playerStringResource(Res.string.breakdown_more, breakdown.month, money(breakdown.total))
+                breakdown.total < Money.ZERO -> playerStringResource(Res.string.breakdown_less, breakdown.month, money(-breakdown.total))
+                else -> playerStringResource(Res.string.breakdown_same, breakdown.month)
             })
             if (breakdown.effects.isNotEmpty()) {
-                Text(stringResource(Res.string.breakdown_items, breakdown.fromMonth + 1),
+                Text(playerStringResource(Res.string.breakdown_items, breakdown.fromMonth + 1),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 for (effect in breakdown.effects) {
-                    LedgerLine(stringResource(effect.item.label), signedMoney(effect.effect))
+                    LedgerLine(playerStringResource(effect.item.label), signedMoney(effect.effect))
                 }
             }
         }
