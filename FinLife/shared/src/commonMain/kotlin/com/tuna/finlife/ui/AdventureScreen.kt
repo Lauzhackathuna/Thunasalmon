@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.BalanceMetric
 import com.tuna.finlife.game.StartingData
 import com.tuna.finlife.game.Counterfactual
 import com.tuna.finlife.game.WhatIf
@@ -37,6 +38,7 @@ import com.tuna.finlife.simulation.MonthlySimulation
 import com.tuna.finlife.simulation.PendingDecision
 import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
+import com.tuna.finlife.simulation.TwelveMonthProjection
 import com.tuna.finlife.simulation.SimulationSessions
 import finlife.shared.generated.resources.*
 import androidx.compose.ui.unit.dp
@@ -90,12 +92,25 @@ internal fun AdventureScreen(
     }
     var whatIfOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
+    var chartMetric by remember { mutableStateOf(BalanceMetric.Cash) }
+    val outlook = rememberOutlook(whatIfDraft).getOrNull()
+    val selectedProjection = outlook?.selected(whatIfDraft.selected)?.projection
+    val baselineProjection = outlook?.baseline?.projection
     if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
     if (detailsOpen) FinancialDetailsSheet(session.currentState, record, startingData, onUpdateAmounts) { detailsOpen = false }
     GameScreen(
         onOpenSettings = onOpenSettings,
         sidePanel = sidePanel,
-        header = { AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty()) { detailsOpen = true } },
+        dockSidePanel = true,
+        dashboardFocus = true,
+        header = {
+            AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty(),
+                projection = if (pending.isEmpty()) selectedProjection else null,
+                baseline = if (pending.isEmpty() && whatIfDraft.selected.isNotEmpty()) baselineProjection else null,
+                chartMetric = chartMetric,
+                onMetricChange = { chartMetric = it },
+                onShowDetails = { detailsOpen = true })
+        },
         actions = {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
@@ -156,7 +171,7 @@ internal fun AdventureScreen(
                     if (session.status == SessionStatus.COMPLETED) Text(stringResource(Res.string.simulation_complete))
                 }
             }
-            OutlookCard(whatIfDraft)
+            OutlookCard(whatIfDraft, chartMetric, outlook)
         }
     }
 }
@@ -181,7 +196,7 @@ private fun WhatIfDialog(draft: WhatIfDraft, onToggle: (WhatIf, Boolean) -> Unit
                 Switch(checked = on, onCheckedChange = null, enabled = enabled)
             }
         }
-        FuturePreview(draft)
+        Text(stringResource(Res.string.whatif_dashboard_hint), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -197,6 +212,10 @@ private fun AdventureFinances(
     record: MonthlyRecord?,
     counterfactual: Counterfactual?,
     showHistory: Boolean,
+    projection: TwelveMonthProjection?,
+    baseline: TwelveMonthProjection?,
+    chartMetric: BalanceMetric,
+    onMetricChange: (BalanceMetric) -> Unit,
     onShowDetails: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
@@ -212,8 +231,13 @@ private fun AdventureFinances(
             }
             HorizontalDivider()
             LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))
+            LedgerLine(stringResource(Res.string.theoretical_balance), money(session.currentState.theoreticalCash))
+            if (session.currentState.netWorth == session.currentState.theoreticalCash &&
+                session.currentState.investments == Money.ZERO && session.currentState.debt == Money.ZERO) {
+                Text(stringResource(Res.string.equal_metrics_hint),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             if (session.currentState.unpaid.items.isNotEmpty()) {
-                LedgerLine(stringResource(Res.string.theoretical_balance), money(session.currentState.theoreticalCash))
                 Text(stringResource(Res.string.shortfall_hint), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
             if (record != null && showHistory) {
@@ -224,7 +248,18 @@ private fun AdventureFinances(
                 if (record != null) Text(money(record.flow.expenses), style = MaterialTheme.typography.labelLarge)
                 TextButton(onClick = onShowDetails) { Text(stringResource(Res.string.financial_details)) }
             }
-            CashChart(session, counterfactual, Modifier.fillMaxWidth())
+        }
+        OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+            Column(
+                modifier = Modifier.padding(FinLifeSpacing.large),
+                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            ) {
+                Text(stringResource(Res.string.dashboard_timeline_title),
+                    style = MaterialTheme.typography.titleLarge)
+                CashChart(session, counterfactual, Modifier.fillMaxWidth(),
+                    projection = projection, baseline = baseline, combineHistory = projection != null,
+                    selectedMetric = chartMetric, onSelectMetric = onMetricChange)
+            }
         }
     }
 }
