@@ -101,7 +101,7 @@ internal fun AdventureScreen(
     GameScreen(
         onOpenSettings = onOpenSettings,
         sidePanel = sidePanel,
-        dockSidePanel = false,
+        dockSidePanel = true,
         dashboardFocus = true,
         header = {
             AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty(),
