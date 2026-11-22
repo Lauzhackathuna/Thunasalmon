@@ -17,6 +17,7 @@ internal enum class FlowItem(val sign: Int, val read: (MonthlyFlow) -> Money) {
     UnexpectedCosts(-1, { it.exceptionalExpenses }),
     DecisionCosts(-1, { it.decisionCosts }),
     Interest(-1, { it.interest }),
+    Taxes(-1, { it.taxes }),
     InvestmentReturn(+1, { it.investmentReturn }),
 }
 

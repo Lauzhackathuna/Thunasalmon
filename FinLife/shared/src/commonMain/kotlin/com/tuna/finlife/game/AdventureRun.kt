@@ -37,6 +37,9 @@ internal enum class WhatIfState {
  * engine calendar through [SimulationSessions.schedule], so all money comes from the engine.
  */
 internal object AdventureRun {
+    /** Flat synthetic share of the salary paid as taxes and social contributions (team assumption). */
+    const val SALARY_TAX_RATE = 0.20
+
     /** [seed] drives the random problems; a new one per run unless given (tests). */
     fun start(seed: Long = Random.nextLong(), data: StartingData = StartingData.Default): SimulationSession {
         return openMonth(createSession(seed, data))
@@ -70,6 +73,8 @@ internal object AdventureRun {
                 sharedMovingCost = Money.chf(data.sharedFlatMovingCost),
                 // The engine's own random calendar is off: problems come from RandomTroubles only.
                 randomEvents = RandomEventSettings(enabled = false),
+                // Synthetic team assumption: taxes and social contributions on the salary after studies.
+                incomeTaxRate = SALARY_TAX_RATE,
             ),
             events = events,
         )

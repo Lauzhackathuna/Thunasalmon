@@ -10,6 +10,7 @@
     <string name="assumptions_parent_income">Des parents, chaque mois (non indexé à l’inflation)</string>
     <string name="assumptions_internship">Scénario stage, par mois pendant %1$d mois</string>
     <string name="assumptions_salary">Salaire après les études, par mois</string>
+    <string name="assumptions_salary_tax">Impôts et cotisations sociales sur le salaire</string>
     <string name="assumptions_salary_growth">Hausse du salaire par an</string>
     <string name="assumptions_section_studies">Études</string>
     <string name="assumptions_study_length">Durée des études</string>
@@ -30,6 +31,7 @@
     <string name="assumptions_repair_odds">Réparation de %1$s : 1 chance sur %2$d chaque mois, au plus %3$d tous les %4$d mois.</string>
     <string name="assumptions_section_rules">Règles</string>
     <string name="assumptions_rule_cash">Le solde du compte ne descend jamais sous 0 : ce qui ne peut pas être payé devient une facture impayée, reportée au mois suivant. Il n’y a aucun prêt automatique.</string>
+    <string name="assumptions_rule_taxes_salary">Seul le salaire est imposé, à un taux forfaitaire synthétique. Le revenu des parents et la rémunération du stage ne sont pas imposés.</string>
     <string name="assumptions_rule_savings">L’épargne n’est pas investie.</string>
     <string name="assumptions_rule_taxes">Les impôts ne sont pas modélisés.</string>
     <string name="assumptions_rule_outlook">Les perspectives sur 12 mois supposent que rien ne change et ne tirent aucun nouveau problème aléatoire.</string>
@@ -65,5 +67,6 @@
     <string name="breakdown_unexpected">Dépenses imprévues</string>
     <string name="breakdown_decisions">Déménagement et coûts des décisions</string>
     <string name="breakdown_interest">Intérêts</string>
+    <string name="breakdown_taxes">Impôts sur le salaire</string>
     <string name="breakdown_return">Rendement des placements</string>
 </resources>

@@ -143,9 +143,12 @@ data class MonthlyConfiguration(
     val assumptionsProvenance: DataProvenance = DataProvenance.TEAM_ASSUMPTION,
     val sharedReferenceRent: Money = Money.chf(800),
     val sharedMovingCost: Money = Money.ZERO,
+    /** Flat share of the salary (professional income) paid as taxes and social contributions. 0 = no taxes. */
+    val incomeTaxRate: Double = 0.0,
 ) {
     init {
         requireCost(sharedReferenceRent); requireCost(sharedMovingCost)
+        require(incomeTaxRate.isFinite() && incomeTaxRate in 0.0..1.0)
         require(horizonMonths in 1..MAX_MONTHS)
         validateRate(annualInflation); validateRate(annualSalaryGrowth); validateRate(annualInvestmentReturn)
         require(annualDebtInterest.isFinite() && annualDebtInterest in 0.0..1.0)
@@ -224,12 +227,14 @@ data class MonthlyFlow(
     val principalRepayment: Money = Money.ZERO,
     val investmentContribution: Money = Money.ZERO,
     val investmentReturn: Money = Money.ZERO,
+    /** Taxes and social contributions on the salary (MonthlyConfiguration.incomeTaxRate). */
+    val taxes: Money = Money.ZERO,
     /** Actual cash payments, including older arrears. expenses remains this month's accrued expense. */
-    val paidExpenses: Money = rent + healthInsurance + groceries + otherExpenses + tuition + exceptionalExpenses + decisionCosts + interest,
+    val paidExpenses: Money = rent + healthInsurance + groceries + otherExpenses + tuition + exceptionalExpenses + decisionCosts + interest + taxes,
 ) {
     val income: Money get() = studentIncome + internshipIncome + professionalIncome
     val recurringExpenses: Money get() = rent + healthInsurance + groceries + otherExpenses
-    val expenses: Money get() = recurringExpenses + tuition + exceptionalExpenses + decisionCosts + interest
+    val expenses: Money get() = recurringExpenses + tuition + exceptionalExpenses + decisionCosts + interest + taxes
     val netCashFlow: Money get() = income + newBorrowing - paidExpenses - principalRepayment
     val netWorthChange: Money get() = income - expenses + investmentReturn
 }

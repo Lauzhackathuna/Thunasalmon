@@ -107,7 +107,7 @@ object BudgetEnvelopes {
                 else -> Money.ZERO
             }
         }.total()
-        return EnvelopeBalances(flow.rent, flow.healthInsurance, flow.groceries, studies, flow.otherExpenses + futureBills)
+        return EnvelopeBalances(flow.rent, flow.healthInsurance, flow.groceries, studies, flow.otherExpenses + flow.taxes + futureBills)
     }
 
     fun settle(before: EnvelopeBalances, income: Money, borrowing: Money, targets: EnvelopeBalances,

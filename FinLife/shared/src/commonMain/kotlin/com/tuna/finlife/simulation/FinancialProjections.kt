@@ -143,9 +143,10 @@ object FinancialStabilityAnalysis {
         require(comparison == null || comparison.reference.initialState == projection.initialState)
         val terminal = projection.finalState
         val index = configuration.priceIndex(terminal.month)
+        val terminalSalary = if (terminal.status == LifeStatus.EMPLOYED) profile.startingMonthlySalary.scaled(
+            (1.0 + configuration.annualSalaryGrowth).pow((terminal.month - requireNotNull(terminal.careerStartMonth)) / 12)) else Money.ZERO
         val terminalFlow = MonthlyFlow(
-            professionalIncome = if (terminal.status == LifeStatus.EMPLOYED) profile.startingMonthlySalary.scaled(
-                (1.0 + configuration.annualSalaryGrowth).pow((terminal.month - requireNotNull(terminal.careerStartMonth)) / 12)) else Money.ZERO,
+            professionalIncome = terminalSalary, taxes = terminalSalary.scaled(configuration.incomeTaxRate),
             rent = MonthlySimulation.rentAt(terminal, configuration), healthInsurance = profile.healthInsurance.scaled(index),
             groceries = profile.groceries.scaled(index), otherExpenses = profile.otherExpenses.scaled(index),
             interest = terminal.debt.scaled(FinancialSimulation.effectiveMonthlyRate(configuration.annualDebtInterest)))
@@ -156,7 +157,7 @@ object FinancialStabilityAnalysis {
                 flow.otherExpenses.scaled(settings.essentialOtherShare)
             // S005 and the short internship are temporary; neither finances permanent commitments.
             val permanentIncome = if (state.studyMonthsRemaining > 0) profile.studentMonthlyIncome else flow.professionalIncome
-            val balance = permanentIncome - flow.recurringExpenses - tuition - flow.interest
+            val balance = permanentIncome - flow.recurringExpenses - tuition - flow.interest - flow.taxes
             val uncommitted = (state.cash - state.accountsPayable -
                 (state.envelopes.total - state.envelopes.reserve)).nonNegative()
             MonthlyCoverage(state.month, essential, state.envelopes.reserve, state.cash,

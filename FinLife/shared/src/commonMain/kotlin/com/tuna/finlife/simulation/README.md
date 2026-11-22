@@ -304,3 +304,7 @@ une politique explicite de deux échéances académiques, pas d'optimiseur globa
 Les cibles n'anticipent pas l'acceptation d'une proposition encore non décidée. Une nouvelle information
 recalcule le budget au prochain mois. La colocation ne comporte ni préavis ni coût par défaut.
 Le moteur ne certifie pas la solvabilité réelle ni la conformité de chaque hypothèse à un contrat UBS.
+
+## Impôts sur le salaire
+
+`MonthlyConfiguration.incomeTaxRate` (0 par défaut) prélève une part fixe du salaire (`professionalIncome`) au titre des impôts et cotisations sociales. Le montant apparaît dans `MonthlyFlow.taxes`, compte dans les dépenses et se paie depuis l'enveloppe OTHER comme les autres obligations. Le revenu étudiant et la rémunération des stages ne sont pas imposés. Taux forfaitaire synthétique, pas un barème fiscal réel.

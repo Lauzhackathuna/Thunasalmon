@@ -83,6 +83,7 @@ internal object AssistantFacts {
                 "unexpected costs" to flow.exceptionalExpenses,
                 "decision costs" to flow.decisionCosts,
                 "interest" to flow.interest,
+                "taxes on salary" to flow.taxes,
             ) + ".")
             add("- Net worth: ${m(record.before.netWorth, c)} at the start, ${m(record.after.netWorth, c)} at the end (change ${m(record.netWorthChange, c)}).")
             add("- Balance (cash minus unpaid bills): ${m(record.before.theoreticalCash, c)} at the start, ${m(record.after.theoreticalCash, c)} at the end.")
@@ -342,6 +343,8 @@ internal object AssistantFacts {
             "Net worth = cash + investments − debt − unpaid bills. The chart shows net worth.",
             "Balance = cash on the account minus unpaid bills; it can go below zero. Cash itself never goes below zero: what cannot be paid stays as unpaid bills, and there is no automatic loan.",
             "Prices are indexed at ${percentLabel(configuration.annualInflation)}% inflation per year.",
+            if (configuration.incomeTaxRate > 0.0) "Once Maya earns a salary, ${percentLabel(configuration.incomeTaxRate)}% of it goes to taxes and social contributions (a flat synthetic rate). Income from parents and internship pay are not taxed."
+            else "Taxes are not modelled.",
             "Random problems are drawn each month: a rent rise with probability 1 in ${RandomTroubles.RENT_ODDS}, at most ${RandomTroubles.MAX_RENT_RISES_PER_BLOCK} per ${RandomTroubles.BLOCK_MONTHS} months, raising the rent by ${percentLabel(rentRise)}% per year; " +
                 "and a maintenance bill of ${m(RandomTroubles.MAINTENANCE_COST, c)} with probability 1 in ${RandomTroubles.MAINTENANCE_ODDS}, at most ${RandomTroubles.MAX_MAINTENANCE_PER_BLOCK} per ${RandomTroubles.BLOCK_MONTHS} months.",
             "What-ifs are choices the player can switch on before playing a month: the 3-month internship at ${m(Money.chf(context.internshipSalary), c)} per month alongside studies, " +

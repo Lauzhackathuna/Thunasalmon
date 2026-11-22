@@ -10,6 +10,7 @@
     <string name="assumptions_parent_income">From parents, each month (not indexed to inflation)</string>
     <string name="assumptions_internship">Internship what-if, per month for %1$d months</string>
     <string name="assumptions_salary">Salary after studies, each month</string>
+    <string name="assumptions_salary_tax">Taxes and social contributions on salary</string>
     <string name="assumptions_salary_growth">Salary rise per year</string>
     <string name="assumptions_section_studies">Studies</string>
     <string name="assumptions_study_length">Length of studies</string>
@@ -30,6 +31,7 @@
     <string name="assumptions_repair_odds">Repair bill of %1$s: 1 chance in %2$d each month, at most %3$d every %4$d months.</string>
     <string name="assumptions_section_rules">Rules</string>
     <string name="assumptions_rule_cash">Cash never goes below 0: what can’t be paid becomes an unpaid bill, carried to the next month. There is no automatic loan.</string>
+    <string name="assumptions_rule_taxes_salary">Only the salary is taxed, at one flat synthetic rate. Income from parents and internship pay are not taxed.</string>
     <string name="assumptions_rule_savings">Savings are not invested.</string>
     <string name="assumptions_rule_taxes">Taxes are not modelled.</string>
     <string name="assumptions_rule_outlook">The 12-month outlook assumes nothing changes and draws no new random problems.</string>
@@ -65,5 +67,6 @@
     <string name="breakdown_unexpected">Unexpected costs</string>
     <string name="breakdown_decisions">Moving and decision costs</string>
     <string name="breakdown_interest">Interest</string>
+    <string name="breakdown_taxes">Taxes on salary</string>
     <string name="breakdown_return">Investment return</string>
 </resources>

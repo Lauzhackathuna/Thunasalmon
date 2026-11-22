@@ -7,6 +7,7 @@
     <string name="financial_edit_error">Ces montants n’ont pas pu être appliqués à la partie en cours. Vérifiez les valeurs et réessayez.</string>
     <string name="no_closed_month">Le détail apparaîtra à la clôture du premier mois.</string>
     <string name="field_internship_salary">Salaire mensuel du stage</string>
+    <string name="tax_expense">Impôts sur le salaire</string>
     <string name="interest_expense">Intérêts</string>
     <string name="paid_expenses">Dépenses payées</string>
 </resources>

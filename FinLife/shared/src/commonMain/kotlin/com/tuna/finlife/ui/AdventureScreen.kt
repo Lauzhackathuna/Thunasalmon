@@ -167,6 +167,9 @@ internal fun AdventureScreen(
                         if (record.flow.exceptionalExpenses > Money.ZERO) {
                             LedgerLine(stringResource(Res.string.unexpected_costs), money(record.flow.exceptionalExpenses))
                         }
+                        if (record.flow.taxes > Money.ZERO) {
+                            LedgerLine(stringResource(Res.string.tax_expense), money(record.flow.taxes))
+                        }
                         if (record.flow.tuition > Money.ZERO) Text(stringResource(Res.string.event_tuition, money(record.flow.tuition)))
                         if (record.before.shortInternship?.active(record.month) == true && record.after.shortInternship?.active(record.after.month) == false)
                             Text(stringResource(Res.string.event_stage_end))

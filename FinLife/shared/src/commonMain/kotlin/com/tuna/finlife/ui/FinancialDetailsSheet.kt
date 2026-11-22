@@ -102,6 +102,7 @@ internal fun FinancialDetailsSheet(
                 if (flow.exceptionalExpenses != Money.ZERO) LedgerLine(stringResource(Res.string.unexpected_costs), money(flow.exceptionalExpenses))
                 if (flow.decisionCosts != Money.ZERO) LedgerLine(stringResource(Res.string.decision_costs), money(flow.decisionCosts))
                 if (flow.interest != Money.ZERO) LedgerLine(stringResource(Res.string.interest_expense), money(flow.interest))
+                if (flow.taxes != Money.ZERO) LedgerLine(stringResource(Res.string.tax_expense), money(flow.taxes))
                 LedgerLine(stringResource(Res.string.expenses), money(flow.expenses))
                 LedgerLine(stringResource(Res.string.paid_expenses), money(flow.paidExpenses))
             }

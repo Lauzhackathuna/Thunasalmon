@@ -50,6 +50,7 @@ internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit) {
             LedgerLine(stringResource(Res.string.assumptions_internship, values.internshipMonths), money(values.internshipMonthlyPay))
             LedgerLine(stringResource(Res.string.assumptions_salary), money(values.salaryAfterStudies))
             LedgerLine(stringResource(Res.string.assumptions_salary_growth), percent(values.annualSalaryGrowth))
+            LedgerLine(stringResource(Res.string.assumptions_salary_tax), percent(values.salaryTaxRate))
         }
         Section(Res.string.assumptions_section_studies) {
             LedgerLine(stringResource(Res.string.assumptions_study_length), stringResource(Res.string.assumptions_months, values.studyMonths))
@@ -78,7 +79,7 @@ internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit) {
         Section(Res.string.assumptions_section_rules) {
             Text(stringResource(Res.string.assumptions_rule_cash))
             if (values.investmentShare == 0.0) Text(stringResource(Res.string.assumptions_rule_savings))
-            Text(stringResource(Res.string.assumptions_rule_taxes))
+            Text(stringResource(if (values.salaryTaxRate > 0.0) Res.string.assumptions_rule_taxes_salary else Res.string.assumptions_rule_taxes))
             Text(stringResource(Res.string.assumptions_rule_outlook))
         }
     }
@@ -210,5 +211,6 @@ private val FlowItem.label: StringResource
         FlowItem.UnexpectedCosts -> Res.string.breakdown_unexpected
         FlowItem.DecisionCosts -> Res.string.breakdown_decisions
         FlowItem.Interest -> Res.string.breakdown_interest
+        FlowItem.Taxes -> Res.string.breakdown_taxes
         FlowItem.InvestmentReturn -> Res.string.breakdown_return
     }

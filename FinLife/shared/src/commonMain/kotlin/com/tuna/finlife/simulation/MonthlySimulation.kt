@@ -35,7 +35,7 @@ class MonthlyRecord internal constructor(
     fun explanation(): List<String> = listOf(
         "Mois $month : cash ${before.cash} → ${after.cash}.",
         "Revenus : études ${flow.studentIncome}, stage ${flow.internshipIncome}, emploi ${flow.professionalIncome}.",
-        "Dépenses : loyer ${flow.rent}, assurance maladie ${flow.healthInsurance}, courses ${flow.groceries}, autres ${flow.otherExpenses}, études ${flow.tuition}.",
+        "Dépenses : loyer ${flow.rent}, assurance maladie ${flow.healthInsurance}, courses ${flow.groceries}, autres ${flow.otherExpenses}, études ${flow.tuition}, impôts ${flow.taxes}.",
         "Paiements effectifs ${flow.paidExpenses} ; passifs fournisseurs ${after.accountsPayable}. Exceptionnel ${flow.exceptionalExpenses}, décisions ${flow.decisionCosts}, intérêts ${flow.interest}.",
         "Emprunts explicites ${flow.newBorrowing}, capital remboursé ${flow.principalRepayment}, versement investi ${flow.investmentContribution}, rendement ${flow.investmentReturn}.",
         "Variation de patrimoine = revenus − dépenses + rendement = $netWorthChange. Patrimoine nominal ${after.netWorth}, réel ${after.realNetWorth}.",
@@ -162,13 +162,16 @@ object MonthlySimulation {
         val rent = rentAt(working, configuration)
         require(repayment <= state.debt + borrowing) { "Principal repayment exceeds explicit outstanding debt" }
         val interest = state.debt.scaled(FinancialSimulation.effectiveMonthlyRate(configuration.annualDebtInterest))
+        // Only the salary is taxed; student income and internship pay are not.
+        val taxes = professionalIncome.scaled(configuration.incomeTaxRate)
         var flow = MonthlyFlow(studentIncome, internIncome, professionalIncome, rent, indexed(profile.healthInsurance),
             indexed(profile.groceries), indexed(profile.otherExpenses), tuition, exceptional, decisionCosts,
-            interest, borrowing, repayment)
+            interest, borrowing, repayment, taxes = taxes)
         val obligations = state.unpaid.items + listOf(
             Triple("studies", Envelope.STUDIES, tuition), Triple("rent", Envelope.HOUSING, rent),
             Triple("insurance", Envelope.INSURANCE, flow.healthInsurance), Triple("groceries", Envelope.GROCERIES, flow.groceries),
             Triple("other", Envelope.OTHER, flow.otherExpenses), Triple("interest", Envelope.OTHER, interest),
+            Triple("taxes", Envelope.OTHER, taxes),
         ).filter { it.third > Money.ZERO }.map { (id, category, amount) ->
             FinancialObligation("$month-$id", month, category, amount)
         } + outcomes.filter { it.chargedCost > Money.ZERO }.map {
