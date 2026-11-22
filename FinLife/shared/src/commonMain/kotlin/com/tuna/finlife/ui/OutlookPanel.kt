@@ -16,15 +16,27 @@ internal fun rememberOutlook(draft: WhatIfDraft): Result<AdventureOutlook> = rem
 }
 
 @Composable
-internal fun OutlookCard(draft: WhatIfDraft) {
-    val outlook = rememberOutlook(draft).getOrNull()
+internal fun OutlookCard(draft: WhatIfDraft, metric: BalanceMetric, outlook: AdventureOutlook? = rememberOutlook(draft).getOrNull()) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(FinLifeSpacing.medium), verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
             Text(stringResource(Res.string.outlook_title), style = MaterialTheme.typography.titleLarge)
-            Text(stringResource(Res.string.outlook_baseline), style = MaterialTheme.typography.labelLarge)
-            if (outlook == null) Text(stringResource(Res.string.outlook_unavailable)) else {
-                Checkpoints(outlook.baseline)
-                StabilityPanel(outlook.baseline.stability, compact = true)
+            if (outlook == null) {
+                Text(stringResource(Res.string.outlook_unavailable))
+            } else {
+                val option = outlook.selected(draft.selected)
+                Text(scenarioLabel(option.choices), style = MaterialTheme.typography.labelLarge)
+                Checkpoints(option, if (draft.selected.isEmpty()) null else outlook.baseline, metric)
+                HorizontalDivider()
+                Text(stringResource(Res.string.outlook_all_metrics), style = MaterialTheme.typography.labelLarge)
+                LedgerLine(stringResource(Res.string.actual_cash), money(option.at(12).cash))
+                LedgerLine(stringResource(Res.string.net_worth), money(option.at(12).netWorth))
+                LedgerLine(stringResource(Res.string.theoretical_balance), money(option.at(12).theoreticalCash))
+                if (option.at(12).investments == Money.ZERO && option.at(12).debt == Money.ZERO) {
+                    Text(stringResource(Res.string.equal_metrics_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                StabilityPanel(option.stability, compact = true)
             }
             Text(stringResource(Res.string.outlook_assumptions), style = MaterialTheme.typography.bodySmall)
         }
@@ -69,12 +81,13 @@ internal fun FuturePreview(draft: WhatIfDraft) {
 }
 
 @Composable
-private fun Checkpoints(option: FutureOption, baseline: FutureOption? = null) {
-    Text(stringResource(Res.string.actual_cash), style = MaterialTheme.typography.labelSmall)
+private fun Checkpoints(option: FutureOption, baseline: FutureOption? = null, metric: BalanceMetric = BalanceMetric.Cash) {
+    Text(metricLabel(metric), style = MaterialTheme.typography.labelSmall)
     for (offset in listOf(3, 6, 12)) {
-        LedgerLine(stringResource(Res.string.checkpoint, offset), money(option.at(offset).cash))
+        LedgerLine(stringResource(Res.string.checkpoint, offset), money(metric.value(option.at(offset))))
         if (baseline != null) Text(
-            stringResource(Res.string.future_difference, money(option.at(offset).cash - baseline.at(offset).cash)),
+            stringResource(Res.string.future_difference,
+                money(metric.value(option.at(offset)) - metric.value(baseline.at(offset)))),
             style = MaterialTheme.typography.bodySmall,
         )
     }
