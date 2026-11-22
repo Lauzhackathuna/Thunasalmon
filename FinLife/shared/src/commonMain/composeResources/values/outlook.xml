@@ -80,4 +80,5 @@
     <string name="whatif_dashboard_hint">Close this panel to see the selected scenario, its projected trajectory and the 3/6/12-month results on the main dashboard. These toggles can be changed until you advance the month.</string>
     <string name="chart_future_range">Months ahead · forecast horizon</string>
     <string name="dashboard_timeline_title">Your financial timeline</string>
+    <string name="equal_metrics_toggle">Why are these equal?</string>
 </resources>
