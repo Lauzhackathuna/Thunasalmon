@@ -167,6 +167,27 @@ class ProductUpgradeTest {
         assertEquals(AdventureRun.advance(draft.session).states, AdventureRun.advance(restored.session).states)
     }
 
+    @Test fun customNameSurvivesSaveAndLegacySaveWithoutNameRestoresMaya() {
+        val data = StartingData.Default.copy(firstName = "Zoé")
+        val session = AdventureRun.start(seed = 3, data = data)
+        val saved = JourneySave.encode(data, session, null, false, "French", "Dark")
+        val restored = JourneySave.decode(saved)
+        assertEquals("Zoé", restored.data.firstName)
+        assertEquals("Zoé", restored.session.profile.name)
+        assertEquals(session.states, restored.session.states)
+
+        // A v1 file created before the name field had no N record.
+        val legacyBody = saved.substringBeforeLast("\nHASH|")
+            .lines().filterNot { it.startsWith("N|") }.joinToString("\n")
+        var hash = 2166136261u
+        legacyBody.forEach { hash = (hash xor it.code.toUInt()) * 16777619u }
+        val legacy = JourneySave.decode("$legacyBody\nHASH|\${hash.toString(16)}")
+        assertEquals("Maya", legacy.data.firstName)
+        assertEquals("Maya", legacy.session.profile.name)
+
+        assertFails { JourneySave.decode(saved.replace("N|", "N|xyz")) }
+    }
+
     @Test fun saveRoundTripIncludesMoveRepairAndPendingDecision() {
         val start = AdventureRun.start(seed = 3)
         val moved = playDefaults(WhatIfDraft(start).toggle(WhatIf.SharedFlat, true).session, 12)
