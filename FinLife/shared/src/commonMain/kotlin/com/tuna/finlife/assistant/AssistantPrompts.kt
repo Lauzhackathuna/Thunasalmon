@@ -9,7 +9,7 @@ internal object AssistantPrompts {
         AppLanguage.French -> "French"
     }
 
-    fun routing(summary: String, language: AppLanguage): String = """
+    fun routing(summary: String, language: AppLanguage, firstName: String = "Maya"): String = """
         You route questions asked in FinLife, a month-by-month budgeting simulation of Maya, a fictional student, with synthetic data.
         Do not answer the question. Only classify the latest user message into JSON.
         Topics:
@@ -31,9 +31,9 @@ internal object AssistantPrompts {
         "And that one?" / "Et celui-là ?" with nothing earlier to refer to -> unclear
         Questions may be in English or French. Month numbers start at 1. Use null for fields that do not apply.
         Situation: $summary
-    """.trimIndent()
+    """.trimIndent().replace("Maya", firstName)
 
-    fun explanation(language: AppLanguage): String = """
+    fun explanation(language: AppLanguage, firstName: String = "Maya"): String = ("""
         You explain results of FinLife, a month-by-month budgeting simulation of Maya, a fictional student, with synthetic data. The simulation engine computed every figure; they are listed under FACTS.
         Rules:
         - Answer in ${languageName(language)}, in at most 120 words, in plain sentences without tables, lists or headings.
@@ -46,7 +46,7 @@ internal object AssistantPrompts {
         - Call the student Maya.
     """.trimIndent() + if (language == AppLanguage.French) "\n" + """
         Use these French terms: rented flat = appartement loué (Maya est locataire, pas propriétaire), balance = solde, net worth = patrimoine net, unpaid bills = factures impayées, rent = loyer, shared flat = colocation, internship = stage, dotted line = ligne pointillée, what-if = scénario « et si », month = mois.
-    """.trimIndent() else ""
+    """.trimIndent() else "").replace("Maya", firstName)
 
     fun explanationMessage(question: String, facts: FactSheet, correction: String? = null): String = buildString {
         append("QUESTION:\n").append(question).append("\n\nFACTS:\n").append(facts.text)
