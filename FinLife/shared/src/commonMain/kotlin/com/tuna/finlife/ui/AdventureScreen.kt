@@ -153,14 +153,14 @@ internal fun AdventureScreen(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     if (record == null) {
-                        Text(stringResource(Res.string.adventure_arrival, money(session.profile.studentMonthlyIncome)))
+                        Text(stringResource(Res.string.adventure_arrival, session.profile.name, money(session.profile.studentMonthlyIncome)))
                     } else {
                         val events = remember(session) { session.calendar.associateBy { it.id } }
                         for (outcome in record.events) {
                             val event = events[outcome.eventId] ?: continue
                             outcomeText(event.kind(), outcome, record)?.let { Text(it) }
                         }
-                        Text(stringResource(Res.string.adventure_month, money(record.flow.income), money(record.flow.expenses)))
+                        Text(stringResource(Res.string.adventure_month, session.profile.name, money(record.flow.income), money(record.flow.expenses)))
                         HorizontalDivider()
                         LedgerLine(stringResource(Res.string.monthly_rent), money(record.flow.rent))
                         if (record.flow.decisionCosts > Money.ZERO) {
