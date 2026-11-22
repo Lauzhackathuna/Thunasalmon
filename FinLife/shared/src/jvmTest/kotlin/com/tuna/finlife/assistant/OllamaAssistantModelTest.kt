@@ -101,6 +101,8 @@ class OllamaAssistantModelTest {
         assertEquals(Extraction(Topic.Current, month = null),
             OllamaAssistantModel.parseExtraction("""{"topic":"current","month":2.5,"end_month":null,"clarification":null}"""))
         assertEquals("{}", OllamaAssistantModel.stripThinking("<think>\nhmm 1200\n</think>\n{}"))
+        // Thinking-only models: the template opened the block, the reply only closes it.
+        assertEquals("{}", OllamaAssistantModel.stripThinking("Okay, let's see: 1200.\n</think>\n\n{}"))
     }
 
     @Test
@@ -109,19 +111,23 @@ class OllamaAssistantModelTest {
             replies = { _, _ -> chatReply(content) }
             assertEquals(ModelResult.Failed(ModelFailure.Malformed), model().extract("route", emptyList()), content)
         }
+        for (content in listOf("   ", """{"answer":"  "}""", "Maya received 1200 CHF.", """{"answer":"cut""")) {
+            replies = { _, _ -> chatReply(content) }
+            assertEquals(ModelResult.Failed(ModelFailure.Malformed), model().explain("system", "question"), content)
+        }
         replies = { _, _ -> Reply(200, "<html>") }
-        assertEquals(ModelResult.Failed(ModelFailure.Malformed), model().explain("system", "question"))
-        replies = { _, _ -> chatReply("   ") }
         assertEquals(ModelResult.Failed(ModelFailure.Malformed), model().explain("system", "question"))
     }
 
     @Test
-    fun explanationSendsNoFormatAndReturnsTheText() = runBlocking {
-        replies = { _, _ -> chatReply("<think>x</think>Maya received 1200 CHF.") }
+    fun explanationAsksForAJsonAnswerAndReturnsItsText() = runBlocking {
+        replies = { _, _ -> chatReply("""<think>x</think>{"answer":" Maya received 1200 CHF. "}""") }
         assertEquals(ModelResult.Ok("Maya received 1200 CHF."), model().explain("system", "question"))
         val json = Json.parseToJsonElement(requests.single().second) as JsonObject
-        assertNull(json["format"])
-        assertEquals(0, json["options"]!!.jsonObject["temperature"]!!.jsonPrimitive.content.toInt())
+        assertEquals(listOf("answer"), json["format"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content })
+        val options = json["options"]!!.jsonObject
+        assertEquals(0, options["temperature"]!!.jsonPrimitive.content.toInt())
+        assertEquals(OllamaAssistantModel.MAX_ANSWER_TOKENS, options["num_predict"]!!.jsonPrimitive.content.toInt())
     }
 
     @Test
@@ -139,7 +145,7 @@ class OllamaAssistantModelTest {
     @Test
     fun aModelWithoutThinkingIsAskedAgainWithoutTheField() = runBlocking {
         replies = { _, body ->
-            if ("\"think\"" in body) Reply(400, """{"error":"\"llama3.2\" does not support thinking"}""") else chatReply("Done.")
+            if ("\"think\"" in body) Reply(400, """{"error":"\"llama3.2\" does not support thinking"}""") else chatReply("""{"answer":"Done."}""")
         }
         assertEquals(ModelResult.Ok("Done."), model("llama3.2").explain("system", "question"))
         assertEquals(2, requests.size)

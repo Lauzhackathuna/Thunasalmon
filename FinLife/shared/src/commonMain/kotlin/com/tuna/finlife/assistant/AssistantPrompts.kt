@@ -21,7 +21,14 @@ internal object AssistantPrompts {
         - concept: what a term or rule of the simulation means (net worth, balance, unpaid bills, what-ifs, random problems, inflation, the dotted line, the projection).
         - out_of_scope: anything else, such as other purchases, investments, loans, taxes, real people, personal finances or requests for advice.
         - unclear: you cannot tell the topic or the month. Then write one short clarification question in ${languageName(language)} in "clarification".
-        Month numbers start at 1. Use null for fields that do not apply.
+        Examples:
+        "Why did my balance drop in month 3?" / "Pourquoi mon solde a baissé au mois 3 ?" -> played_months, month 3
+        "What are my options for the rent rise?" / "Quelles sont les options pour la hausse de loyer ?" -> pending_decision
+        "What happens over the next year?" / "Que se passe-t-il sur les 12 prochains mois ?" -> projection
+        "What does the dotted line show?" / "Que montre la ligne pointillée ?" -> latest_choice
+        "Should I buy shares?" / "Dois-je acheter des actions ?" -> out_of_scope
+        "And that one?" / "Et celui-là ?" with nothing earlier to refer to -> unclear
+        Questions may be in English or French. Month numbers start at 1. Use null for fields that do not apply.
         Situation: $summary
     """.trimIndent()
 
@@ -33,6 +40,7 @@ internal object AssistantPrompts {
         - If the FACTS do not answer the question, say so briefly.
         - Explain; do not advise. Never say what Maya or the user should do, never recommend an option and never call one better. You may say which option ends with more or less money.
         - When you talk about the coming months, say it is a simulation under the listed assumptions, not a prediction.
+        - Do not repeat the question. Attach each amount to exactly what the FACTS attach it to; keep "balance", "net worth" and "unpaid bills" apart.
         - Call the student Maya.
     """.trimIndent() + if (language == AppLanguage.French) "\n" + """
         Use these French terms: balance = solde, net worth = patrimoine net, unpaid bills = factures impayées, rent = loyer, shared flat = colocation, internship = stage, dotted line = ligne pointillée, what-if = scénario « et si », month = mois.

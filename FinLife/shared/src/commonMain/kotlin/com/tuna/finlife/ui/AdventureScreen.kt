@@ -77,6 +77,7 @@ internal fun AdventureScreen(
     startingData: StartingData,
     onUpdateAmounts: (StartingData) -> Boolean,
     onWhatIfToggle: (WhatIf, Boolean) -> Unit,
+    sidePanel: SidePanel? = null,
 ) {
     val record = remember(session) { session.history.lastOrNull() }
     val pending = remember(session) {
@@ -88,6 +89,7 @@ internal fun AdventureScreen(
     if (detailsOpen) FinancialDetailsSheet(record, startingData, onUpdateAmounts) { detailsOpen = false }
     GameScreen(
         onOpenSettings = onOpenSettings,
+        sidePanel = sidePanel,
         header = { AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty()) { detailsOpen = true } },
         actions = {
             FlowRow(

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_title">Assistant</string>
+    <string name="assistant_open">Assistant</string>
+    <string name="assistant_close">Fermer</string>
+    <string name="assistant_intro">Posez une question sur les chiffres simulés : un mois joué, la situation actuelle, la ligne pointillée, la décision en attente ou les 12 prochains mois. L’assistant explique ; il ne donne aucun conseil et ne modifie rien dans la simulation.</string>
+    <string name="assistant_placeholder">Une question sur la simulation</string>
+    <string name="assistant_send">Envoyer</string>
+    <string name="assistant_thinking">Réflexion… La première réponse peut prendre jusqu’à une minute.</string>
+    <string name="assistant_you">Vous</string>
+    <string name="assistant_model_note">Les réponses sont rédigées par un modèle local (%1$s) et peuvent être imparfaites. Tous les chiffres viennent du moteur de simulation.</string>
+    <string name="assistant_retry">Vérifier à nouveau</string>
+    <string name="assistant_not_running">Ollama ne tourne pas sur cet ordinateur. Lancez Ollama, puis vérifiez à nouveau. Le reste de la simulation fonctionne sans lui.</string>
+    <string name="assistant_model_missing">Le modèle %1$s n’est pas installé dans Ollama. Installez-le avec « ollama pull %1$s », puis vérifiez à nouveau.</string>
+    <string name="assistant_timeout">Le modèle local a mis trop de temps à répondre. Réessayez.</string>
+    <string name="assistant_server_error">Ollama a renvoyé une erreur. Réessayez.</string>
+    <string name="assistant_projection_caption">Simulation des 12 prochains mois si rien ne change : aucun événement aléatoire, logement conservé, nouvelles offres refusées, aucun prêt automatique. Ce n’est pas une prévision.</string>
+    <string name="assistant_unreliable">Je n’ai pas pu expliquer cela de façon fiable à partir des chiffres simulés. Reformulez, ou consultez la carte du mois et le graphique.</string>
+    <string name="assistant_out_of_scope">Je ne peux expliquer que cette simulation : les mois joués, la situation actuelle, la ligne pointillée, la décision en attente, les 12 prochains mois ou le fonctionnement de la simulation.</string>
+    <string name="assistant_nothing_played">Aucun mois n’a encore été joué. Jouez un mois, puis reposez la question.</string>
+    <string name="assistant_which_month">De quel mois parlez-vous ? Les mois 1 à %1$d ont été joués.</string>
+    <string name="assistant_month_not_played">Ce mois n’a pas été joué. Les mois 1 à %1$d ont été joués ; pour la suite, interrogez-moi sur les 12 prochains mois.</string>
+    <string name="assistant_range_too_long">Merci de poser une question sur 12 mois au plus à la fois.</string>
+    <string name="assistant_no_dotted_line">Il n’y a pas de ligne pointillée sur le graphique pour le moment. Elle apparaît après un choix ou un scénario « et si ».</string>
+    <string name="assistant_no_decision">Aucune décision n’est en attente pour le moment.</string>
+    <string name="assistant_no_projection">Le moteur ne peut pas simuler les 12 prochains mois à partir d’ici.</string>
+    <string name="assistant_rephrase">Pouvez-vous reformuler ? Par exemple : « Que s’est-il passé au mois 2 ? » ou « Que se passe-t-il sur les 12 prochains mois ? »</string>
+</resources>

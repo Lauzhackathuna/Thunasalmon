@@ -176,7 +176,9 @@ internal object AssistantFacts {
             add(when (val choice = counterfactual.choice) {
                 is AlternativeChoice.WithoutWhatIfs ->
                     "Latest choice: in month ${counterfactual.month + 1} Maya switched on ${choice.whatIfs.joinToString { whatIfName(it) }}. " +
-                        "The dotted line is the same run without it."
+                        "The dotted line is the same run without it" +
+                        (if (WhatIf.SharedFlat in choice.whatIfs) " (on the dotted line Maya keeps her own home)" else "") +
+                        (if (WhatIf.Internship in choice.whatIfs) " (on the dotted line Maya does not do the internship)" else "") + "."
                 is AlternativeChoice.OtherAnswer -> {
                     val answer = main.selections.firstOrNull { it.eventId == choice.event.id }?.optionId
                     "Latest choice: in month ${counterfactual.month + 1}, for ${eventName(choice.event)}, Maya chose " +
@@ -189,10 +191,12 @@ internal object AssistantFacts {
                 add("No month has been played since the choice yet, so both lines are still equal.")
             } else {
                 add("At the end of month $month:")
-                add("- Net worth: Maya's path ${m(mine.netWorth, c)}, dotted line ${m(theirs.netWorth, c)}, difference ${m(comparison.nominalNetWorth, c)}.")
+                add("- Net worth: Maya's path ${m(mine.netWorth, c)}, dotted line ${m(theirs.netWorth, c)}. " +
+                    gap("Maya's path has", comparison.nominalNetWorth, "net worth than the dotted line", c))
                 add("- Balance: Maya's path ${m(mine.theoreticalCash, c)}, dotted line ${m(theirs.theoreticalCash, c)}.")
                 add("- Unpaid bills: Maya's path ${m(Money(mine.cash.cents - mine.theoreticalCash.cents), c)}, dotted line ${m(Money(theirs.cash.cents - theirs.theoreticalCash.cents), c)}.")
-                add("- Since the start, Maya's path has ${m(comparison.income, c)} more income and ${m(comparison.expenses, c)} more expenses than the dotted line (negative means less).")
+                add("- Since the start: " + gap("Maya's path received", comparison.income, "income than the dotted line", c) +
+                    " " + gap("Maya's path spent", comparison.expenses, "than the dotted line", c))
             }
             if (other.currentMonth < main.currentMonth) {
                 add("The dotted line stopped at month ${other.currentMonth}: it reached a decision with no automatic answer.")
@@ -257,6 +261,7 @@ internal object AssistantFacts {
             add("Amounts are in ${c}.")
             add("12-month projection by the engine, months $first to $last, starting from the current situation. It is a simulation under these assumptions, not a prediction:")
             ProjectionAssumptions.english(session.configuration.annualInflation).forEach { add("- $it") }
+            add(if (state.housing.type == HousingType.SHARED) "Maya lives in the shared flat now." else "Maya lives alone in her own home now (not a shared flat).")
             add("If nothing changes:")
             addAll(projectionLines(reference, c))
             val scenarios = studiedScenarios(context)
@@ -275,8 +280,10 @@ internal object AssistantFacts {
         val lowest = projection.states.drop(1).minBy { it.theoreticalCash.cents }
         val deficit = projection.deficitMonths.map { it + 1 }
         return listOf(
-            "- End of month ${end.month}: net worth ${m(end.netWorth, c)}, balance ${m(end.theoreticalCash, c)}, " +
-                (if (end.unpaid.items.isEmpty()) "no unpaid bills." else "unpaid bills ${m(Money(end.cash.cents - end.theoreticalCash.cents), c)}."),
+            "- End of month ${end.month}: net worth ${m(end.netWorth, c)}.",
+            "- End of month ${end.month}: balance ${m(end.theoreticalCash, c)}.",
+            if (end.unpaid.items.isEmpty()) "- End of month ${end.month}: no unpaid bills."
+            else "- End of month ${end.month}: unpaid bills owed ${m(Money(end.cash.cents - end.theoreticalCash.cents), c)} (an amount owed, separate from net worth and balance).",
             "- Lowest balance: ${m(lowest.theoreticalCash, c)} at the end of month ${lowest.month}.",
             if (deficit.isEmpty()) "- No month ends with unpaid bills."
             else "- Months ending with unpaid bills: ${deficit.joinToString()}.",
@@ -307,7 +314,7 @@ internal object AssistantFacts {
 
     /** English label for the engine's French scenario label ("Colocation, stage accepté", …). */
     internal fun scenarioLabel(engineLabel: String, offerStudied: Boolean): String {
-        val housing = if (engineLabel.startsWith("Colocation")) "Shared flat" else "Current home"
+        val housing = if (engineLabel.startsWith("Colocation")) "Shared flat" else "Own home (not shared)"
         val internship = when {
             engineLabel.contains("stage accepté") -> "with the 3-month internship"
             offerStudied -> "without the internship"
@@ -370,6 +377,13 @@ internal object AssistantFacts {
         is LifeEvent.HousingChoice -> if (optionId == "move") "move" else "keep the home"
         is LifeEvent.ShortInternshipOffer, is LifeEvent.Internship -> if (optionId == "accept") "accept the internship" else "decline the internship"
         else -> if (optionId == "first") "first option" else "second option"
+    }
+
+    /** "Maya's path has 300 CHF more net worth than…" / "… 300 CHF less …" / "… the same …": no signed amounts. */
+    private fun gap(subject: String, difference: Money, rest: String, c: String): String = when {
+        difference > Money.ZERO -> "$subject ${m(difference, c)} more $rest."
+        difference < Money.ZERO -> "$subject ${m(-difference, c)} less $rest."
+        else -> "No difference: ${subject.removePrefix("Maya's path ")} the same on both lines."
     }
 
     private fun parts(c: String, vararg items: Pair<String, Money>): String {

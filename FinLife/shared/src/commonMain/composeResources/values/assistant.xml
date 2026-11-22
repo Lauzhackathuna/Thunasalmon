@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_title">Assistant</string>
+    <string name="assistant_open">Assistant</string>
+    <string name="assistant_close">Close</string>
+    <string name="assistant_intro">Ask about the simulated figures: a played month, the current situation, the dotted line, the decision waiting or the next 12 months. The assistant explains; it gives no advice and changes nothing in the simulation.</string>
+    <string name="assistant_placeholder">Ask about the simulation</string>
+    <string name="assistant_send">Send</string>
+    <string name="assistant_thinking">Thinking… The first answer can take up to a minute.</string>
+    <string name="assistant_you">You</string>
+    <string name="assistant_model_note">Answers are worded by a local model (%1$s) and can be imperfect. Every figure comes from the simulation engine.</string>
+    <string name="assistant_retry">Check again</string>
+    <string name="assistant_not_running">Ollama isn’t running on this computer. Start Ollama, then check again. The rest of the simulation works without it.</string>
+    <string name="assistant_model_missing">The model %1$s isn’t installed in Ollama. Install it with “ollama pull %1$s”, then check again.</string>
+    <string name="assistant_timeout">The local model took too long to answer. Try again.</string>
+    <string name="assistant_server_error">Ollama returned an error. Try again.</string>
+    <string name="assistant_projection_caption">Simulation of the next 12 months if nothing changes: no random events, housing kept, new offers declined, no automatic loan. Not a prediction.</string>
+    <string name="assistant_unreliable">I couldn’t explain this reliably from the simulation figures. Try rephrasing, or look at the month card and the chart.</string>
+    <string name="assistant_out_of_scope">I can only explain this simulation: played months, the current situation, the dotted line, the decision waiting, the next 12 months, or how the simulation works.</string>
+    <string name="assistant_nothing_played">No month has been played yet. Play a month, then ask again.</string>
+    <string name="assistant_which_month">Which month do you mean? Months 1 to %1$d have been played.</string>
+    <string name="assistant_month_not_played">That month hasn’t been played. Months 1 to %1$d have been played; for later months, ask about the next 12 months.</string>
+    <string name="assistant_range_too_long">Please ask about at most 12 months at a time.</string>
+    <string name="assistant_no_dotted_line">There is no dotted line on the chart right now. It appears after a choice or a what-if.</string>
+    <string name="assistant_no_decision">No decision is waiting right now.</string>
+    <string name="assistant_no_projection">The engine can’t simulate the next 12 months from here.</string>
+    <string name="assistant_rephrase">Could you rephrase? For example: “What happened in month 2?” or “What happens over the next 12 months?”</string>
+</resources>

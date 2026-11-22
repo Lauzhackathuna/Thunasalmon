@@ -103,6 +103,10 @@ class AssistantTest {
         assertEquals(Plan.Answer(AssistantAnswer.Clarification(null)),
             plan(Extraction(Topic.Unclear, clarification = "Do you mean the 1200 CHF rent?")))
         assertEquals(Plan.Answer(AssistantAnswer.Clarification(null)), plan(Extraction(Topic.Unclear, clarification = " ")))
+        // A copied question, or a statement, is not a clarification question.
+        assertEquals(Plan.Answer(AssistantAnswer.Clarification(null)), Assistant.plan(
+            Extraction(Topic.Unclear, clarification = "And that one? with nothing earlier to refer to"), context(played), "And that one?"))
+        assertEquals(Plan.Answer(AssistantAnswer.Clarification(null)), plan(Extraction(Topic.Unclear, clarification = "I am not sure.")))
     }
 
     // --- Facts are the engine's figures ---
@@ -133,7 +137,7 @@ class AssistantTest {
     fun studiedScenariosGetEnglishLabels() {
         val scenarios = assertNotNull(AssistantFacts.studiedScenarios(context(played)))
         assertEquals(
-            setOf("Current home, without the internship", "Current home, with the 3-month internship",
+            setOf("Own home (not shared), without the internship", "Own home (not shared), with the 3-month internship",
                 "Shared flat, without the internship", "Shared flat, with the 3-month internship"),
             scenarios.map { it.first }.toSet(),
         )
@@ -153,7 +157,9 @@ class AssistantTest {
         val counterfactual = assertNotNull(cf)
         val facts = assertIs<Plan.Explain>(plan(Extraction(Topic.LatestChoice), main, counterfactual)).facts.text
         val difference = MonthlyComparisons.compare(main, counterfactual.alternative, main.currentMonth).nominalNetWorth
-        assertTrue("difference ${m(difference, "CHF")}" in facts, facts)
+        val words = if (difference.cents > 0) "more" else "less"
+        assertTrue("Maya's path has ${m(Money(kotlin.math.abs(difference.cents)), "CHF")} $words net worth than the dotted line" in facts, facts)
+        assertTrue("on the dotted line Maya keeps her own home" in facts, facts)
         assertTrue("switched on the move to the shared flat" in facts, facts)
     }
 

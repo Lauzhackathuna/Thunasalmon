@@ -35,10 +35,12 @@ internal fun SummaryScreen(
     onContinue: (() -> Unit)?,
     onStartOver: () -> Unit,
     onOpenSettings: () -> Unit,
+    sidePanel: SidePanel? = null,
 ) {
     val summary = remember(session) { RunSummary.of(session) }
     GameScreen(
         onOpenSettings = onOpenSettings,
+        sidePanel = sidePanel,
         actions = {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),

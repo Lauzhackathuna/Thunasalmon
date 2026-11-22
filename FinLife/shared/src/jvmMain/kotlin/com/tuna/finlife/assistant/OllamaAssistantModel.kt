@@ -64,11 +64,18 @@ internal class OllamaAssistantModel(
         return parseExtraction(content)?.let { ModelResult.Ok(it) } ?: ModelResult.Failed(ModelFailure.Malformed)
     }
 
-    override suspend fun explain(system: String, user: String): ModelResult<String> =
-        when (val result = chat(system, listOf(ChatTurn(Speaker.User, user)), format = null)) {
-            is ModelResult.Ok -> if (result.value.isBlank()) ModelResult.Failed(ModelFailure.Malformed) else result
-            is ModelResult.Failed -> result
+    /**
+     * The answer is requested as {"answer": "..."}: a JSON format leaves no room for a reasoning preamble, which
+     * thinking-only models (such as qwen3:4b) otherwise write into the reply even with thinking switched off.
+     */
+    override suspend fun explain(system: String, user: String): ModelResult<String> {
+        val content = when (val result = chat(system, listOf(ChatTurn(Speaker.User, user)), ANSWER_SCHEMA)) {
+            is ModelResult.Ok -> result.value
+            is ModelResult.Failed -> return result
         }
+        val answer = parseAnswer(content)
+        return if (answer.isNullOrBlank()) ModelResult.Failed(ModelFailure.Malformed) else ModelResult.Ok(answer.trim())
+    }
 
     private suspend fun chat(system: String, turns: List<ChatTurn>, format: JsonObject?): ModelResult<String> {
         var outcome = send(chatRequest(chatBody(system, turns, format, think = false)))
@@ -96,7 +103,12 @@ internal class OllamaAssistantModel(
         put("model", modelName)
         put("stream", false)
         if (think != null) put("think", think)
-        putJsonObject("options") { put("temperature", 0) }
+        putJsonObject("options") {
+            put("temperature", 0)
+            // Bounds the time of an answer on CPU; a cut answer is not valid JSON and is reported as unreadable.
+            put("num_predict", MAX_ANSWER_TOKENS)
+            put("num_ctx", CONTEXT_TOKENS)
+        }
         if (format != null) put("format", format)
         putJsonArray("messages") {
             addJsonObject { put("role", "system"); put("content", system) }
@@ -131,6 +143,8 @@ internal class OllamaAssistantModel(
         const val LOCAL_URL = "http://localhost:11434"
         const val DEFAULT_MODEL = "qwen3:4b"
         const val MODEL_VARIABLE = "FINLIFE_OLLAMA_MODEL"
+        const val MAX_ANSWER_TOKENS = 700
+        const val CONTEXT_TOKENS = 8192
 
         fun fromEnvironment(): OllamaAssistantModel =
             OllamaAssistantModel(System.getenv(MODEL_VARIABLE)?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_MODEL)
@@ -150,9 +164,27 @@ internal class OllamaAssistantModel(
             putJsonArray("required") { listOf("topic", "month", "end_month", "clarification").forEach { add(it) } }
         }
 
+        /** JSON schema of an explanation. */
+        val ANSWER_SCHEMA: JsonObject = buildJsonObject {
+            put("type", "object")
+            putJsonObject("properties") { putJsonObject("answer") { put("type", "string") } }
+            putJsonArray("required") { add("answer") }
+        }
+
         private val thinking = Regex("""<think>[\s\S]*?</think>""")
 
-        internal fun stripThinking(content: String): String = content.replace(thinking, "").trim()
+        /** Drops reasoning blocks, including one whose opening tag the model's template already supplied. */
+        internal fun stripThinking(content: String): String {
+            val closed = content.replace(thinking, "")
+            val end = closed.lastIndexOf("</think>")
+            return (if (end >= 0) closed.substring(end + "</think>".length) else closed).trim()
+        }
+
+        internal fun parseAnswer(content: String): String? = try {
+            ((Json.parseToJsonElement(content) as? JsonObject)?.get("answer") as? JsonPrimitive)?.takeIf { it.isString }?.content
+        } catch (_: IllegalArgumentException) {
+            null
+        }
 
         internal fun parseExtraction(content: String): Extraction? {
             val json = try {

@@ -7,6 +7,17 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import finlife.shared.generated.resources.assistant_open
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
@@ -29,68 +40,123 @@ import finlife.shared.generated.resources.simulation_note
 import finlife.shared.generated.resources.synthetic_data
 import org.jetbrains.compose.resources.stringResource
 
+/** A panel beside the game (docked) or in a dialog ([onClose] set). [reserveEnd]: the gear overlaps its top-right corner. */
+internal typealias SidePanel = @Composable (onClose: (() -> Unit)?, reserveEnd: Boolean) -> Unit
+
 @Composable
 internal fun GameScreen(
     header: (@Composable () -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
+    sidePanel: SidePanel? = null,
     content: @Composable () -> Unit,
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TooltipHost {
         BoxWithConstraints(Modifier.fillMaxSize().background(LocalGameBackdrop.current).safeContentPadding()) {
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
-            val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
-            val pinControls = maxHeight >= 700.dp * fontScale
-            // Keep content clear of the top-right gear when the window leaves no free margin for it.
-            val contentWidth = if (wideRoom) FinLifeContentWidth * 2 else FinLifeContentWidth
-            val gearMargin = (FinLifeSpacing.touchTarget + FinLifeSpacing.medium * 2) * 2
-            val reserveTop = onOpenSettings != null && maxWidth < contentWidth + gearMargin
-            Column(
-                modifier = Modifier.fillMaxSize()
-                    .padding(top = if (reserveTop) FinLifeSpacing.touchTarget + FinLifeSpacing.small else 0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (wideRoom) {
-                    Row(
-                        modifier = Modifier.weight(1f).widthIn(max = FinLifeContentWidth * 2).fillMaxWidth()
-                            .verticalScroll(rememberScrollState()).padding(FinLifeSpacing.large),
-                        horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.large),
+            // The side panel sits on the right when the game keeps at least its single-column width beside it.
+            val docked = sidePanel != null && maxWidth >= SidePanelDockWidth * fontScale
+            var panelOpen by remember { mutableStateOf(false) }
+            if (docked) {
+                Row(Modifier.fillMaxSize()) {
+                    GameBody(header, actions, cornerWidth = 0.dp, Modifier.weight(1f).fillMaxHeight(), content)
+                    VerticalDivider()
+                    Box(
+                        Modifier.width(SidePanelWidth * fontScale.coerceAtMost(1.25f)).fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.surface),
                     ) {
-                        Box(Modifier.weight(1f)) { header() }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
-                        ) {
-                            content()
-                            actions()
-                        }
-                    }
-                } else {
-                    if (pinControls && header != null) {
-                        Box(screenWidth().padding(top = FinLifeSpacing.medium)) { header() }
-                    }
-                    Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-                        Column(
-                            modifier = Modifier.align(Alignment.TopCenter).then(screenWidth())
-                                .padding(vertical = if (header == null) FinLifeSpacing.large else FinLifeSpacing.medium),
-                            verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
-                        ) {
-                            if (!pinControls) header?.invoke()
-                            content()
-                            if (!pinControls) actions?.invoke()
-                        }
-                    }
-                    if (pinControls && actions != null) {
-                        Box(screenWidth().padding(vertical = FinLifeSpacing.small)) { actions() }
+                        sidePanel(null, onOpenSettings != null)
                     }
                 }
-                SimulationNotice(screenWidth().padding(vertical = FinLifeSpacing.small))
+            } else {
+                // Content stays clear of the top-right controls when the window leaves no free margin for them.
+                val corner = (if (onOpenSettings != null) FinLifeSpacing.touchTarget + FinLifeSpacing.medium * 2 else 0.dp) +
+                    (if (sidePanel != null) SidePanelButtonWidth else 0.dp)
+                GameBody(header, actions, corner, Modifier.fillMaxSize(), content)
             }
-            if (onOpenSettings != null) {
-                SettingsGearButton(onOpenSettings, Modifier.align(Alignment.TopEnd).padding(FinLifeSpacing.medium))
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(FinLifeSpacing.medium),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            ) {
+                if (sidePanel != null && !docked) PrimaryButton(stringResource(Res.string.assistant_open), { panelOpen = true })
+                if (onOpenSettings != null) SettingsGearButton(onOpenSettings)
+            }
+            if (sidePanel != null && !docked && panelOpen) {
+                Dialog(onDismissRequest = { panelOpen = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(0.92f).fillMaxHeight(0.9f).widthIn(max = 560.dp),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surface,
+                    ) { sidePanel({ panelOpen = false }, false) }
+                }
             }
         }
     } }
+}
+
+/** Width from which the side panel is docked on the right instead of opened from a button. */
+private val SidePanelDockWidth = 900.dp
+private val SidePanelWidth = 360.dp
+/** Room taken by the side panel's button next to the gear. */
+private val SidePanelButtonWidth = 140.dp
+
+@Composable
+private fun GameBody(
+    header: (@Composable () -> Unit)?,
+    actions: (@Composable () -> Unit)?,
+    cornerWidth: Dp,
+    modifier: Modifier,
+    content: @Composable () -> Unit,
+) {
+    BoxWithConstraints(modifier) {
+        val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+        val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
+        val pinControls = maxHeight >= 700.dp * fontScale
+        val contentWidth = if (wideRoom) FinLifeContentWidth * 2 else FinLifeContentWidth
+        val reserveTop = cornerWidth > 0.dp && maxWidth < contentWidth + cornerWidth * 2
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(top = if (reserveTop) FinLifeSpacing.touchTarget + FinLifeSpacing.small else 0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (wideRoom) {
+                Row(
+                    modifier = Modifier.weight(1f).widthIn(max = FinLifeContentWidth * 2).fillMaxWidth()
+                        .verticalScroll(rememberScrollState()).padding(FinLifeSpacing.large),
+                    horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.large),
+                ) {
+                    Box(Modifier.weight(1f)) { header() }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
+                    ) {
+                        content()
+                        actions()
+                    }
+                }
+            } else {
+                if (pinControls && header != null) {
+                    Box(screenWidth().padding(top = FinLifeSpacing.medium)) { header() }
+                }
+                Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    Column(
+                        modifier = Modifier.align(Alignment.TopCenter).then(screenWidth())
+                            .padding(vertical = if (header == null) FinLifeSpacing.large else FinLifeSpacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
+                    ) {
+                        if (!pinControls) header?.invoke()
+                        content()
+                        if (!pinControls) actions?.invoke()
+                    }
+                }
+                if (pinControls && actions != null) {
+                    Box(screenWidth().padding(vertical = FinLifeSpacing.small)) { actions() }
+                }
+            }
+            SimulationNotice(screenWidth().padding(vertical = FinLifeSpacing.small))
+        }
+    }
 }
 
 private fun screenWidth(): Modifier =

@@ -44,7 +44,7 @@ internal class Assistant(private val model: AssistantModel) {
             is ModelResult.Ok -> result.value
             is ModelResult.Failed -> return failed(result.failure)
         }
-        val plan = when (val p = plan(extraction, context)) {
+        val plan = when (val p = plan(extraction, context, question)) {
             is Plan.Answer -> return p.answer
             is Plan.Explain -> p
         }
@@ -52,7 +52,7 @@ internal class Assistant(private val model: AssistantModel) {
         var correction: String? = null
         repeat(2) {
             val reply = when (val result = model.explain(system, AssistantPrompts.explanationMessage(question, plan.facts, correction))) {
-                is ModelResult.Ok -> result.value.trim()
+                is ModelResult.Ok -> withoutEchoedQuestion(result.value, question)
                 is ModelResult.Failed -> return failed(result.failure)
             }
             val numbers = ReplyGuard.unsupportedNumbers(reply, plan.facts.text)
@@ -65,12 +65,18 @@ internal class Assistant(private val model: AssistantModel) {
         return AssistantAnswer.Unreliable
     }
 
+    /** Small models sometimes start by repeating the question: drop that first line. */
+    private fun withoutEchoedQuestion(reply: String, question: String): String {
+        val text = reply.trim()
+        return if (text.startsWith(question.trim())) text.removePrefix(question.trim()).trim() else text
+    }
+
     private fun failed(failure: ModelFailure): AssistantAnswer =
         if (failure == ModelFailure.Malformed) AssistantAnswer.Unreliable else AssistantAnswer.Unavailable(failure, model.modelName)
 
     companion object {
         /** Validates the model's [extraction] against the run and picks the facts. No model call. */
-        fun plan(extraction: Extraction, context: AssistantContext): Plan {
+        fun plan(extraction: Extraction, context: AssistantContext, question: String = ""): Plan {
             val played = context.monthsPlayed
             return when (extraction.topic) {
                 Topic.PlayedMonths -> {
@@ -97,13 +103,16 @@ internal class Assistant(private val model: AssistantModel) {
                     ?: Plan.Answer(AssistantAnswer.ProjectionUnavailable)
                 Topic.Concept -> Plan.Explain(AssistantFacts.concepts(context))
                 Topic.OutOfScope -> Plan.Answer(AssistantAnswer.OutOfScope)
-                Topic.Unclear -> Plan.Answer(AssistantAnswer.Clarification(clarification(extraction.clarification, played)))
+                Topic.Unclear -> Plan.Answer(AssistantAnswer.Clarification(clarification(extraction.clarification, played, question)))
             }
         }
 
         /** The model's question if it is usable: short, and quoting no number other than played months. */
-        private fun clarification(text: String?, played: Int): String? {
+        private fun clarification(text: String?, played: Int, asked: String): String? {
             val question = text?.trim()?.takeIf { it.isNotEmpty() && it.length <= 300 } ?: return null
+            // A small model may copy the question (or a prompt example) instead of asking something.
+            if (asked.isNotBlank() && question.contains(asked.trim(), ignoreCase = true)) return null
+            if (!question.trimEnd().endsWith("?")) return null
             val months = (0..played).map { it * 100L }.toSet()
             return question.takeIf { ReplyGuard.numbers(it).all { (_, value) -> value in months } }
         }
