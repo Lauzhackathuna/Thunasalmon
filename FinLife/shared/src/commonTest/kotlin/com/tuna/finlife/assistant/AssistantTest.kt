@@ -55,6 +55,23 @@ internal class FakeModel(
 }
 
 class AssistantTest {
+
+    @Test
+    fun promptsAndFinancialFactsUseChosenFirstName() {
+        val facts = FactSheet(listOf("Maya accepted the internship.", "Income 300 CHF."))
+        val renamed = facts.named("Zoé").text
+        assertTrue("Zoé accepted the internship." in renamed)
+        assertTrue("300 CHF" in renamed)
+        assertTrue("Maya" !in renamed)
+        val prompt = AssistantPrompts.explanation(AppLanguage.French, "Zoé")
+        assertTrue("Zoé" in prompt)
+        assertTrue("Maya" !in prompt)
+        val routing = AssistantPrompts.routing("No month has been played yet.", AppLanguage.English, "Zoé")
+        assertTrue("Zoé" in routing)
+        assertTrue("Maya" !in routing)
+    }
+
+
     private fun context(session: SimulationSession, counterfactual: Counterfactual? = null) =
         AssistantContext(session, counterfactual, emptySet(), StartingData.Default.internshipSalary, "CHF")
 

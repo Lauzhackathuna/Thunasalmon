@@ -53,7 +53,7 @@ internal fun FinancialDetailsSheet(
     var texts by remember(initial) { mutableStateOf(StartingDataForm.texts(initial)) }
     var saveFailed by remember { mutableStateOf(false) }
 
-    val data = if (editing) StartingDataForm.build(texts) else null
+    val data = if (editing) StartingDataForm.build(texts, initial.firstName) else null
     GameSheet(
         onDismiss,
         footerAction = if (editing) {

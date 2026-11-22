@@ -72,7 +72,9 @@ internal fun decisionCopy(
     month: Int,
     sharedRent: Money = Money.ZERO,
     sharedMovingCost: Money = Money.ZERO,
-): DecisionCopy = when (kind) {
+    firstName: String = "Maya",
+): DecisionCopy {
+    val copy = when (kind) {
     is EventKind.RentRise -> DecisionCopy(
         stringResource(Res.string.decision_rent_rise_title),
         stringResource(
@@ -105,6 +107,8 @@ internal fun decisionCopy(
     is EventKind.Purchase -> DecisionCopy(kind.title, stringResource(Res.string.decision_generic_prompt, month + 1))
     // Not interactive in the engine; listed for completeness.
     else -> DecisionCopy("", stringResource(Res.string.decision_generic_prompt, month + 1))
+    }
+    return copy.copy(prompt = copy.prompt.replace("Maya", firstName))
 }
 
 /** Engine option ids: accept/decline, stay/move, first/second. Unknown cases fall back to the engine label. */
@@ -127,10 +131,10 @@ internal fun optionLabel(kind: EventKind, option: DecisionOption): String = when
 
 /** One sentence describing what an event did during [record]'s month, or null if nothing to say. */
 @Composable
-internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: MonthlyRecord): String? {
+internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: MonthlyRecord, firstName: String = "Maya"): String? {
     val applied = outcome.application == EventApplication.APPLIED
     val notApplicable = outcome.application == EventApplication.NOT_APPLICABLE
-    return when (kind) {
+    return (when (kind) {
         is EventKind.Internship -> stringResource(
             when (outcome.application) {
                 EventApplication.APPLIED -> Res.string.outcome_internship_accepted
@@ -182,5 +186,5 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
             else stringResource(Res.string.outcome_other_party)
         is EventKind.Financing ->
             stringResource(Res.string.outcome_financing, money(kind.borrowing), money(kind.principalRepayment))
-    }
+    })?.replace("Maya", firstName)
 }

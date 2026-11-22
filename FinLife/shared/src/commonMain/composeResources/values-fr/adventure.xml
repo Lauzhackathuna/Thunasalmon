@@ -7,8 +7,8 @@
     <string name="expenses">Dépenses</string>
     <string name="simulation_complete">Simulation terminée</string>
     <string name="adventure_title">Le parcours de %1$s</string>
-    <string name="adventure_arrival">Maya vient d’arriver pour son master. Son revenu étudiant mensuel est de %1$s.</string>
-    <string name="adventure_month">Ce mois-ci, Maya a reçu %1$s et dépensé %2$s.</string>
+    <string name="adventure_arrival">%1$s vient d’arriver pour son master. Son revenu étudiant mensuel est de %2$s.</string>
+    <string name="adventure_month">Ce mois-ci, %1$s a reçu %2$s et dépensé %3$s.</string>
     <string name="monthly_rent">Loyer mensuel</string>
     <string name="closing_cash">Solde de fin de mois</string>
     <string name="cash_history">Historique du solde</string>
@@ -26,5 +26,5 @@
     <string name="chart_without_both">Sans le stage ni le déménagement</string>
     <string name="chart_difference">Écart</string>
     <string name="chart_axis_net_worth">Patrimoine net, %1$s</string>
-    <string name="chart_other_answer">Si elle avait choisi : %1$s</string>
+    <string name="chart_other_answer">Autre choix possible : %1$s</string>
 </resources>

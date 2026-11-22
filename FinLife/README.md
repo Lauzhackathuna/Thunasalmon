@@ -1,8 +1,8 @@
 # FinLife — interactive financial digital twin
 
 FinLife is a fictional financial journey for the UBS × LauzHack and JetBrains challenges.
-Maya is a student in Lausanne. Configure her starting circumstances, follow completed months, explore
-alternative futures, advance one month to commit selected actions, and finish or resume the journey.
+Choose a first name for a fictional master's student in Lausanne, configure starting finances, follow
+completed months, explore alternative futures, advance one month, and finish or resume the journey.
 All displayed financial results come from the shared monthly V3 engine. No UBS customer data is used.
 
 ## Run and validate
@@ -37,8 +37,8 @@ Use `--offline` only when dependencies and SDK components are already cached.
 - Summary: opening/final finances, income, accrued expenses, actual payments, unpaid bills, internship
   income and a recorded-event recap. Continue or start over. No past decision rewriting is exposed.
 
-Maya is the supported V3 persona. Other legacy personas are retained for compatibility and tests;
-they are not presented as functioning V3 journeys.
+The master's-student story is the supported V3 persona. A first name is required before a new run;
+old save files without a name continue using Maya. Other legacy personas are retained for tests.
 
 ## Financial definitions and assumptions
 
@@ -116,7 +116,7 @@ guide; the result is neither an official UBS rating nor personal advice.
 
 ## Local persistence
 
-The versioned save stores input amounts, seed, original event calendar, recorded answers, completed months,
+The versioned save stores input amounts, first name, seed, original event calendar, recorded answers, completed months,
 current What If draft, summary mode, language and theme. It replays and validates balances before restoration.
 An integrity checksum detects accidental corruption; it is not authentication or encryption.
 Unknown versions/event types, invalid amounts and mismatched replays fail closed. Errors preserve the current

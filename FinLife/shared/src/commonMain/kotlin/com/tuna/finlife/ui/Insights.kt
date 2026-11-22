@@ -38,7 +38,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Every value the engine uses for this run, grouped as on the setup screen. Read-only. */
 @Composable
-internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit) {
+internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit, firstName: String = "Maya") {
     GameSheet(onDismiss = onDismiss) {
         ScreenHeading(stringResource(Res.string.assumptions_title))
         Text(stringResource(Res.string.assumptions_intro), style = MaterialTheme.typography.bodyMedium)
@@ -57,7 +57,7 @@ internal fun AssumptionsSheet(values: ModelAssumptions, onDismiss: () -> Unit) {
             LedgerLine(stringResource(Res.string.assumptions_tuition, values.tuitionEveryMonths), money(values.tuition))
         }
         Section(Res.string.assumptions_section_costs) {
-            LedgerLine(stringResource(Res.string.assumptions_rent), money(values.rent))
+            LedgerLine(stringResource(Res.string.assumptions_rent).replace("Maya", firstName), money(values.rent))
             LedgerLine(stringResource(Res.string.assumptions_insurance), money(values.healthInsurance))
             LedgerLine(stringResource(Res.string.assumptions_groceries), money(values.groceries))
             LedgerLine(stringResource(Res.string.assumptions_other), money(values.otherExpenses))
@@ -180,15 +180,15 @@ private fun signedMoney(value: Money): String =
 
 /** Why Maya's path and the dotted line end apart, item by item (engine amounts, no estimate). */
 @Composable
-internal fun DifferenceBreakdownCard(breakdown: DifferenceBreakdown, modifier: Modifier = Modifier) {
+internal fun DifferenceBreakdownCard(breakdown: DifferenceBreakdown, modifier: Modifier = Modifier, firstName: String = "Maya") {
     OutlinedCard(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(FinLifeSpacing.medium), verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
             Text(stringResource(Res.string.breakdown_title), style = MaterialTheme.typography.titleMedium)
-            Text(when {
+            Text((when {
                 breakdown.total > Money.ZERO -> stringResource(Res.string.breakdown_more, breakdown.month, money(breakdown.total))
                 breakdown.total < Money.ZERO -> stringResource(Res.string.breakdown_less, breakdown.month, money(-breakdown.total))
                 else -> stringResource(Res.string.breakdown_same, breakdown.month)
-            })
+            }).replace("Maya", firstName))
             if (breakdown.effects.isNotEmpty()) {
                 Text(stringResource(Res.string.breakdown_items, breakdown.fromMonth + 1),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

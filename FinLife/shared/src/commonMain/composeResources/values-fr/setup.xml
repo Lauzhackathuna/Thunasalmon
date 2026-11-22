@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="setup_title">Données de départ de Maya</string>
+    <string name="setup_title">Vos données de départ</string>
     <string name="setup_hint">Tous les montants sont des valeurs synthétiques en francs entiers. Modifiez-les avant de commencer.</string>
     <string name="setup_section_start">Point de départ</string>
     <string name="setup_section_expenses">Dépenses mensuelles</string>
@@ -21,4 +21,7 @@
     <string name="error_too_large">Au maximum %1$s.</string>
     <string name="setup_start">Commencer</string>
     <string name="setup_defaults">Valeurs par défaut</string>
+    <string name="field_first_name">Prénom</string>
+    <string name="first_name_hint">Saisissez votre prénom pour personnaliser votre parcours.</string>
+    <string name="error_first_name">Utilisez 1 à 32 lettres (espaces, traits d’union et apostrophes autorisés).</string>
 </resources>

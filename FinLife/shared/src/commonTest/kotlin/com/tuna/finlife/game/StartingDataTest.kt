@@ -45,6 +45,29 @@ class StartingDataTest {
         assertEquals(mapOf(StartingField.Groceries to FieldError.Empty), StartingDataForm.errors(broken))
     }
 
+
+    @Test
+    fun firstNameValidationAndEnginePersonalization() {
+        assertNull(FirstName.normalize(""))
+        assertNull(FirstName.normalize("   "))
+        assertNull(FirstName.normalize("123"))
+        assertNull(FirstName.normalize("Alex\nDo something else"))
+        assertNull(FirstName.normalize("A".repeat(33)))
+        assertEquals("Zoé", FirstName.normalize(" Zoé "))
+        assertEquals("Anne-Marie", FirstName.normalize("Anne-Marie"))
+        assertEquals("Jean Luc", FirstName.normalize("Jean   Luc"))
+        assertEquals("O’Connor", FirstName.normalize("O’Connor"))
+
+        val amounts = StartingDataForm.texts(StartingData.Default)
+        val data = assertNotNull(StartingDataForm.build(amounts, "Zoé"))
+        assertEquals("Zoé", data.firstName)
+        assertNull(StartingDataForm.build(amounts, "   "))
+        val session = AdventureRun.start(seed = 9, data = data)
+        assertEquals("Zoé", session.profile.name)
+        val replayed = assertNotNull(AdventureRun.recalculate(session, data.copy(rent = 950)))
+        assertEquals("Zoé", replayed.profile.name)
+    }
+
     @Test
     fun defaultsAreTheEnginesReferenceValues() {
         val engine = com.tuna.finlife.simulation.MonthlyProfile.alexia()

@@ -49,7 +49,7 @@ internal object AdventureRun {
         val home = HousingContract("maya-home", Money.chf(data.rent), 0, HousingType.ALONE)
         val profile = MonthlyProfile.alexia().copy(
             profileId = "finlife-maya",
-            name = "Maya",
+            name = data.firstName,
             cash = Money.chf(data.openingCash),
             studentMonthlyIncome = Money.chf(data.parentIncome),
             startingMonthlySalary = Money.chf(data.salaryAfterStudies),
@@ -58,7 +58,7 @@ internal object AdventureRun {
             groceries = Money.chf(data.groceries),
             otherExpenses = Money.chf(data.otherExpenses),
             tuitionPayment = Money.chf(data.tuition),
-            provenance = if (data == StartingData.Default) DataProvenance.TEAM_ASSUMPTION else DataProvenance.USER_INPUT,
+            provenance = if (data.copy(firstName = FirstName.LegacyDefault) == StartingData.Default) DataProvenance.TEAM_ASSUMPTION else DataProvenance.USER_INPUT,
         )
         return SimulationSessions.start(
             profile = profile,

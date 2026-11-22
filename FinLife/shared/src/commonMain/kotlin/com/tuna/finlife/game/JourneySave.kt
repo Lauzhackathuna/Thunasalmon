@@ -15,6 +15,8 @@ internal object JourneySave {
             add("FINLIFE|1")
             add("R|${base.configuration.randomSeed}|${base.currentMonth}|$ended|$language|$theme")
             StartingField.entries.forEach { add("A|${it.name}|${data[it]}") }
+            // Optional metadata: old v1 saves without N still restore with Maya.
+            add("N|${hex(data.firstName)}")
             add("V|${base.currentState.cash.cents}|${base.currentState.netWorth.cents}|${base.currentState.studyMonthsCompleted}|${base.currentState.accountsPayable.cents}")
             draft?.selected?.sortedBy { it.name }?.forEach { add("D|${it.name}") }
             base.selections.forEach { add("C|${hex(it.eventId)}|${hex(it.optionId)}") }
@@ -43,12 +45,18 @@ internal object JourneySave {
         require(body.isNotEmpty() && checksum(body) == text.substringAfterLast("\nHASH|")) { "Save checksum mismatch" }
         val lines = body.lines().map { it.split('|') }
         require(lines.first() == listOf("FINLIFE", "1")) { "Unsupported save version" }
-        require(lines.drop(1).all { it.first() in setOf("R", "A", "V", "D", "C", "E") })
+        require(lines.drop(1).all { it.first() in setOf("R", "A", "N", "V", "D", "C", "E") })
         val run = lines.single { it.first() == "R" }; require(run.size == 6)
         require(run[4] in setOf("English", "French") && run[5] in setOf("System", "Light", "Dark"))
         val amounts = lines.filter { it.first() == "A" }
         require(amounts.size == StartingField.entries.size && amounts.map { it[1] }.distinct().size == amounts.size)
-        val data = StartingData.of(amounts.associate { require(it.size == 3); StartingField.valueOf(it[1]) to it[2].toLong() })
+        val names = lines.filter { it.first() == "N" }
+        require(names.size <= 1) { "Multiple first names" }
+        val firstName = names.singleOrNull()?.let {
+            require(it.size == 2)
+            requireNotNull(FirstName.normalize(unhex(it[1]))) { "Invalid saved name" }
+        } ?: FirstName.LegacyDefault
+        val data = StartingData.of(amounts.associate { require(it.size == 3); StartingField.valueOf(it[1]) to it[2].toLong() }, firstName)
         val choices = lines.filter { it.first() == "C" }.map {
             require(it.size == 3); DecisionSelection(unhex(it[1]), unhex(it[2]))
         }
