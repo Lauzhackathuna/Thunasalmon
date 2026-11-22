@@ -81,4 +81,6 @@
     <string name="chart_future_range">Months ahead · forecast horizon</string>
     <string name="dashboard_timeline_title">Your financial timeline</string>
     <string name="equal_metrics_toggle">Why are these equal?</string>
+    <string name="scenario_career_break">Six-month career break</string>
+    <string name="career_break_temporary">The six-month career break stops salary temporarily, not rent or everyday expenses.</string>
 </resources>

@@ -81,4 +81,6 @@
     <string name="chart_future_range">Mois à venir · horizon de prévision</string>
     <string name="dashboard_timeline_title">Votre trajectoire financière</string>
     <string name="equal_metrics_toggle">Pourquoi ces montants sont-ils identiques ?</string>
+    <string name="scenario_career_break">Pause professionnelle de six mois</string>
+    <string name="career_break_temporary">La pause professionnelle suspend le salaire pendant six mois, mais pas le loyer ni les dépenses courantes.</string>
 </resources>

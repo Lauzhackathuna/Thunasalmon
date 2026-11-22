@@ -218,6 +218,7 @@ private val WhatIf.label: StringResource
     get() = when (this) {
         WhatIf.Internship -> Res.string.whatif_internship
         WhatIf.SharedFlat -> Res.string.whatif_shared_flat
+        WhatIf.CareerBreak -> Res.string.whatif_career_break
     }
 
 @Composable
@@ -313,7 +314,8 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
     val shared = remember(session, decision) {
         MonthlySimulation.sharedContract(decision.event.month, session.configuration).monthlyRent
     }
-    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month))
+    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month),
+        session.profile.startingMonthlySalary)
     if (copy.title.isNotEmpty()) Text(copy.title, style = MaterialTheme.typography.titleLarge)
     Text(copy.prompt, style = MaterialTheme.typography.bodyMedium)
     for (option in decision.options) {

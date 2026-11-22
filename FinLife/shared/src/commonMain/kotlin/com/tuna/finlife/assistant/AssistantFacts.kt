@@ -119,6 +119,13 @@ internal object AssistantFacts {
                 else -> "The move did not apply."
             }
             is EventKind.OneOffExpense -> if (applied) "One-off expense: ${m(outcome.chargedCost, c)} charged." else null
+            is EventKind.CareerBreak -> if (applied) "Maya began a ${kind.months}-month unpaid work break; ordinary bills still apply." else null
+            is EventKind.EpflJobOffer -> when {
+                applied && outcome.optionId == "epfl" -> "Maya accepted the fictional EPFL job at ${m(kind.salary, c)} per month."
+                outcome.optionId == "stay" -> "Maya stayed in the private job; ${percentLabel(kind.risk)}% company-collapse risk over the next ${kind.horizon} months."
+                else -> "The EPFL offer did not apply."
+            }
+            EventKind.CompanyClosure -> if (applied) "The private company collapsed; Maya lost the job and future salary, but not existing savings." else null
             is EventKind.Financing -> if (applied) "Financing: borrowed ${m(kind.borrowing, c)}, repaid ${m(kind.principalRepayment, c)}." else null
             is EventKind.Plant, is EventKind.Oven, is EventKind.Purchase -> if (applied) "A purchase decision cost ${m(outcome.chargedCost, c)}." else null
         }
@@ -160,7 +167,14 @@ internal object AssistantFacts {
     private fun statusLines(state: MonthlyState, c: String): List<String> = buildList {
         when (state.status) {
             LifeStatus.STUDENT, LifeStatus.INTERN -> add("Maya is a student; ${state.studyMonthsRemaining} months of studies remain.")
-            LifeStatus.EMPLOYED -> add("Maya has finished her studies and works since month ${(state.careerStartMonth ?: 0) + 1}.")
+            LifeStatus.EMPLOYED -> when {
+                state.jobLost -> add("Maya lost the private-sector job. Professional income is zero; existing savings remain.")
+                state.careerBreakRemaining > 0 -> add("Maya is taking an unpaid career break; ${state.careerBreakRemaining} months of salary-free time remain.")
+                else -> add("Maya has finished her studies and works since month ${(state.careerStartMonth ?: 0) + 1}.")
+            }
+        }
+        if (state.status == LifeStatus.EMPLOYED && !state.jobLost) {
+            add("Current employer: ${state.employerType}. The EPFL job pays 4500 CHF per month; the private salary follows the entered financial profile.")
         }
         state.shortInternship?.takeIf { it.active(state.month) || state.month < it.startMonth }?.let {
             add("Maya's 3-month internship runs from month ${it.startMonth + 1} to month ${it.startMonth + 3}, paying ${m(it.monthlyIncome, c)} per month.")
@@ -240,6 +254,7 @@ internal object AssistantFacts {
         }
         is LifeEvent.ShortInternshipOffer -> "The offer lasts ${event.durationMonths} months at ${m(event.monthlyIncome, c)} per month, alongside studies."
         is LifeEvent.HousingChoice -> "The new rented home costs ${m(event.newContract.monthlyRent, c)} per month; moving costs ${m(event.movingCost, c)}."
+        is LifeEvent.EpflJobOffer -> "Fictional EPFL job salary: ${m(event.monthlySalary, c)} per month; staying in the private job means a ${percentLabel(event.privateCompanyFailureProbability)}% company-collapse risk over the next ${event.riskHorizonMonths} months. The risk is hypothetical, not an actual EPFL statistic."
         else -> null
     }
 
@@ -348,8 +363,8 @@ internal object AssistantFacts {
             else "Taxes are not modelled.",
             "Random problems are drawn each month: a rent rise with probability 1 in ${RandomTroubles.RENT_ODDS}, at most ${RandomTroubles.MAX_RENT_RISES_PER_BLOCK} per ${RandomTroubles.BLOCK_MONTHS} months, raising the rent by ${percentLabel(rentRise)}% per year; " +
                 "and a maintenance bill of ${m(RandomTroubles.MAINTENANCE_COST, c)} with probability 1 in ${RandomTroubles.MAINTENANCE_ODDS}, at most ${RandomTroubles.MAX_MAINTENANCE_PER_BLOCK} per ${RandomTroubles.BLOCK_MONTHS} months.",
-            "What-ifs are choices the player can switch on before playing a month: the 3-month internship at ${m(Money.chf(context.internshipSalary), c)} per month alongside studies, " +
-                "and moving to the shared flat at ${m(shared.newContract.monthlyRent, c)} per month with a moving cost of ${m(shared.movingCost, c)}. Once the month is played they cannot be undone.",
+            "What-ifs can include a 3-month internship, moving into a shared flat, or (after finding work) a six-month unpaid career break. Ordinary expenses continue during the break; salary resumes afterwards unless the job was independently lost.",
+            "After at least three months of employment, the fictional EPFL offer is 4500 CHF per month and modeled as stable. Keeping a private-sector position has a one-time 30% chance of the employer failing in the next 12 months. This is a game assumption; job loss stops salary, not savings.",
             "The dotted line on the chart is the same run with the other side of the latest choice, simulated by the same engine with the same random events. It never goes beyond the months played.",
             "The projection is the engine's simulation of up to the next 12 months if nothing changes, with no random events. It is not a prediction, and nothing beyond 12 months ahead is simulated.",
             "FinLife is a simulation, not financial advice.",
@@ -370,6 +385,7 @@ internal object AssistantFacts {
     private fun whatIfName(whatIf: WhatIf) = when (whatIf) {
         WhatIf.Internship -> "the 3-month internship"
         WhatIf.SharedFlat -> "the move to the shared flat"
+        WhatIf.CareerBreak -> "the unpaid six-month career break"
     }
 
     private fun eventName(event: LifeEvent): String = when (event) {
@@ -381,12 +397,16 @@ internal object AssistantFacts {
         is LifeEvent.PurchaseChoice -> "a purchase"
         is LifeEvent.OneOffExpense -> "a one-off expense"
         is LifeEvent.Financing -> "a financing"
+        is LifeEvent.CareerBreak -> "a six-month career break"
+        is LifeEvent.EpflJobOffer -> "an EPFL job offer"
+        is LifeEvent.CompanyClosure -> "a private-company collapse"
     }
 
     private fun optionName(event: LifeEvent, optionId: String): String = when (event) {
         is LifeEvent.RentRise -> if (optionId == "move") "move to the shared flat" else "stay in her rented flat and accept the new rent"
         is LifeEvent.HousingChoice -> if (optionId == "move") "move" else "stay in her rented flat"
         is LifeEvent.ShortInternshipOffer, is LifeEvent.Internship -> if (optionId == "accept") "accept the internship" else "decline the internship"
+        is LifeEvent.EpflJobOffer -> if (optionId == "epfl") "accept the stable EPFL job at 4500 CHF per month" else "stay in the higher-paid private job with its modeled 30% failure risk"
         else -> if (optionId == "first") "first option" else "second option"
     }
 

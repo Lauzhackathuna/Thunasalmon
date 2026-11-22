@@ -59,7 +59,8 @@ internal fun FuturePreview(draft: WhatIfDraft) {
     Text(playerStringResource(Res.string.impact_rent) + ": " + money(impact.rentSaved))
     if (impact.movingCosts != Money.ZERO) LedgerLine(playerStringResource(Res.string.impact_move), money(impact.movingCosts))
     if (impact.unpaid != Money.ZERO) LedgerLine(playerStringResource(Res.string.avoided_unpaid), money(-impact.unpaid))
-    Text(playerStringResource(Res.string.stage_temporary), style = MaterialTheme.typography.bodySmall)
+    if (WhatIf.Internship in option.choices) Text(playerStringResource(Res.string.stage_temporary), style = MaterialTheme.typography.bodySmall)
+    if (WhatIf.CareerBreak in option.choices) Text(playerStringResource(Res.string.career_break_temporary), style = MaterialTheme.typography.bodySmall)
     StabilityPanel(option.stability)
     HorizontalDivider()
     for (alternative in outlook.options) {
@@ -154,9 +155,14 @@ internal fun stabilityLabel(value: FinancialStability) = playerStringResource(wh
 })
 
 @Composable
-private fun scenarioLabel(choices: Set<WhatIf>) = playerStringResource(when {
-    choices.size == 2 -> Res.string.scenario_both
-    WhatIf.Internship in choices -> Res.string.scenario_internship
-    WhatIf.SharedFlat in choices -> Res.string.scenario_shared
-    else -> Res.string.scenario_none
-})
+private fun scenarioLabel(choices: Set<WhatIf>): String {
+    if (choices == setOf(WhatIf.Internship, WhatIf.SharedFlat)) return playerStringResource(Res.string.scenario_both)
+    if (choices.isEmpty()) return playerStringResource(Res.string.scenario_none)
+    return choices.sortedBy { it.ordinal }.map { choice ->
+        playerStringResource(when (choice) {
+            WhatIf.Internship -> Res.string.scenario_internship
+            WhatIf.SharedFlat -> Res.string.scenario_shared
+            WhatIf.CareerBreak -> Res.string.scenario_career_break
+        })
+    }.joinToString(" + ")
+}
