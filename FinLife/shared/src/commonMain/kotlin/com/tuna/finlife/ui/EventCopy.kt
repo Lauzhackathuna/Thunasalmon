@@ -74,8 +74,8 @@ internal fun decisionCopy(
     sharedMovingCost: Money = Money.ZERO,
 ): DecisionCopy = when (kind) {
     is EventKind.RentRise -> DecisionCopy(
-        stringResource(Res.string.decision_rent_rise_title),
-        stringResource(
+        playerStringResource(Res.string.decision_rent_rise_title),
+        playerStringResource(
             Res.string.decision_rent_rise_prompt,
             percentLabel(kind.annualExtraRate),
             money(sharedRent),
@@ -83,45 +83,45 @@ internal fun decisionCopy(
         ),
     )
     is EventKind.ShortInternship -> DecisionCopy(
-        stringResource(Res.string.decision_short_internship_title),
-        stringResource(Res.string.decision_short_internship_prompt, kind.months, money(kind.monthlyIncome)),
+        playerStringResource(Res.string.decision_short_internship_title),
+        playerStringResource(Res.string.decision_short_internship_prompt, kind.months, money(kind.monthlyIncome)),
     )
     is EventKind.Internship -> DecisionCopy(
-        stringResource(Res.string.decision_internship_title),
-        stringResource(Res.string.decision_internship_prompt, kind.months, money(kind.monthlyIncome)),
+        playerStringResource(Res.string.decision_internship_title),
+        playerStringResource(Res.string.decision_internship_prompt, kind.months, money(kind.monthlyIncome)),
     )
     is EventKind.Housing -> DecisionCopy(
-        stringResource(Res.string.decision_housing_title),
-        stringResource(Res.string.decision_housing_prompt, money(kind.newRent), money(kind.movingCost)),
+        playerStringResource(Res.string.decision_housing_title),
+        playerStringResource(Res.string.decision_housing_prompt, money(kind.newRent), money(kind.movingCost)),
     )
     is EventKind.Plant -> DecisionCopy(
-        stringResource(Res.string.decision_plant_title),
-        stringResource(Res.string.decision_plant_prompt, money(kind.cost)),
+        playerStringResource(Res.string.decision_plant_title),
+        playerStringResource(Res.string.decision_plant_prompt, money(kind.cost)),
     )
     is EventKind.Oven -> DecisionCopy(
-        stringResource(Res.string.decision_oven_title),
-        stringResource(Res.string.decision_oven_prompt, money(kind.repairCost), money(kind.replacementCost)),
+        playerStringResource(Res.string.decision_oven_title),
+        playerStringResource(Res.string.decision_oven_prompt, money(kind.repairCost), money(kind.replacementCost)),
     )
-    is EventKind.Purchase -> DecisionCopy(kind.title, stringResource(Res.string.decision_generic_prompt, month + 1))
+    is EventKind.Purchase -> DecisionCopy(kind.title, playerStringResource(Res.string.decision_generic_prompt, month + 1))
     // Not interactive in the engine; listed for completeness.
-    else -> DecisionCopy("", stringResource(Res.string.decision_generic_prompt, month + 1))
+    else -> DecisionCopy("", playerStringResource(Res.string.decision_generic_prompt, month + 1))
 }
 
 /** Engine option ids: accept/decline, stay/move, first/second. Unknown cases fall back to the engine label. */
 @Composable
 internal fun optionLabel(kind: EventKind, option: DecisionOption): String = when {
-    kind is EventKind.Internship && option.id == "accept" -> stringResource(Res.string.option_internship_accept)
-    kind is EventKind.Internship && option.id == "decline" -> stringResource(Res.string.option_internship_decline)
-    kind is EventKind.ShortInternship && option.id == "accept" -> stringResource(Res.string.option_short_internship_accept)
-    kind is EventKind.ShortInternship && option.id == "decline" -> stringResource(Res.string.option_short_internship_decline)
-    kind is EventKind.RentRise && option.id == "stay" -> stringResource(Res.string.option_rent_rise_stay)
-    kind is EventKind.RentRise && option.id == "move" -> stringResource(Res.string.option_rent_rise_move)
-    kind is EventKind.Housing && option.id == "stay" -> stringResource(Res.string.option_housing_stay)
-    kind is EventKind.Housing && option.id == "move" -> stringResource(Res.string.option_housing_move)
-    kind is EventKind.Plant && option.id == "first" -> stringResource(Res.string.option_plant_buy)
-    kind is EventKind.Plant && option.id == "second" -> stringResource(Res.string.option_plant_skip)
-    kind is EventKind.Oven && option.id == "first" -> stringResource(Res.string.option_oven_repair)
-    kind is EventKind.Oven && option.id == "second" -> stringResource(Res.string.option_oven_replace)
+    kind is EventKind.Internship && option.id == "accept" -> playerStringResource(Res.string.option_internship_accept)
+    kind is EventKind.Internship && option.id == "decline" -> playerStringResource(Res.string.option_internship_decline)
+    kind is EventKind.ShortInternship && option.id == "accept" -> playerStringResource(Res.string.option_short_internship_accept)
+    kind is EventKind.ShortInternship && option.id == "decline" -> playerStringResource(Res.string.option_short_internship_decline)
+    kind is EventKind.RentRise && option.id == "stay" -> playerStringResource(Res.string.option_rent_rise_stay)
+    kind is EventKind.RentRise && option.id == "move" -> playerStringResource(Res.string.option_rent_rise_move)
+    kind is EventKind.Housing && option.id == "stay" -> playerStringResource(Res.string.option_housing_stay)
+    kind is EventKind.Housing && option.id == "move" -> playerStringResource(Res.string.option_housing_move)
+    kind is EventKind.Plant && option.id == "first" -> playerStringResource(Res.string.option_plant_buy)
+    kind is EventKind.Plant && option.id == "second" -> playerStringResource(Res.string.option_plant_skip)
+    kind is EventKind.Oven && option.id == "first" -> playerStringResource(Res.string.option_oven_repair)
+    kind is EventKind.Oven && option.id == "second" -> playerStringResource(Res.string.option_oven_replace)
     else -> option.label
 }
 
@@ -131,7 +131,7 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
     val applied = outcome.application == EventApplication.APPLIED
     val notApplicable = outcome.application == EventApplication.NOT_APPLICABLE
     return when (kind) {
-        is EventKind.Internship -> stringResource(
+        is EventKind.Internship -> playerStringResource(
             when (outcome.application) {
                 EventApplication.APPLIED -> Res.string.outcome_internship_accepted
                 EventApplication.DECLINED -> Res.string.outcome_internship_declined
@@ -139,12 +139,12 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
             },
         )
         is EventKind.RentRise -> when (rentRiseResult(kind.contractId, outcome, record)) {
-            RentRiseResult.Applied -> stringResource(Res.string.outcome_rent_rise, percentLabel(kind.annualExtraRate))
-            RentRiseResult.MovedInstead -> stringResource(Res.string.outcome_rent_rise_moved)
-            RentRiseResult.PreviousHome -> stringResource(Res.string.outcome_rent_rise_previous_home)
-            RentRiseResult.AlreadyRising -> stringResource(Res.string.outcome_rent_rise_already_rising)
+            RentRiseResult.Applied -> playerStringResource(Res.string.outcome_rent_rise, percentLabel(kind.annualExtraRate))
+            RentRiseResult.MovedInstead -> playerStringResource(Res.string.outcome_rent_rise_moved)
+            RentRiseResult.PreviousHome -> playerStringResource(Res.string.outcome_rent_rise_previous_home)
+            RentRiseResult.AlreadyRising -> playerStringResource(Res.string.outcome_rent_rise_already_rising)
         }
-        is EventKind.ShortInternship -> stringResource(
+        is EventKind.ShortInternship -> playerStringResource(
             when (outcome.application) {
                 EventApplication.APPLIED -> Res.string.outcome_short_internship_accepted
                 EventApplication.DECLINED -> Res.string.outcome_short_internship_declined
@@ -152,35 +152,35 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
             },
         )
         is EventKind.Maintenance ->
-            if (applied) stringResource(Res.string.outcome_maintenance, money(outcome.chargedCost))
-            else stringResource(Res.string.outcome_maintenance_other_party)
+            if (applied) playerStringResource(Res.string.outcome_maintenance, money(outcome.chargedCost))
+            else playerStringResource(Res.string.outcome_maintenance_other_party)
         is EventKind.Plant -> when {
-            notApplicable -> stringResource(Res.string.outcome_other_party)
-            outcome.optionId == "first" -> stringResource(Res.string.outcome_plant_bought)
-            else -> stringResource(Res.string.outcome_plant_skipped)
+            notApplicable -> playerStringResource(Res.string.outcome_other_party)
+            outcome.optionId == "first" -> playerStringResource(Res.string.outcome_plant_bought)
+            else -> playerStringResource(Res.string.outcome_plant_skipped)
         }
         is EventKind.Oven -> when {
-            notApplicable -> stringResource(Res.string.outcome_other_party)
-            outcome.optionId == "first" -> stringResource(Res.string.outcome_oven_repaired)
-            else -> stringResource(Res.string.outcome_oven_replaced)
+            notApplicable -> playerStringResource(Res.string.outcome_other_party)
+            outcome.optionId == "first" -> playerStringResource(Res.string.outcome_oven_repaired)
+            else -> playerStringResource(Res.string.outcome_oven_replaced)
         }
         is EventKind.Purchase ->
-            if (notApplicable) stringResource(Res.string.outcome_other_party)
-            else stringResource(
+            if (notApplicable) playerStringResource(Res.string.outcome_other_party)
+            else playerStringResource(
                 Res.string.outcome_one_off,
                 kind.title,
                 if (outcome.optionId == "first") kind.firstLabel else kind.secondLabel,
             )
         is EventKind.Housing -> when (outcome.application) {
-            EventApplication.APPLIED -> stringResource(Res.string.outcome_housing_moved)
-            EventApplication.DECLINED -> stringResource(Res.string.outcome_housing_stayed)
+            EventApplication.APPLIED -> playerStringResource(Res.string.outcome_housing_moved)
+            EventApplication.DECLINED -> playerStringResource(Res.string.outcome_housing_stayed)
             EventApplication.NOT_APPLICABLE -> null
         }
         is EventKind.OneOffExpense ->
-            if (applied && outcome.eventId.startsWith("random-maintenance-")) stringResource(Res.string.event_minor_repair, money(outcome.chargedCost))
-            else if (applied) stringResource(Res.string.outcome_one_off, kind.label, money(outcome.chargedCost))
-            else stringResource(Res.string.outcome_other_party)
+            if (applied && outcome.eventId.startsWith("random-maintenance-")) playerStringResource(Res.string.event_minor_repair, money(outcome.chargedCost))
+            else if (applied) playerStringResource(Res.string.outcome_one_off, kind.label, money(outcome.chargedCost))
+            else playerStringResource(Res.string.outcome_other_party)
         is EventKind.Financing ->
-            stringResource(Res.string.outcome_financing, money(kind.borrowing), money(kind.principalRepayment))
+            playerStringResource(Res.string.outcome_financing, money(kind.borrowing), money(kind.principalRepayment))
     }
 }
