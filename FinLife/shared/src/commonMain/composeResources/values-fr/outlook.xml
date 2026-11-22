@@ -80,4 +80,5 @@
     <string name="whatif_dashboard_hint">Fermez cette fenêtre pour voir le scénario choisi, sa trajectoire future et les résultats à 3, 6 et 12 mois sur la page principale. Les choix restent modifiables jusqu’au passage au mois suivant.</string>
     <string name="chart_future_range">Mois à venir · horizon de prévision</string>
     <string name="dashboard_timeline_title">Votre trajectoire financière</string>
+    <string name="equal_metrics_toggle">Pourquoi ces montants sont-ils identiques ?</string>
 </resources>

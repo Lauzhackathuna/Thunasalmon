@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.tuna.finlife.game.*
 import com.tuna.finlife.i18n.displayMonths
 import com.tuna.finlife.simulation.*
@@ -82,14 +83,36 @@ internal fun FuturePreview(draft: WhatIfDraft) {
 
 @Composable
 private fun Checkpoints(option: FutureOption, baseline: FutureOption? = null, metric: BalanceMetric = BalanceMetric.Cash) {
-    Text(metricLabel(metric), style = MaterialTheme.typography.labelSmall)
-    for (offset in listOf(3, 6, 12)) {
-        LedgerLine(stringResource(Res.string.checkpoint, offset), money(metric.value(option.at(offset))))
-        if (baseline != null) Text(
-            stringResource(Res.string.future_difference,
-                money(metric.value(option.at(offset)) - metric.value(baseline.at(offset)))),
-            style = MaterialTheme.typography.bodySmall,
-        )
+    Text(metricLabel(metric), style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+        verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+    ) {
+        for (offset in listOf(3, 6, 12)) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Column(
+                    Modifier.widthIn(min = 120.dp).padding(FinLifeSpacing.small),
+                    verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.xSmall),
+                ) {
+                    Text(stringResource(Res.string.checkpoint, offset),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(money(metric.value(option.at(offset))),
+                        style = MaterialTheme.typography.titleMedium)
+                    if (baseline != null) {
+                        Text(stringResource(Res.string.future_difference,
+                            money(metric.value(option.at(offset)) - metric.value(baseline.at(offset)))),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
     }
     Text(stringResource(Res.string.future_owed, money(option.stability.finalUnpaid)),
         color = if (option.stability.finalUnpaid > Money.ZERO) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)

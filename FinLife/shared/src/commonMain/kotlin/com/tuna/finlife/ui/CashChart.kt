@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -59,6 +60,7 @@ import com.tuna.finlife.i18n.formatCents
 import com.tuna.finlife.simulation.TwelveMonthProjection
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import finlife.shared.generated.resources.*
 import com.tuna.finlife.game.AlternativeChoice
 import com.tuna.finlife.game.ChartScale
@@ -95,7 +97,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 
-private val ChartHeight = 252.dp
+private val ChartHeight = 302.dp
 private val TooltipWidth = 240.dp
 
 /** Whole CHF of the plotted value: the engine's net worth (cash + investments − debt − unpaid bills). */
@@ -197,16 +199,40 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
         Text(stringResource(Res.string.chart_metric), style = MaterialTheme.typography.labelSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             BalanceMetric.entries.forEach { value ->
-                FilterChip(selected = metric == value, onClick = {
-                    if (selectedMetric == null) localMetric = value else onSelectMetric?.invoke(value)
-                }, label = { Text(metricLabel(value)) })
+                FilterChip(
+                    selected = metric == value,
+                    onClick = {
+                        if (selectedMetric == null) localMetric = value else onSelectMetric?.invoke(value)
+                    },
+                    label = { Text(metricLabel(value)) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = colors.primary.copy(alpha = 0.15f),
+                        selectedLabelColor = colors.primary,
+                    ),
+                    border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                        enabled = true, selected = metric == value,
+                        borderColor = colors.outlineVariant,
+                        selectedBorderColor = colors.primary.copy(alpha = 0.4f),
+                    ),
+                )
             }
         }
         Text(stringResource(if (combined) Res.string.chart_future_range else Res.string.chart_range), style = MaterialTheme.typography.labelSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf(3, 6, 12).forEach { value ->
-                FilterChip(selected = window == value, onClick = { window = value },
-                    label = { Text(value.toString()) })
+                FilterChip(
+                    selected = window == value, onClick = { window = value },
+                    label = { Text(value.toString()) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = colors.primary.copy(alpha = 0.15f),
+                        selectedLabelColor = colors.primary,
+                    ),
+                    border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                        enabled = true, selected = window == value,
+                        borderColor = colors.outlineVariant,
+                        selectedBorderColor = colors.primary.copy(alpha = 0.4f),
+                    ),
+                )
             }
         }
         if (combined) {
@@ -295,7 +321,25 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                     val x = (xOf(month.toFloat()) - text.size.width / 2f).coerceIn(0f, size.width - text.size.width)
                     drawText(text, topLeft = Offset(x, plotBottom + 4.dp.toPx()))
                 }
-                // Historical path stays solid; future projection is distinguished by a dashed line.
+                // Subtle area fill connects the financial trajectory to the time axis
+                // without suggesting that projected months are historical observations.
+                val area = Path().apply {
+                    moveTo(xOf(0f), plotBottom)
+                    for ((index, value) in values.withIndex()) {
+                        lineTo(xOf(index.toFloat()), yOf(value))
+                    }
+                    lineTo(xOf(values.lastIndex.toFloat()), plotBottom)
+                    close()
+                }
+                drawPath(
+                    area,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(colors.primary.copy(alpha = 0.22f), colors.primary.copy(alpha = 0f)),
+                        startY = topPx,
+                        endY = plotBottom,
+                    ),
+                )
+                // Historical path stays solid; future projection remains clearly dashed.
                 val line = Path()
                 for ((index, value) in values.withIndex()) {
                     if (combined && index > projectionStart) break
