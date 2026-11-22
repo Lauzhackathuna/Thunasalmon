@@ -75,4 +75,7 @@
     <string name="avoided_unpaid">Unpaid bills avoided at +12 months</string>
     <string name="metric_cash">Bank balance</string>
     <string name="metric_theoretical">Theoretical balance</string>
+    <string name="outlook_all_metrics">At +12 months · financial breakdown</string>
+    <string name="equal_metrics_hint">Net worth and theoretical balance match here because Maya has no investments or bank debt. They can differ when assets or debts are introduced.</string>
+    <string name="whatif_dashboard_hint">Close this panel to see the selected scenario, its projected trajectory and the 3/6/12-month results on the main dashboard. These toggles can be changed until you advance the month.</string>
 </resources>
