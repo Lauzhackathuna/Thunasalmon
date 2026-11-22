@@ -41,7 +41,7 @@ internal class Assistant(private val model: AssistantModel) {
         language: AppLanguage,
     ): AssistantAnswer {
         model.check()?.let { return AssistantAnswer.Unavailable(it, model.modelName) }
-        val routing = AssistantPrompts.routing(AssistantFacts.routingSummary(context), language)
+        val routing = AssistantPrompts.routing(AssistantFacts.routingSummary(context).replace("Maya", context.playerName), language)
         val extraction = when (val result = model.extract(routing, history.takeLast(6) + ChatTurn(Speaker.User, question))) {
             is ModelResult.Ok -> result.value
             is ModelResult.Failed -> return failed(result.failure)
@@ -51,13 +51,16 @@ internal class Assistant(private val model: AssistantModel) {
             is Plan.Explain -> p
         }
         val system = AssistantPrompts.explanation(language)
+            .replace("Maya", context.playerName)
+        val facts = FactSheet(listOf("Player first name: ${context.playerName}.") +
+            plan.facts.lines.map { it.replace("Maya", context.playerName) })
         var correction: String? = null
         repeat(2) {
-            val reply = when (val result = model.explain(system, AssistantPrompts.explanationMessage(question, plan.facts, correction))) {
+            val reply = when (val result = model.explain(system, AssistantPrompts.explanationMessage(question, facts, correction))) {
                 is ModelResult.Ok -> withoutEchoedQuestion(result.value, question)
                 is ModelResult.Failed -> return failed(result.failure)
             }
-            val numbers = ReplyGuard.unsupportedNumbers(reply, plan.facts.text)
+            val numbers = ReplyGuard.unsupportedNumbers(reply, facts.text)
             val advice = ReplyGuard.advicePhrases(reply)
             if (reply.isNotEmpty() && numbers.isEmpty() && advice.isEmpty()) {
                 return AssistantAnswer.Explanation(reply, plan.projectionMonths)
