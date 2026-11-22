@@ -103,9 +103,9 @@ internal fun AdventureScreen(
     val baselineProjection = outlook?.baseline?.projection
     if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
     if (assumptionsOpen) {
-        AssumptionsSheet(remember(session, startingData) { ModelAssumptions.of(session, startingData.internshipSalary) }) {
+        AssumptionsSheet(remember(session, startingData) { ModelAssumptions.of(session, startingData.internshipSalary) }, onDismiss = {
             assumptionsOpen = false
-        }
+        }, firstName = session.profile.name)
     }
     if (detailsOpen) FinancialDetailsSheet(session.currentState, record, startingData, onUpdateAmounts) { detailsOpen = false }
     GameScreen(
@@ -300,7 +300,7 @@ private fun AdventureFinances(
             }
         }
         val breakdown = remember(session, counterfactual) { counterfactual?.let { DifferenceBreakdown.of(session, it) } }
-        if (breakdown != null) DifferenceBreakdownCard(breakdown, session.profile.name)
+        if (breakdown != null) DifferenceBreakdownCard(breakdown, firstName = session.profile.name)
     }
 }
 
