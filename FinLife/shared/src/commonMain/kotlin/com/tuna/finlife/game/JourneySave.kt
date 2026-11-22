@@ -77,7 +77,7 @@ internal object JourneySave {
             }
         }
         require(events.size <= 5000)
-        val base = requireNotNull(AdventureRun.restore(run[1].toLong(), data, events, choices, run[2].toInt())) { "Recorded decisions cannot be restored" }
+        val base = requireNotNull(AdventureRun.restore(run[1].toLong(), data, events, choices, run[2].toInt(), playerName = playerName.ifEmpty { "Player" })) { "Recorded decisions cannot be restored" }
         val expected = lines.single { it.first() == "V" }.drop(1)
         require(expected == listOf(base.currentState.cash.cents.toString(), base.currentState.netWorth.cents.toString(),
             base.currentState.studyMonthsCompleted.toString(), base.currentState.accountsPayable.cents.toString())) { "Replayed balances differ" }
