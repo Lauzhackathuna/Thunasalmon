@@ -43,8 +43,10 @@ internal class AdventureOutlook private constructor(val options: List<FutureOpti
         /** [sensitivity] changes the engine's inputs for this projection only; neutral = the run's own values. */
         fun calculate(base: SimulationSession, internshipSalary: Long, sensitivity: Sensitivity = Sensitivity()): AdventureOutlook {
             val states = AdventureRun.whatIfStates(base)
-            val choices = listOf(emptySet(), setOf(WhatIf.Internship), setOf(WhatIf.SharedFlat), WhatIf.entries.toSet())
-                .filter { selected -> selected.all { states[it] == WhatIfState.Available } }
+            val available = WhatIf.entries.filter { states[it] == WhatIfState.Available }
+            val choices: List<Set<WhatIf>> = available.fold(listOf(emptySet())) { current, value ->
+                current + current.map { it + value }
+            }
             val profile = sensitivity.apply(base.profile)
             val options = choices.map { selected ->
                 val proposed = AdventureRun.withWhatIfs(base, selected, internshipSalary)
