@@ -58,13 +58,16 @@ internal fun GameScreen(
     actions: (@Composable () -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
     sidePanel: SidePanel? = null,
+    // Hide the companion until requested on dashboard screens; other screens keep docked behavior.
+    dockSidePanel: Boolean = true,
+    dashboardFocus: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { TooltipHost {
         BoxWithConstraints(Modifier.fillMaxSize().background(LocalGameBackdrop.current).safeContentPadding()) {
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
             // The side panel sits on the right when the game keeps at least its single-column width beside it.
-            val docked = sidePanel != null && maxWidth >= SidePanelDockWidth * fontScale
+            val docked = dockSidePanel && sidePanel != null && maxWidth >= SidePanelDockWidth * fontScale
             var panelOpen by remember { mutableStateOf(false) }
             var panelVisible by remember { mutableStateOf(false) }
             LaunchedEffect(panelOpen) { if (panelOpen) panelVisible = true }
@@ -77,7 +80,7 @@ internal fun GameScreen(
             val closePanel: () -> Unit = { panelVisible = false }
             if (docked) {
                 Row(Modifier.fillMaxSize()) {
-                    GameBody(header, actions, cornerWidth = 0.dp, Modifier.weight(1f).fillMaxHeight(), content)
+                    GameBody(header, actions, cornerWidth = 0.dp, Modifier.weight(1f).fillMaxHeight(), dashboardFocus, content)
                     VerticalDivider()
                     Box(
                         Modifier.width(SidePanelWidth * fontScale.coerceAtMost(1.25f)).fillMaxHeight()
@@ -90,7 +93,7 @@ internal fun GameScreen(
                 // Content stays clear of the top-right controls when the window leaves no free margin for them.
                 val corner = (if (onOpenSettings != null) FinLifeSpacing.touchTarget + FinLifeSpacing.medium * 2 else 0.dp) +
                     (if (sidePanel != null) SidePanelButtonWidth else 0.dp)
-                GameBody(header, actions, corner, Modifier.fillMaxSize(), content)
+                GameBody(header, actions, corner, Modifier.fillMaxSize(), dashboardFocus, content)
             }
             Row(
                 modifier = Modifier.align(Alignment.TopEnd).padding(FinLifeSpacing.medium),
@@ -133,13 +136,16 @@ private fun GameBody(
     actions: (@Composable () -> Unit)?,
     cornerWidth: Dp,
     modifier: Modifier,
+    dashboardFocus: Boolean,
     content: @Composable () -> Unit,
 ) {
     BoxWithConstraints(modifier) {
         val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
         val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
         val pinControls = maxHeight >= 480.dp * fontScale
-        val contentWidth = if (wideRoom) FinLifeContentWidth * 2 else FinLifeContentWidth
+        val contentWidth = if (wideRoom) {
+            if (dashboardFocus) 1200.dp else FinLifeContentWidth * 2
+        } else FinLifeContentWidth
         val reserveTop = cornerWidth > 0.dp && maxWidth < contentWidth + cornerWidth * 2
         Column(
             modifier = Modifier.fillMaxSize()
@@ -148,13 +154,13 @@ private fun GameBody(
         ) {
             if (wideRoom) {
                 Row(
-                    modifier = Modifier.weight(1f).widthIn(max = FinLifeContentWidth * 2).fillMaxWidth()
+                    modifier = Modifier.weight(1f).widthIn(max = contentWidth).fillMaxWidth()
                         .padding(FinLifeSpacing.large),
                     horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.large),
                 ) {
-                    Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) { header() }
+                    Box(Modifier.weight(if (dashboardFocus) 1.25f else 1f).verticalScroll(rememberScrollState())) { header() }
                     Column(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        modifier = Modifier.weight(if (dashboardFocus) 0.9f else 1f).fillMaxHeight(),
                         verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
                     ) {
                         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
