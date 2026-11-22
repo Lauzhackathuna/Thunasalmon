@@ -1,3 +1,5 @@
+> **Archive — modèle annuel V1.** Ce document conserve les anciennes hypothèses et ne décrit pas l’aventure actuelle. Pour Maya, les enveloppes, les impayés et les projections mensuelles, consulter [le README actuel](../README.md) et [le moteur V3](../shared/src/commonMain/kotlin/com/tuna/finlife/simulation/README.md).
+
 1. Conventions
    Monnaie : CHF nominaux. Pas d'inflation dans la version 1 (limite assumée, affichée dans l'app).
    Pas de temps : 1 an.
@@ -122,4 +124,3 @@ La simulation est une fonction pure : mêmes entrées → mêmes sorties, aucun 
     Reproductibilité : deux appels identiques donnent des résultats identiques.
     Calcul à la main (scénario de référence, t = 0 → 1) : recettes_0 = 60 000 ; depenses_0 = 9 600 + 18 000 = 27 600 ; F_0 = 32 400 ; V_0 = 0 ; C_1 = 8 000 + 32 400 = 40 400 ; I_1 = 0 ; D_1 = 0 ; NW_1 = 40 400.
 
-AUtres idees

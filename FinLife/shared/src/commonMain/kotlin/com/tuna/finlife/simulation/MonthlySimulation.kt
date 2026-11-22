@@ -49,8 +49,7 @@ object MonthlySimulation {
         val netWorth = profile.cash + profile.investments - profile.debt
         return MonthlyState(0, profile.cash, profile.investments, profile.debt, netWorth,
             0, profile.studyMonths, -1, 0, Money.ZERO, if (profile.studyMonths == 0) 0 else null, profile.housing, null,
-                envelopes = profile.initialEnvelopes ?: if (profile.cash == Money.chf(8000))
-                    EnvelopeBalances.alexia() else EnvelopeBalances(reserve = profile.cash))
+                envelopes = BudgetEnvelopes.initial(profile))
             .also { require(configuration.horizonMonths > 0) }
     }
 

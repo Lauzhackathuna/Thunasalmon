@@ -40,3 +40,19 @@ private fun displayMagnitude(magnitude: Long, scale: Int, fractionDigits: Int): 
         whole + stringResource(Res.string.money_decimal_separator) + fraction.toString().padStart(fractionDigits, '0')
     }
 }
+
+/** Exact cents formatter for simulated values, without an intermediate floating-point conversion. */
+internal fun formatCents(cents: Long, group: String = "’", decimal: String = "."): String {
+    require(cents in -com.tuna.finlife.simulation.Money.MAX_CENTS..com.tuna.finlife.simulation.Money.MAX_CENTS)
+    val magnitude = abs(cents)
+    val whole = (magnitude / 100).toString().reversed().chunked(3).asReversed().joinToString(group) { it.reversed() }
+    val fraction = magnitude % 100
+    return (if (cents < 0) "−" else "") + whole + if (fraction == 0L) "" else decimal + fraction.toString().padStart(2, '0')
+}
+
+@Composable
+internal fun displayMoney(amount: com.tuna.finlife.simulation.Money): String = stringResource(
+    Res.string.money_pattern,
+    formatCents(amount.cents, stringResource(Res.string.money_group_separator), stringResource(Res.string.money_decimal_separator)),
+    LocalCurrencyCode.current,
+)

@@ -38,6 +38,11 @@ import com.tuna.finlife.simulation.PendingDecision
 import com.tuna.finlife.simulation.SessionStatus
 import com.tuna.finlife.simulation.SimulationSession
 import com.tuna.finlife.simulation.SimulationSessions
+import finlife.shared.generated.resources.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import com.tuna.finlife.simulation.LifeStatus
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.advance_month
 import finlife.shared.generated.resources.adventure_arrival
@@ -85,7 +90,7 @@ internal fun AdventureScreen(
     var whatIfOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
     if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
-    if (detailsOpen) FinancialDetailsSheet(record, startingData, onUpdateAmounts) { detailsOpen = false }
+    if (detailsOpen) FinancialDetailsSheet(session.currentState, record, startingData, onUpdateAmounts) { detailsOpen = false }
     GameScreen(
         onOpenSettings = onOpenSettings,
         header = { AdventureFinances(session, record, counterfactual, showHistory = pending.isEmpty()) { detailsOpen = true } },
@@ -95,12 +100,12 @@ internal fun AdventureScreen(
                 verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
             ) {
                 if (session.status == SessionStatus.READY) {
-                    PrimaryButton(stringResource(Res.string.advance_month), onAdvance)
+                    Button(onClick = onAdvance, modifier = Modifier.heightIn(min = FinLifeSpacing.touchTarget)) { Text(stringResource(Res.string.advance_month)) }
                 }
                 if (pending.isEmpty() && session.status != SessionStatus.COMPLETED) {
                     PrimaryButton(stringResource(Res.string.whatif_title), { whatIfOpen = true })
                 }
-                PrimaryButton(stringResource(Res.string.end_simulation), onEnd)
+                TextButton(onClick = onEnd) { Text(stringResource(Res.string.end_simulation)) }
             }
         },
     ) {
@@ -136,6 +141,11 @@ internal fun AdventureScreen(
                         if (record.flow.exceptionalExpenses > Money.ZERO) {
                             LedgerLine(stringResource(Res.string.unexpected_costs), money(record.flow.exceptionalExpenses))
                         }
+                        if (record.flow.tuition > Money.ZERO) Text(stringResource(Res.string.event_tuition, money(record.flow.tuition)))
+                        if (record.before.shortInternship?.active(record.month) == true && record.after.shortInternship?.active(record.after.month) == false)
+                            Text(stringResource(Res.string.event_stage_end))
+                        if (record.before.status != LifeStatus.EMPLOYED && record.after.status == LifeStatus.EMPLOYED)
+                            Text(stringResource(Res.string.event_employment))
                         // Cash never goes below zero in the engine: what could not be paid stays owed.
                         if (record.financingNeed > Money.ZERO) {
                             LedgerLine(stringResource(Res.string.unpaid_bills), money(record.financingNeed))
@@ -144,6 +154,7 @@ internal fun AdventureScreen(
                     if (session.status == SessionStatus.COMPLETED) Text(stringResource(Res.string.simulation_complete))
                 }
             }
+            OutlookCard(whatIfDraft)
         }
     }
 }
@@ -151,39 +162,25 @@ internal fun AdventureScreen(
 /** Pop-up with one switch per what-if. Switches can change freely until the month is advanced. */
 @Composable
 private fun WhatIfDialog(draft: WhatIfDraft, onToggle: (WhatIf, Boolean) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.whatif_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
-                Text(
-                    stringResource(Res.string.whatif_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                for (whatIf in WhatIf.entries) {
-                    val on = draft.isOn(whatIf)
-                    val enabled = draft.canSwitch(whatIf)
-                    Row(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = FinLifeSpacing.touchTarget)
-                            .toggleable(
-                                value = on,
-                                enabled = enabled,
-                                role = Role.Switch,
-                                onValueChange = { onToggle(whatIf, it) },
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
-                    ) {
-                        Text(stringResource(whatIf.label), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        // Locked-on switches (in effect from an earlier month) keep their "on" colour.
-                        Switch(checked = on, onCheckedChange = null, enabled = enabled || on)
-                    }
-                }
+    GameSheet(onDismiss = onDismiss, sheetMaxWidth = 900.dp) {
+        ScreenHeading(stringResource(Res.string.whatif_title))
+        Text(stringResource(Res.string.preview_only))
+        Text(stringResource(Res.string.stage_assumption, money(Money.chf(draft.internshipSalary)), money(Money.chf(draft.internshipSalary).scaled(3.0))))
+        for (whatIf in WhatIf.entries) {
+            val on = draft.isOn(whatIf)
+            val enabled = draft.canSwitch(whatIf)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = FinLifeSpacing.touchTarget)
+                    .toggleable(value = on, enabled = enabled, role = Role.Switch, onValueChange = { onToggle(whatIf, it) }),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+            ) {
+                Text(stringResource(whatIf.label), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Switch(checked = on, onCheckedChange = null, enabled = enabled)
             }
-        },
-        confirmButton = { PrimaryButton(stringResource(Res.string.close_settings), onDismiss) },
-    )
+        }
+        FuturePreview(draft)
+    }
 }
 
 private val WhatIf.label: StringResource
@@ -200,19 +197,23 @@ private fun AdventureFinances(
     showHistory: Boolean,
     onShowDetails: () -> Unit,
 ) {
-    val cash by animateFloatAsState(session.currentState.theoreticalCash.cents.toFloat() / 100f, label = "cash balance")
     Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+        Text(stringResource(Res.string.journey_heading, session.profile.name, session.currentMonth), style = MaterialTheme.typography.titleLarge)
         KeyFigureCard(
-            label = stringResource(Res.string.cash_balance),
-            value = displayMoney(cash.toDouble()),
+            label = stringResource(Res.string.actual_cash),
+            value = money(session.currentState.cash),
             modifier = Modifier.fillMaxWidth(),
         ) {
             if (record != null) {
-                val change = (record.after.theoreticalCash - record.before.theoreticalCash).cents / 100.0
+                val change = (record.after.cash - record.before.cash).cents / 100.0
                 DeltaIndicator(displayMoney(abs(change)), DeltaDirection.fromAmount(change))
             }
             HorizontalDivider()
             LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))
+            if (session.currentState.unpaid.items.isNotEmpty()) {
+                LedgerLine(stringResource(Res.string.theoretical_balance), money(session.currentState.theoreticalCash))
+                Text(stringResource(Res.string.shortfall_hint), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
             if (record != null && showHistory) {
                 LedgerLine(stringResource(Res.string.income), money(record.flow.income))
             }
@@ -221,7 +222,7 @@ private fun AdventureFinances(
                 if (record != null) Text(money(record.flow.expenses), style = MaterialTheme.typography.labelLarge)
                 TextButton(onClick = onShowDetails) { Text(stringResource(Res.string.financial_details)) }
             }
-            if (record != null && showHistory) CashChart(session, counterfactual, Modifier.fillMaxWidth())
+            CashChart(session, counterfactual, Modifier.fillMaxWidth())
         }
     }
 }
@@ -248,7 +249,7 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
                 if (outcome != null) {
                     LedgerLine(stringResource(Res.string.monthly_rent), money(outcome.flow.rent))
                     LedgerLine(stringResource(Res.string.decision_costs), money(outcome.flow.decisionCosts))
-                    LedgerLine(stringResource(Res.string.closing_cash), money(outcome.after.theoreticalCash))
+                    LedgerLine(stringResource(Res.string.closing_cash), money(outcome.after.cash))
                 } else {
                     LedgerLine(stringResource(Res.string.decision_costs), money(option.immediateCost))
                 }
@@ -270,4 +271,4 @@ internal fun LedgerLine(label: String, value: String) {
 }
 
 @Composable
-internal fun money(value: Money): String = displayMoney(value.cents / 100.0)
+internal fun money(value: Money): String = displayMoney(value)

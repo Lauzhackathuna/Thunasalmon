@@ -16,8 +16,10 @@ internal data class StartingData(
     val salaryAfterStudies: Long,
     val sharedFlatRent: Long,
     val sharedFlatMovingCost: Long,
-    val internshipSalary: Long = 1_500,
+    val internshipSalary: Long = 300,
 ) {
+    init { StartingField.entries.forEach { require(this[it] in 0..MAX_ABS_CHF) { "Invalid starting amount: $it" } } }
+
     operator fun get(field: StartingField): Long = when (field) {
         StartingField.OpeningCash -> openingCash
         StartingField.ParentIncome -> parentIncome
@@ -98,8 +100,9 @@ internal enum class FieldError { Empty, NotAWholeNumber, Negative, TooLarge }
 internal object StartingDataForm {
     /** Parses whole CHF. Spaces, apostrophes, commas and thin spaces are accepted as digit grouping. */
     fun parse(text: String, field: StartingField): Result<Long> {
-        val cleaned = text.trim().filterNot { it == ' ' || it == '\'' || it == ',' || it == '’' || it == ' ' || it == ' ' }
-            .replace('−', '-')
+        val grouped = text.trim().replace('−', '-').map { if (it in " ,’  ") '\'' else it }.joinToString("")
+        if ('\'' in grouped && !Regex("-?[0-9]{1,3}('[0-9]{3})+").matches(grouped)) return Result.Invalid(FieldError.NotAWholeNumber)
+        val cleaned = grouped.replace("'", "")
         if (cleaned.isEmpty()) return Result.Invalid(FieldError.Empty)
         val negative = cleaned.startsWith("-")
         val digits = if (negative) cleaned.drop(1) else cleaned
@@ -107,7 +110,7 @@ internal object StartingDataForm {
         if (negative && !field.allowsNegative) return Result.Invalid(FieldError.Negative)
         // More than 10 digits is out of range anyway; avoid Long overflow while parsing.
         if (digits.trimStart('0').length > 10) return Result.Invalid(FieldError.TooLarge)
-        val value = digits.toLong().let { if (negative) -it else it }
+        val value = (digits.trimStart('0').ifEmpty { "0" }).toLong().let { if (negative) -it else it }
         if (kotlin.math.abs(value) > StartingData.MAX_ABS_CHF) return Result.Invalid(FieldError.TooLarge)
         return Result.Valid(value)
     }

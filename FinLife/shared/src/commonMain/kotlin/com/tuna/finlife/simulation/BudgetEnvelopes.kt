@@ -58,6 +58,24 @@ class BudgetLedger internal constructor(
 }
 
 object BudgetEnvelopes {
+    /** Opening buffers: two tuition deadlines, three rents, four insurance payments,
+     * three grocery budgets, one other budget, then reserve. Capped by actual available cash. */
+    fun initial(profile: MonthlyProfile): EnvelopeBalances {
+        profile.initialEnvelopes?.let { return it }
+        val deadlines = if (profile.studyMonths == 0) 0 else minOf(2, (profile.studyMonths - 1) / profile.tuitionEveryStudyMonths + 1)
+        val target = EnvelopeBalances(profile.housing.monthlyRent.scaled(3.0), profile.healthInsurance.scaled(4.0),
+            profile.groceries.scaled(3.0), profile.tuitionPayment.scaled(deadlines.toDouble()), profile.otherExpenses)
+        var remaining = profile.cash
+        var result = EnvelopeBalances()
+        for (category in fundingPriority) {
+            val amount = if (category == Envelope.RESERVE) remaining else minOf(remaining, target[category])
+            result = result.with(category, amount)
+            remaining -= amount
+        }
+        check(result.total == profile.cash)
+        return result
+    }
+
     val fundingPriority get() = Envelope.entries.toList()
     val withdrawalPriority get() = listOf(Envelope.OTHER, Envelope.RESERVE, Envelope.GROCERIES,
         Envelope.INSURANCE, Envelope.HOUSING, Envelope.STUDIES)

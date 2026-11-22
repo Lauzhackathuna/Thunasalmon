@@ -10,6 +10,7 @@ import com.tuna.finlife.simulation.EventApplication
 import com.tuna.finlife.simulation.EventOutcome
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRecord
+import finlife.shared.generated.resources.event_minor_repair
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.decision_rent_rise_prompt
 import finlife.shared.generated.resources.decision_rent_rise_title
@@ -176,7 +177,8 @@ internal fun outcomeText(kind: EventKind, outcome: EventOutcome, record: Monthly
             EventApplication.NOT_APPLICABLE -> null
         }
         is EventKind.OneOffExpense ->
-            if (applied) stringResource(Res.string.outcome_one_off, kind.label, money(outcome.chargedCost))
+            if (applied && outcome.eventId.startsWith("random-maintenance-")) stringResource(Res.string.event_minor_repair, money(outcome.chargedCost))
+            else if (applied) stringResource(Res.string.outcome_one_off, kind.label, money(outcome.chargedCost))
             else stringResource(Res.string.outcome_other_party)
         is EventKind.Financing ->
             stringResource(Res.string.outcome_financing, money(kind.borrowing), money(kind.principalRepayment))
