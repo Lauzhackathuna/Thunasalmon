@@ -16,6 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.AdventureRun
+import com.tuna.finlife.game.Counterfactual
+import com.tuna.finlife.game.DifferenceBreakdown
 import com.tuna.finlife.game.RunSummary
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.SimulationSession
@@ -40,8 +42,10 @@ internal fun SummaryScreen(
     onStartOver: () -> Unit,
     onOpenSettings: () -> Unit,
     sidePanel: SidePanel? = null,
+    counterfactual: Counterfactual? = null,
 ) {
     val summary = remember(session) { RunSummary.of(session) }
+    val breakdown = remember(session, counterfactual) { counterfactual?.let { DifferenceBreakdown.of(session, it) } }
     GameScreen(
         onOpenSettings = onOpenSettings,
         sidePanel = sidePanel,
@@ -56,6 +60,7 @@ internal fun SummaryScreen(
         },
     ) {
         ScreenHeading(stringResource(Res.string.summary_title))
+        if (breakdown != null) DifferenceBreakdownCard(breakdown)
         OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
             Column(
                 modifier = Modifier.padding(FinLifeSpacing.medium),
@@ -77,6 +82,8 @@ internal fun SummaryScreen(
                     LedgerLine(stringResource(Res.string.unpaid_bills), money(summary.unpaid))
                     Text(stringResource(Res.string.shortfall_hint), color = MaterialTheme.colorScheme.error)
                 }
+                HorizontalDivider()
+                GoalProgressView(session.goal)
                 HorizontalDivider()
                 Text(stringResource(Res.string.journey_recap), style = MaterialTheme.typography.titleLarge)
                 Text(stringResource(Res.string.journey_change, money(summary.netWorth - summary.initialNetWorth), money(summary.initialNetWorth)))

@@ -37,6 +37,8 @@ internal fun OutlookCard(draft: WhatIfDraft, metric: BalanceMetric, outlook: Adv
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StabilityPanel(option.stability, compact = true)
+                HorizontalDivider()
+                SensitivityPanel(draft, outlook)
             }
             Text(stringResource(Res.string.outlook_assumptions), style = MaterialTheme.typography.bodySmall)
         }

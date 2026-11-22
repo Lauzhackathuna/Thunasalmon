@@ -178,6 +178,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                         if (ended || current.status == SessionStatus.COMPLETED) {
                             SummaryScreen(
                                 session = current,
+                                counterfactual = counterfactual,
                                 onContinue = if (current.status == SessionStatus.COMPLETED) null else ({ ended = false }),
                                 onStartOver = {
                                     session = null

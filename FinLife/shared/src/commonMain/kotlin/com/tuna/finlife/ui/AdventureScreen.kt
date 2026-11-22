@@ -28,6 +28,8 @@ import com.tuna.finlife.game.AdventureRun
 import com.tuna.finlife.game.BalanceMetric
 import com.tuna.finlife.game.StartingData
 import com.tuna.finlife.game.Counterfactual
+import com.tuna.finlife.game.DifferenceBreakdown
+import com.tuna.finlife.game.ModelAssumptions
 import com.tuna.finlife.game.WhatIf
 import com.tuna.finlife.game.WhatIfDraft
 import com.tuna.finlife.game.kind
@@ -92,11 +94,17 @@ internal fun AdventureScreen(
     }
     var whatIfOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
+    var assumptionsOpen by remember { mutableStateOf(false) }
     var chartMetric by remember { mutableStateOf(BalanceMetric.Cash) }
     val outlook = rememberOutlook(whatIfDraft).getOrNull()
     val selectedProjection = outlook?.selected(whatIfDraft.selected)?.projection
     val baselineProjection = outlook?.baseline?.projection
     if (whatIfOpen) WhatIfDialog(whatIfDraft, onWhatIfToggle, onDismiss = { whatIfOpen = false })
+    if (assumptionsOpen) {
+        AssumptionsSheet(remember(session, startingData) { ModelAssumptions.of(session, startingData.internshipSalary) }) {
+            assumptionsOpen = false
+        }
+    }
     if (detailsOpen) FinancialDetailsSheet(session.currentState, record, startingData, onUpdateAmounts) { detailsOpen = false }
     GameScreen(
         onOpenSettings = onOpenSettings,
@@ -122,6 +130,7 @@ internal fun AdventureScreen(
                 if (pending.isEmpty() && session.status != SessionStatus.COMPLETED) {
                     PrimaryButton(stringResource(Res.string.whatif_title), { whatIfOpen = true })
                 }
+                PrimaryButton(stringResource(Res.string.assumptions_open), { assumptionsOpen = true })
                 TextButton(onClick = onEnd) { Text(stringResource(Res.string.end_simulation)) }
             }
         },
@@ -248,6 +257,8 @@ private fun AdventureFinances(
                 if (record != null) Text(money(record.flow.expenses), style = MaterialTheme.typography.labelLarge)
                 TextButton(onClick = onShowDetails) { Text(stringResource(Res.string.financial_details)) }
             }
+            HorizontalDivider()
+            GoalProgressView(session.goal)
         }
         OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
             Column(
@@ -261,6 +272,8 @@ private fun AdventureFinances(
                     selectedMetric = chartMetric, onSelectMetric = onMetricChange)
             }
         }
+        val breakdown = remember(session, counterfactual) { counterfactual?.let { DifferenceBreakdown.of(session, it) } }
+        if (breakdown != null) DifferenceBreakdownCard(breakdown)
     }
 }
 

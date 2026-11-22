@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Écran des hypothèses -->
+    <string name="assumptions_open">Hypothèses</string>
+    <string name="assumptions_title">Les hypothèses de la simulation</string>
+    <string name="assumptions_intro">Toutes les valeurs sont synthétiques : choisies par l’équipe pour être plausibles, ce ne sont pas des données réelles. Le moteur calcule chaque mois à partir d’elles. Les montants se modifient dans Détails.</string>
+    <string name="assumptions_section_start">Point de départ</string>
+    <string name="assumptions_opening_cash">Solde de départ</string>
+    <string name="assumptions_section_income">Revenus</string>
+    <string name="assumptions_parent_income">Des parents, chaque mois (non indexé à l’inflation)</string>
+    <string name="assumptions_internship">Scénario stage, par mois pendant %1$d mois</string>
+    <string name="assumptions_salary">Salaire après les études, par mois</string>
+    <string name="assumptions_salary_growth">Hausse du salaire par an</string>
+    <string name="assumptions_section_studies">Études</string>
+    <string name="assumptions_study_length">Durée des études</string>
+    <string name="assumptions_months">%1$d mois</string>
+    <string name="assumptions_tuition">Frais de scolarité, tous les %1$d mois d’études</string>
+    <string name="assumptions_section_costs">Dépenses mensuelles (indexées à l’inflation)</string>
+    <string name="assumptions_rent">Loyer de l’appartement que Maya loue seule</string>
+    <string name="assumptions_insurance">Assurance maladie</string>
+    <string name="assumptions_groceries">Courses</string>
+    <string name="assumptions_other">Autres dépenses</string>
+    <string name="assumptions_inflation">Inflation par an</string>
+    <string name="assumptions_section_housing">Logement</string>
+    <string name="assumptions_shared_rent">Scénario colocation, loyer par mois</string>
+    <string name="assumptions_moving">Frais de déménagement</string>
+    <string name="assumptions_rent_rise">Hausse de loyer une fois acceptée, par an</string>
+    <string name="assumptions_section_random">Problèmes aléatoires, tirés chaque mois</string>
+    <string name="assumptions_rent_rise_odds">Hausse de loyer : 1 chance sur %1$d chaque mois, au plus %2$d tous les %3$d mois.</string>
+    <string name="assumptions_repair_odds">Réparation de %1$s : 1 chance sur %2$d chaque mois, au plus %3$d tous les %4$d mois.</string>
+    <string name="assumptions_section_rules">Règles</string>
+    <string name="assumptions_rule_cash">Le solde du compte ne descend jamais sous 0 : ce qui ne peut pas être payé devient une facture impayée, reportée au mois suivant. Il n’y a aucun prêt automatique.</string>
+    <string name="assumptions_rule_savings">L’épargne n’est pas investie.</string>
+    <string name="assumptions_rule_taxes">Les impôts ne sont pas modélisés.</string>
+    <string name="assumptions_rule_outlook">Les perspectives sur 12 mois supposent que rien ne change et ne tirent aucun nouveau problème aléatoire.</string>
+    <string name="assumptions_section_goal">Objectif</string>
+    <!-- Objectif -->
+    <string name="goal_title">Objectif</string>
+    <string name="goal_target">%1$s de patrimoine net au mois %2$d</string>
+    <string name="goal_progress">%1$d % atteint</string>
+    <string name="goal_due">Échéance atteinte.</string>
+    <!-- Sensibilité -->
+    <string name="sensitivity_title">Tester les hypothèses</string>
+    <string name="sensitivity_hint">Modifiez une valeur pour voir en quoi les 12 prochains mois changeraient. Seul cet aperçu change, pas la partie.</string>
+    <string name="sensitivity_rent">Loyer de l’appartement actuel : %1$s</string>
+    <string name="sensitivity_income">Revenu des parents : %1$s</string>
+    <string name="sensitivity_result">Avec ces valeurs :</string>
+    <string name="sensitivity_difference">Écart avec les valeurs inchangées : %1$s</string>
+    <string name="sensitivity_stability">Stabilité avec ces valeurs : %1$s</string>
+    <string name="sensitivity_reset">Réinitialiser</string>
+    <!-- Écart avec la ligne pointillée -->
+    <string name="breakdown_title">Pourquoi les deux lignes diffèrent</string>
+    <string name="breakdown_more">À la fin du mois %1$d, le parcours de Maya a %2$s de patrimoine net de plus que la ligne pointillée.</string>
+    <string name="breakdown_less">À la fin du mois %1$d, le parcours de Maya a %2$s de patrimoine net de moins que la ligne pointillée.</string>
+    <string name="breakdown_same">À la fin du mois %1$d, les deux lignes ont le même patrimoine net.</string>
+    <string name="breakdown_items">Effet sur le patrimoine net depuis le mois %1$d, poste par poste :</string>
+    <string name="breakdown_parent_income">Revenu des parents</string>
+    <string name="breakdown_internship">Salaire du stage</string>
+    <string name="breakdown_salary">Salaire</string>
+    <string name="breakdown_rent">Loyer</string>
+    <string name="breakdown_insurance">Assurance maladie</string>
+    <string name="breakdown_groceries">Courses</string>
+    <string name="breakdown_other">Autres dépenses</string>
+    <string name="breakdown_tuition">Frais de scolarité</string>
+    <string name="breakdown_unexpected">Dépenses imprévues</string>
+    <string name="breakdown_decisions">Déménagement et coûts des décisions</string>
+    <string name="breakdown_interest">Intérêts</string>
+    <string name="breakdown_return">Rendement des placements</string>
+</resources>

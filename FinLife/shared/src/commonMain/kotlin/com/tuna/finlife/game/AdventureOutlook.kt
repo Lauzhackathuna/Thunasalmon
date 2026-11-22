@@ -40,19 +40,23 @@ internal class AdventureOutlook private constructor(val options: List<FutureOpti
     }
 
     companion object {
-        fun calculate(base: SimulationSession, internshipSalary: Long): AdventureOutlook {
+        /** [sensitivity] changes the engine's inputs for this projection only; neutral = the run's own values. */
+        fun calculate(base: SimulationSession, internshipSalary: Long, sensitivity: Sensitivity = Sensitivity()): AdventureOutlook {
             val states = AdventureRun.whatIfStates(base)
             val choices = listOf(emptySet(), setOf(WhatIf.Internship), setOf(WhatIf.SharedFlat), WhatIf.entries.toSet())
                 .filter { selected -> selected.all { states[it] == WhatIfState.Available } }
+            val profile = sensitivity.apply(base.profile)
             val options = choices.map { selected ->
                 val proposed = AdventureRun.withWhatIfs(base, selected, internshipSalary)
                 // Calendar is only what is already known. Include this month's already drawn problems,
                 // even when their IDs start with random-. Never draw any future random events.
                 val known = proposed.calendar.filter { it.month >= proposed.currentMonth }
-                val projection = FinancialProjections.nothingChanges(proposed, known)
-                FutureOption(selected, projection, FinancialStabilityAnalysis.evaluate(base.profile, base.configuration, projection))
+                val commitments = proposed.selections.filter { choice -> known.any { it.id == choice.eventId } }
+                val projection = FinancialProjections.nothingChanges(profile, proposed.configuration,
+                    sensitivity.apply(proposed.currentState), known, commitments)
+                FutureOption(selected, projection, FinancialStabilityAnalysis.evaluate(profile, base.configuration, projection))
             }
-            check(options.all { it.projection.initialState == base.currentState })
+            check(options.all { it.projection.initialState == sensitivity.apply(base.currentState) })
             return AdventureOutlook(options)
         }
     }
