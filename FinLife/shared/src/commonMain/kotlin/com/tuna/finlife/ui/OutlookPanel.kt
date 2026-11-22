@@ -26,6 +26,7 @@ internal fun OutlookCard(draft: WhatIfDraft, metric: BalanceMetric, outlook: Adv
             } else {
                 val option = outlook.selected(draft.selected)
                 Text(scenarioLabel(option.choices), style = MaterialTheme.typography.labelLarge)
+                Text(playerStringResource(Res.string.outlook_assumptions), style = MaterialTheme.typography.bodySmall)
                 Checkpoints(option, if (draft.selected.isEmpty()) null else outlook.baseline, metric)
                 HorizontalDivider()
                 Text(playerStringResource(Res.string.outlook_all_metrics), style = MaterialTheme.typography.labelLarge)
@@ -52,6 +53,7 @@ internal fun FuturePreview(draft: WhatIfDraft) {
     val option = outlook.selected(draft.selected)
     val impact = outlook.impact(option)
     Text(scenarioLabel(option.choices), style = MaterialTheme.typography.titleLarge)
+    Text(playerStringResource(Res.string.outlook_assumptions), style = MaterialTheme.typography.bodySmall)
     CashChart(draft.base, null, Modifier.fillMaxWidth(), option.projection, outlook.baseline.projection)
     Checkpoints(option, outlook.baseline)
     HorizontalDivider()

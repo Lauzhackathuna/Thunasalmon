@@ -45,6 +45,8 @@ import finlife.shared.generated.resources.setup_section_start
 import finlife.shared.generated.resources.setup_section_studies
 import finlife.shared.generated.resources.setup_section_whatif
 import finlife.shared.generated.resources.setup_start
+import finlife.shared.generated.resources.setup_demo
+import finlife.shared.generated.resources.setup_demo_hint
 import finlife.shared.generated.resources.setup_title
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -65,6 +67,7 @@ internal fun SetupScreen(
     playerName: String,
     onStart: (StartingData) -> Unit,
     onOpenSettings: () -> Unit,
+    onDemo: (() -> Unit)? = null,
 ) {
     var texts by remember(initial) { mutableStateOf(StartingDataForm.texts(initial)) }
     val data = StartingDataForm.build(texts)
@@ -89,6 +92,10 @@ internal fun SetupScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (onDemo != null) {
+            PrimaryButton(stringResource(Res.string.setup_demo), onDemo)
+            Text(stringResource(Res.string.setup_demo_hint), style = MaterialTheme.typography.bodySmall)
+        }
         StartingAmountFields(texts) { field, value -> texts = texts + (field to value) }
     }
 }

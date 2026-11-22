@@ -106,4 +106,30 @@ class AssistantLiveEvaluation {
         file.writeText(report.toString())
         println(report)
     }
+    /** Short rehearsal of the documented question; opt-in, never required for offline CI. */
+    @Test fun epflDemoQuestion() {
+        if (System.getenv("FINLIFE_DEMO_OLLAMA") != "1") return
+        val offered = com.tuna.finlife.game.DemoJourney.atEpflOffer("Alex")
+        val event = com.tuna.finlife.simulation.SimulationSessions.pendingDecisions(offered).single().event
+        val selected = AdventureRun.choose(offered, event.id, "epfl")
+        val delegate = OllamaAssistantModel.fromEnvironment()
+        val report = StringBuilder()
+        val model = object : AssistantModel by delegate {
+            override suspend fun explain(system: String, user: String): ModelResult<String> {
+                val result = delegate.explain(system, user)
+                report.appendLine("Model wording: $result")
+                return result
+            }
+        }
+        runBlocking {
+            repeat(3) {
+                val started = System.nanoTime()
+                val answer = Assistant(model).answer("Pourquoi le salaire a-t-il changé au mois 28 ?",
+                    emptyList(), context(selected), AppLanguage.French)
+                report.appendLine("Attempt ${it + 1}, ${(System.nanoTime() - started) / 1e9} s: $answer")
+            }
+        }
+        File("build/assistant-demo-report.txt").writeText(report.toString())
+        println(report)
+    }
 }

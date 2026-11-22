@@ -1,4 +1,4 @@
-> **Archive — modèle annuel V1.** Ce document conserve les anciennes hypothèses et ne décrit pas l’aventure actuelle. Pour Maya, les enveloppes, les impayés et les projections mensuelles, consulter [le README actuel](../README.md) et [le moteur V3](../shared/src/commonMain/kotlin/com/tuna/finlife/simulation/README.md).
+> **Archive — modèle annuel V1.** Ce document conserve les anciennes hypothèses et ne décrit pas l’aventure actuelle. Pour le parcours à prénom personnalisable, les enveloppes, les impayés et les projections mensuelles, consulter [le README actuel](../README.md) et [le moteur V3](../shared/src/commonMain/kotlin/com/tuna/finlife/simulation/README.md).
 
 1. Conventions
    Monnaie : CHF nominaux. Pas d'inflation dans la version 1 (limite assumée, affichée dans l'app).

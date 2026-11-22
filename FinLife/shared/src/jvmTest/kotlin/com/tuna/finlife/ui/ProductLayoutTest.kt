@@ -74,4 +74,15 @@ class ProductLayoutTest {
         val setup = render("setup", 390, 844) { FinLifeTheme { SetupScreen(StartingData.Default, playerName = "Alex", onStart = {}, onOpenSettings = {}) } }
         assertTrue(setup.any { it.contains("CHF") })
     }
+    @Test fun epflDemoRendersAtDesktopAndPhoneWidths() {
+        val run = DemoJourney.atEpflOffer("Alex")
+        for (width in listOf(390, 1200)) {
+            val text = render("epfl-demo-$width", width, 1100) {
+                FinLifeTheme { AdventureScreen(run, {}, {}, {}, { _, _ -> }, WhatIfDraft(run), null,
+                    StartingData.Default, { true }, { _, _ -> }) }
+            }
+            assertTrue(text.any { it.contains("71.8") || it.contains("71,8") }, text.toString())
+            assertTrue(text.any { it.contains("EPFL") }, text.toString())
+        }
+    }
 }

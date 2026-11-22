@@ -52,7 +52,7 @@ internal class AdventureOutlook private constructor(val options: List<FutureOpti
                 val proposed = AdventureRun.withWhatIfs(base, selected, internshipSalary)
                 // Calendar is only what is already known. Include this month's already drawn problems,
                 // even when their IDs start with random-. Never draw any future random events.
-                val known = proposed.calendar.filter { it.month >= proposed.currentMonth && it !is LifeEvent.CompanyClosure }
+                val known = proposed.calendar.filter { it.month >= proposed.currentMonth }
                 val commitments = proposed.selections.filter { choice -> known.any { it.id == choice.eventId } }
                 val projection = FinancialProjections.nothingChanges(profile, proposed.configuration,
                     sensitivity.apply(proposed.currentState), known, commitments)

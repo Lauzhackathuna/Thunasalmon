@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-FinLife is an interactive financial life simulator for the UBS × LauzHack and JetBrains challenges. Follow , a fictional student in Lausanne, and explore how housing, work, and unexpected costs affect her cash, unpaid bills, and net worth.
+FinLife is an interactive financial life simulator for the UBS × LauzHack and JetBrains challenges. Choose a first name for a fictional student in Lausanne, then explore how housing, work, and unexpected costs affect cash, unpaid bills, and net worth. FinLife is an exploratory simulator, not a financial adviser.
 
 ## 2. Core Features
 
@@ -40,3 +40,15 @@ For AI explanations, start Ollama and run `ollama pull qwen3:4b` on the host com
 Choose a name → edit his/her budget → preview a choice → advance a month to apply it → review the results. The simulation works without Ollama. Unpaid bills are tracked separately from available cash. All figures are illustrative. Simulation under stated assumptions, not a forecast or financial advice.
 
 [Developer guide and model assumptions](FinLife/README.md)
+
+## 6. Five-minute demo
+
+After entering a first name, select **EPFL demo · jump to decision** on the budget screen.
+This uses the default budget and fixed seed 19, replays 27 completed months with default housing choices,
+and stops before the EPFL decision (month 28). It does not use edited setup amounts.
+See the [five-minute script and platform checklist](FinLife/docs/demo.md).
+
+The private job has a fictional independent **10% failure probability each eligible month** after
+staying in that job: `1 - 0.9^12 ≈ 71.8%` over twelve eligible months. EPFL has no company-failure risk
+in this model. Projections include known events but **do not draw new future failures**; they are
+conditional scenarios, not forecasts or probability-weighted expected outcomes.

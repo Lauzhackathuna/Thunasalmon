@@ -14,7 +14,7 @@
     <string name="assistant_model_missing">The model %1$s isn’t installed in Ollama. Install it with “ollama pull %1$s”, then check again.</string>
     <string name="assistant_timeout">The local model took too long to answer. Try again.</string>
     <string name="assistant_server_error">Ollama returned an error. Try again.</string>
-    <string name="assistant_projection_caption">Simulation of the next %1$d months if nothing changes: no random events, housing kept, new offers declined, no automatic loan. Not a prediction.</string>
+    <string name="assistant_projection_caption">Simulation of the next %1$d months if nothing changes: no random events, housing kept, new offers declined, no automatic loan. Not a prediction. No new future company failures; not a risk-weighted expected outcome.</string>
     <string name="assistant_unreliable">I couldn’t explain this reliably from the simulation figures. Try rephrasing, or look at the month card and the chart.</string>
     <string name="assistant_out_of_scope">I can only explain this simulation: played months, the current situation, the dotted line, the decision waiting, the next 12 months, or how the simulation works.</string>
     <string name="assistant_nothing_played">No month has been played yet. Play a month, then ask again.</string>

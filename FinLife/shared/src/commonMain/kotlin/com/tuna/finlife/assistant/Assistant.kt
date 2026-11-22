@@ -51,6 +51,23 @@ internal class Assistant(private val model: AssistantModel) {
             is Plan.Answer -> return p.answer
             is Plan.Explain -> p
         }
+        // Keep the demo's causal salary explanation deterministic: small models confuse this job with an internship.
+        if (extraction.topic == Topic.PlayedMonths && (extraction.endMonth == null || extraction.endMonth == extraction.month) &&
+            Regex("salaire|salary", RegexOption.IGNORE_CASE).containsMatchIn(question)) {
+            val record = extraction.month?.let { context.session.history.getOrNull(it - 1) }
+            val accepted = record?.events?.any { outcome ->
+                outcome.optionId == "epfl" &&
+                    outcome.application == com.tuna.finlife.simulation.EventApplication.APPLIED &&
+                    context.session.calendar.any { it.id == outcome.eventId && it is com.tuna.finlife.simulation.LifeEvent.EpflJobOffer }
+            } == true
+            if (accepted && record != null) {
+                val salary = m(record.flow.professionalIncome, context.currency)
+                val tax = m(record.flow.taxes, context.currency)
+                return AssistantAnswer.Explanation(if (language == AppLanguage.French)
+                    "Explication du moteur : au mois ${record.month + 1}, le choix du poste fictif à l’EPFL a fixé le salaire brut à $salary. Les impôts et cotisations simulés sur ce salaire sont de $tax. Ce poste n’a pas de risque de faillite dans le jeu. Ces montants sont des flux mensuels, pas le solde bancaire ni le patrimoine net."
+                else "Engine explanation: in month ${record.month + 1}, accepting the fictional EPFL job set gross salary to $salary. Simulated taxes and contributions on that salary are $tax. This job has no company-failure risk in the game. These amounts are monthly flows, not bank balance or net worth.")
+            }
+        }
         val system = AssistantPrompts.explanation(language)
             .replace("Maya", context.playerName)
         val facts = FactSheet(listOf("Player first name: ${context.playerName}.") +
@@ -63,10 +80,12 @@ internal class Assistant(private val model: AssistantModel) {
             }
             val numbers = ReplyGuard.unsupportedNumbers(reply, facts.text)
             val advice = ReplyGuard.advicePhrases(reply)
-            if (reply.isNotEmpty() && numbers.isEmpty() && advice.isEmpty()) {
+            val bindings = ReplyGuard.unsupportedMetricAmounts(reply, facts.text)
+            if (reply.isNotEmpty() && numbers.isEmpty() && advice.isEmpty() && bindings.isEmpty()) {
                 return AssistantAnswer.Explanation(reply, plan.projectionMonths)
             }
-            correction = AssistantPrompts.correction(numbers, advice)
+            correction = AssistantPrompts.correction(numbers, advice) +
+                if (bindings.isEmpty()) "" else " Keep each signed amount attached to its FACTS metric; unsupported bindings: ${bindings.joinToString()}."
         }
         return AssistantAnswer.Unreliable
     }

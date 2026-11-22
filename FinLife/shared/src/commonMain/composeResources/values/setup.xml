@@ -21,4 +21,6 @@
     <string name="error_too_large">At most %1$s.</string>
     <string name="setup_start">Start</string>
     <string name="setup_defaults">Restore defaults</string>
+    <string name="setup_demo">EPFL demo · jump to decision</string>
+    <string name="setup_demo_hint">Preset journey with the default budget and reproducible events. Earlier housing choices keep the current home. Your first name is kept; amounts entered here are not used.</string>
 </resources>

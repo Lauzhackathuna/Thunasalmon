@@ -11,7 +11,7 @@ internal object ProjectionAssumptions {
 
     fun english(annualInflation: Double): List<String> = listOf(
         "Months simulated one by one by the engine; prices indexed at ${percentLabel(annualInflation)}% inflation per year, applied monthly.",
-        "No random events; only events already known are included.",
+        "No new random events or future company-failure draws; already known events are included. This is a scenario without new failures, not a probability-weighted expected outcome.",
         "Without an explicit choice: the housing is kept, new offers are declined, and optional purchases are left out.",
         "Commitments already made, study deadlines and unpaid bills carry over; there is no automatic loan.",
         "Bills due and payments made are kept apart; balance = cash on the account minus unpaid bills.",

@@ -44,4 +44,17 @@ class ReplyGuardTest {
         assertEquals(listOf("il vaut mieux"), ReplyGuard.advicePhrases("Il vaut mieux refuser le stage."))
         assertTrue(ReplyGuard.advicePhrases("The shared flat ends with more money in this simulation.").isEmpty())
     }
+    @Test fun rejectsMetricSwapsAndSignChangesInBothLanguages() {
+        val facts = "Salary: 6000 CHF. Net worth: -300 CHF. Balance (cash minus unpaid bills): -400 CHF. Cash on the account: 0 CHF. Unpaid bills: 400 CHF."
+        for (reply in listOf("Net worth: 6000 CHF.", "Patrimoine net : 6000 CHF.",
+            "Balance: 300 CHF.", "Net worth: 300 CHF.", "Factures impayées : 0 CHF.",
+            "Solde : 6000 CHF.", "6000 CHF.")) {
+            assertTrue(ReplyGuard.unsupportedMetricAmounts(reply, facts).isNotEmpty(), reply)
+        }
+        for (reply in listOf("Net worth: -300 CHF.", "Patrimoine net : −300 CHF.",
+            "Solde : -400 CHF.", "Unpaid bills: 400 CHF.", "Salaire : 6 000 CHF.")) {
+            assertTrue(ReplyGuard.unsupportedMetricAmounts(reply, facts).isEmpty(), reply)
+        }
+    }
+
 }

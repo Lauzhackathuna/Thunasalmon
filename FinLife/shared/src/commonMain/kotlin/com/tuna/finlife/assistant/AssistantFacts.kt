@@ -254,7 +254,7 @@ internal object AssistantFacts {
         }
         is LifeEvent.ShortInternshipOffer -> "The offer lasts ${event.durationMonths} months at ${m(event.monthlyIncome, c)} per month, alongside studies."
         is LifeEvent.HousingChoice -> "The new rented home costs ${m(event.newContract.monthlyRent, c)} per month; moving costs ${m(event.movingCost, c)}."
-        is LifeEvent.EpflJobOffer -> "Fictional EPFL salary: ${m(event.monthlySalary, c)} per month; keeping the private-sector job means an independent ${percentLabel(event.monthlyFailureProbability)}% chance of company collapse EACH month, continuing until that company closes. This is a hypothetical game assumption, not an actual EPFL or company statistic."
+        is LifeEvent.EpflJobOffer -> "Fictional EPFL salary: ${m(event.monthlySalary, c)} per month; keeping the private-sector job means an independent ${percentLabel(event.monthlyFailureProbability)}% chance of company collapse EACH month, continuing until that company closes. Over twelve eligible months, the cumulative probability is 1 - (1 - p)^12: about 71.8% at p = 10%. Previews exclude new future failures and are not expected outcomes. This is a hypothetical game assumption, not an actual EPFL or company statistic."
         else -> null
     }
 
@@ -317,7 +317,7 @@ internal object AssistantFacts {
     internal fun studiedScenarios(context: AssistantContext): List<Pair<String, TwelveMonthProjection>>? {
         val session = context.session
         val state = session.currentState
-        val known = session.calendar.filter { it.month >= state.month && !RandomTroubles.isRandom(it) && it !is LifeEvent.CompanyClosure }
+        val known = session.calendar.filter { it.month >= state.month }
         // A move or an offer already lined up for this month is a choice already made: no comparison then.
         if (known.any { it is LifeEvent.HousingChoice || it is LifeEvent.ShortInternshipOffer || it is LifeEvent.PurchaseChoice }) return null
         val offerPossible = state.status == LifeStatus.STUDENT &&
@@ -356,7 +356,7 @@ internal object AssistantFacts {
             "Amounts are in ${c}.",
             "FinLife simulates the budget of Maya, a fictional student, month by month, with synthetic data.",
             "Maya is a tenant: she rents her housing and does not own it.",
-            "Net worth = cash + investments − debt − unpaid bills. The chart shows net worth.",
+            "Net worth = cash + investments − bank debt − unpaid non-bank bills. Unpaid bank principal is already in bank debt, never subtracted twice. The chart metric is selectable.",
             "Balance = cash on the account minus unpaid bills; it can go below zero. Cash itself never goes below zero: what cannot be paid stays as unpaid bills, and there is no automatic loan.",
             "Prices are indexed at ${percentLabel(configuration.annualInflation)}% inflation per year.",
             if (configuration.incomeTaxRate > 0.0) "Once Maya earns a salary, ${percentLabel(configuration.incomeTaxRate)}% of it goes to taxes and social contributions (a flat synthetic rate). Income from parents and internship pay are not taxed."
@@ -406,7 +406,7 @@ internal object AssistantFacts {
         is LifeEvent.RentRise -> if (optionId == "move") "move to the shared flat" else "stay in her rented flat and accept the new rent"
         is LifeEvent.HousingChoice -> if (optionId == "move") "move" else "stay in her rented flat"
         is LifeEvent.ShortInternshipOffer, is LifeEvent.Internship -> if (optionId == "accept") "accept the internship" else "decline the internship"
-        is LifeEvent.EpflJobOffer -> if (optionId == "epfl") "accept the stable EPFL job at 4500 CHF per month" else "stay in the higher-paid private job with a 10% company-failure chance each month"
+        is LifeEvent.EpflJobOffer -> if (optionId == "epfl") "accept the stable EPFL job at 4500 CHF per month" else "stay in the private job with a 10% company-failure chance each month"
         else -> if (optionId == "first") "first option" else "second option"
     }
 

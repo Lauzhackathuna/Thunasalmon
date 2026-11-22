@@ -14,7 +14,7 @@
     <string name="assistant_model_missing">Le modèle %1$s n’est pas installé dans Ollama. Installez-le avec « ollama pull %1$s », puis vérifiez à nouveau.</string>
     <string name="assistant_timeout">Le modèle local a mis trop de temps à répondre. Réessayez.</string>
     <string name="assistant_server_error">Ollama a renvoyé une erreur. Réessayez.</string>
-    <string name="assistant_projection_caption">Simulation des %1$d prochains mois si rien ne change : aucun événement aléatoire, logement conservé, nouvelles offres refusées, aucun prêt automatique. Ce n’est pas une prévision.</string>
+    <string name="assistant_projection_caption">Simulation des %1$d prochains mois si rien ne change : aucun événement aléatoire, logement conservé, nouvelles offres refusées, aucun prêt automatique. Ce n’est pas une prévision. Sans nouvelle faillite future ; pas une espérance intégrant le risque.</string>
     <string name="assistant_unreliable">Je n’ai pas pu expliquer cela de façon fiable à partir des chiffres simulés. Reformulez, ou consultez la carte du mois et le graphique.</string>
     <string name="assistant_out_of_scope">Je ne peux expliquer que cette simulation : les mois joués, la situation actuelle, la ligne pointillée, la décision en attente, les 12 prochains mois ou le fonctionnement de la simulation.</string>
     <string name="assistant_nothing_played">Aucun mois n’a encore été joué. Jouez un mois, puis reposez la question.</string>

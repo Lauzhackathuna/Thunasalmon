@@ -258,4 +258,25 @@ class AssistantTest {
         assertTrue("Months played: 1 to 4" in system && "French" in system, system)
         assertNull(model.explainCalls.firstOrNull())
     }
+    @Test fun aRealIncomeMislabelledAsNetWorthIsRetriedAndRejected() {
+        val income = m(played.history[1].flow.income, "CHF")
+        val model = FakeModel(extractions = listOf(month2), replies = listOf(
+            ModelResult.Ok("Net worth: $income."), ModelResult.Ok("Patrimoine net : $income.")))
+        assertEquals(AssistantAnswer.Unreliable, ask(model))
+        assertTrue("unsupported bindings" in model.explainCalls[1].second)
+    }
+
+    @Test fun epflSalaryExplanationUsesEngineFactsWithoutModelWording() {
+        val offered = com.tuna.finlife.game.DemoJourney.atEpflOffer("Alex")
+        val event = com.tuna.finlife.simulation.SimulationSessions.pendingDecisions(offered).single().event
+        val selected = AdventureRun.choose(offered, event.id, "epfl")
+        for (language in AppLanguage.entries) {
+            val model = FakeModel(extractions = listOf(ModelResult.Ok(Extraction(Topic.PlayedMonths, 28))))
+            val answer = runNow { Assistant(model).answer("Pourquoi le salaire a-t-il changé au mois 28 ?",
+                emptyList(), context(selected), language) }
+            val text = assertIs<AssistantAnswer.Explanation>(answer).text
+            assertTrue("4500 CHF" in text && "900 CHF" in text, text)
+            assertTrue(model.explainCalls.isEmpty())
+        }
+    }
 }

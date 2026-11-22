@@ -154,6 +154,18 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                 session = AdventureRun.start(data = data, playerName = playerName)
                             },
                             onOpenSettings = { settingsOpen = true },
+                            onDemo = {
+                                val demo = try { com.tuna.finlife.game.DemoJourney.atEpflOffer(playerName) }
+                                    catch (_: Exception) { calculationError = true; null }
+                                if (demo != null) {
+                                    startingData = StartingData.Default
+                                    whatIfDraft = null
+                                    counterfactual = null
+                                    ended = false
+                                    newChat()
+                                    session = demo
+                                }
+                            },
                         )
                     }
                     else -> {
