@@ -202,7 +202,7 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                 }, label = { Text(metricLabel(value)) })
             }
         }
-        Text(stringResource(Res.string.chart_range), style = MaterialTheme.typography.labelSmall)
+        Text(stringResource(if (combined) Res.string.chart_future_range else Res.string.chart_range), style = MaterialTheme.typography.labelSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf<Int?>(3, 6, 12, null).forEach { value ->
                 FilterChip(selected = window == value, onClick = { window = value },
