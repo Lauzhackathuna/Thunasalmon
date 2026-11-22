@@ -47,6 +47,10 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.kotlinx.serialization.json)
         }
+        jvmTest.dependencies {
+            // The same desktop runtime as the app, required for offscreen Compose rendering tests.
+            implementation(compose.desktop.currentOs)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

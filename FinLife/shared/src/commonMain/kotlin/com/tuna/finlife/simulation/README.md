@@ -49,8 +49,7 @@ Les limites numériques et les validations de taux V2 restent applicables.
 `state.envelopes[Envelope.HOUSING]` et les propriétés nommées donnent les soldes.
 Invariant vérifié : `state.envelopes.total == state.cash`, avec tous les soldes non négatifs.
 `MonthlyProfile.initialEnvelopes` accepte une autre affectation dont le total doit égaler le cash.
-Sans affectation explicite : 8 000 CHF utilisent cette répartition de référence ; tout autre montant
-est initialement en RESERVE. Aucun montant n'est ajouté aux liquidités, investissements ou dettes.
+Sans affectation explicite, `BudgetEnvelopes.initial(profile)` finance dans l’ordre prioritaire deux échéances d’études restantes, trois loyers, quatre primes d’assurance, trois budgets de courses et un budget OTHER ; le surplus va en RESERVE. Chaque affectation est plafonnée au cash restant. Cette politique retrouve exactement la répartition de référence et s’adapte aux montants personnalisés. Aucun montant n'est ajouté aux liquidités, investissements ou dettes.
 Les cash initiaux négatifs V2 sont désormais rejetés : fournir un état avec passifs explicites.
 
 Le revenu reçu comble les besoins non encore financés dans l'ordre :

@@ -112,7 +112,7 @@ private fun GameBody(
     BoxWithConstraints(modifier) {
         val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
         val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
-        val pinControls = maxHeight >= 700.dp * fontScale
+        val pinControls = maxHeight >= 480.dp * fontScale
         val contentWidth = if (wideRoom) FinLifeContentWidth * 2 else FinLifeContentWidth
         val reserveTop = cornerWidth > 0.dp && maxWidth < contentWidth + cornerWidth * 2
         Column(
@@ -123,29 +123,27 @@ private fun GameBody(
             if (wideRoom) {
                 Row(
                     modifier = Modifier.weight(1f).widthIn(max = FinLifeContentWidth * 2).fillMaxWidth()
-                        .verticalScroll(rememberScrollState()).padding(FinLifeSpacing.large),
+                        .padding(FinLifeSpacing.large),
                     horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.large),
                 ) {
-                    Box(Modifier.weight(1f)) { header() }
+                    Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) { header() }
                     Column(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                         verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
                     ) {
-                        content()
+                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) { content() }
                         actions()
                     }
                 }
             } else {
-                if (pinControls && header != null) {
-                    Box(screenWidth().padding(top = FinLifeSpacing.medium)) { header() }
-                }
                 Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                     Column(
                         modifier = Modifier.align(Alignment.TopCenter).then(screenWidth())
                             .padding(vertical = if (header == null) FinLifeSpacing.large else FinLifeSpacing.medium),
                         verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
                     ) {
-                        if (!pinControls) header?.invoke()
+                        header?.invoke()
                         content()
                         if (!pinControls) actions?.invoke()
                     }

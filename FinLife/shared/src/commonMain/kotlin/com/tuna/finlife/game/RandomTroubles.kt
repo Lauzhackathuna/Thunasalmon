@@ -8,13 +8,13 @@ import kotlin.random.Random
 
 /**
  * Random problems drawn by the app (product rules, not engine rules):
- * each month, rent rises at probability 1/5 and maintenance at probability 1/12,
+ * each month, rent rises at probability 1/12 and maintenance at probability 1/12,
  * with at most one rent rise and two maintenance bills per 12-month block (months 0–11, 12–23, …).
  * Random maintenance uses a synthetic CHF 400 repair bill.
  */
 internal object RandomTroubles {
     /** Each month: rent rises with probability 1 in [RENT_ODDS], maintenance with 1 in [MAINTENANCE_ODDS]. */
-    const val RENT_ODDS = 5
+    const val RENT_ODDS = 12
     const val MAINTENANCE_ODDS = 12
     private const val MONTHLY_RENT_PROBABILITY = 1.0 / RENT_ODDS
     private const val MONTHLY_MAINTENANCE_PROBABILITY = 1.0 / MAINTENANCE_ODDS
@@ -52,7 +52,7 @@ internal object RandomTroubles {
             val maintenanceId = "$MAINTENANCE_PREFIX$month"
             if (maintenanceRoll < MONTHLY_MAINTENANCE_PROBABILITY && maintenanceId !in ids &&
                 inBlock.count { it.id.startsWith(MAINTENANCE_PREFIX) } < MAX_MAINTENANCE_PER_BLOCK
-            ) add(LifeEvent.Maintenance(maintenanceId, month, PaymentResponsibility.CHARACTER, MAINTENANCE_COST))
+            ) add(LifeEvent.OneOffExpense(maintenanceId, month, "Minor household repair", MAINTENANCE_COST, PaymentResponsibility.CHARACTER))
         }
     }
 

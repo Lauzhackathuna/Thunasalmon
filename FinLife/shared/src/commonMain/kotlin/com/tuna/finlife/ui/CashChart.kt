@@ -54,6 +54,12 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.tuna.finlife.game.BalanceMetric
+import com.tuna.finlife.i18n.formatCents
+import com.tuna.finlife.simulation.TwelveMonthProjection
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.FilterChip
+import finlife.shared.generated.resources.*
 import com.tuna.finlife.game.AlternativeChoice
 import com.tuna.finlife.game.ChartScale
 import com.tuna.finlife.game.Counterfactual
@@ -93,7 +99,7 @@ private val ChartHeight = 200.dp
 private val TooltipWidth = 240.dp
 
 /** Whole CHF of the plotted value: the engine's net worth (cash + investments − debt − unpaid bills). */
-private fun MonthlyState.plotted(): Long = netWorth.cents / 100
+private fun MonthlyState.plotted(metric: BalanceMetric): Long = metric.value(this).cents
 
 /**
  * Net worth over the simulated months: one 2dp line, hairline grid, labelled axes, and a dotted line for
@@ -102,34 +108,46 @@ private fun MonthlyState.plotted(): Long = netWorth.cents / 100
  * by [TooltipHost] and never receives pointer input, so it cannot interrupt the hover.
  */
 @Composable
-internal fun CashChart(session: SimulationSession, counterfactual: Counterfactual?, modifier: Modifier = Modifier) {
-    val states = remember(session) { session.states }
-    val history = remember(session) { session.history }
+internal fun CashChart(session: SimulationSession, counterfactual: Counterfactual?, modifier: Modifier = Modifier,
+    projection: TwelveMonthProjection? = null, baseline: TwelveMonthProjection? = null,
+) {
+    var metric by remember { mutableStateOf(BalanceMetric.Cash) }
+    var window by remember { mutableStateOf<Int?>(12) }
+    val allStates = remember(session, projection) { projection?.states ?: session.states }
+    if (allStates.size == 1) {
+        Text(stringResource(Res.string.history_empty), style = MaterialTheme.typography.bodyMedium)
+        return
+    }
+    val states = remember(allStates, window) { allStates.slice(ChartScale.visibleRange(allStates.size, window, projection != null)) }
+    val firstMonth = states.first().month
+    val history = remember(session, projection) { (projection?.records ?: session.history).associateBy { it.after.month } }
     val events = remember(session) { session.calendar.associateBy { it.id } }
-    val values = remember(states) { states.map { it.plotted() } }
+    val values = remember(states, metric) { states.map { it.plotted(metric) } }
     val count = states.size
-
-    // Alternative (dotted): from the month it branched off to the last month it reached.
-    val altStates = remember(counterfactual) { counterfactual?.alternative?.states.orEmpty() }
-    val altFrom = counterfactual?.month ?: 0
-    val altValues = remember(altStates) { altStates.map { it.plotted() } }
+    val altStates = remember(counterfactual, baseline, firstMonth) {
+        (baseline?.states ?: counterfactual?.alternative?.states.orEmpty()).filter { it.month >= firstMonth }
+    }
+    val altFrom = if (baseline != null) 0 else ((counterfactual?.month ?: firstMonth) - firstMonth).coerceAtLeast(0)
+    val altValues = remember(altStates, metric) { altStates.map { it.plotted(metric) } }
     val altLast = minOf(altStates.lastIndex, values.lastIndex)
-    val altRange = if (counterfactual != null && altLast > altFrom) altFrom..altLast else IntRange.EMPTY
+    val altRange = if (altLast > altFrom) altFrom..altLast else IntRange.EMPTY
 
     val axis = remember(values, altValues, altRange) {
         val all = values + altRange.map { altValues[it] }
         ChartScale.valueAxis(all.min(), all.max())
     }
-    val monthTicks = remember(count) { ChartScale.monthTicks(count - 1) }
     val group = stringResource(Res.string.money_group_separator)
     val decimal = stringResource(Res.string.money_decimal_separator)
-    val yLabels = remember(axis, group, decimal) { ChartScale.tickLabels(axis.ticks, group, decimal) }
+    val yLabels = remember(axis, group, decimal) {
+        if (axis.max - axis.min < 10000) axis.ticks.map { formatCents(it, group, decimal) }
+        else ChartScale.tickLabels(axis.ticks.map { it / 100 }, group, decimal)
+    }
     val colors = MaterialTheme.colorScheme
     val labelStyle = MaterialTheme.typography.labelSmall.copy(color = colors.onSurfaceVariant)
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
 
-    var selected by remember(session) { mutableStateOf<Int?>(null) }
+    var selected by remember(session, projection, window, metric) { mutableStateOf<Int?>(null) }
     val crosshair = remember { Animatable(0f) }
     var crosshairShown by remember { mutableStateOf(false) }
     LaunchedEffect(selected) {
@@ -139,19 +157,34 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
         crosshairShown = true
     }
 
-    val altLabel = counterfactual?.let { alternativeLabel(it.choice) }
-    val description = stringResource(Res.string.cash_history)
-    val selectedLabel = selected?.let { monthLabel(it) }
+    val altLabel = if (baseline != null) stringResource(Res.string.outlook_baseline) else counterfactual?.let {
+        stringResource(Res.string.historical_alternative, alternativeLabel(it.choice))
+    }
+    val description = metricLabel(metric) + ", " + stringResource(if (projection == null) Res.string.cash_history else Res.string.future_path)
+    val selectedLabel = selected?.let { monthLabel(states[it].month) + ": " + money(metric.value(states[it])) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(stringResource(Res.string.chart_metric), style = MaterialTheme.typography.labelSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            BalanceMetric.entries.forEach { value ->
+                FilterChip(selected = metric == value, onClick = { metric = value }, label = { Text(metricLabel(value)) })
+            }
+        }
+        Text(stringResource(Res.string.chart_range), style = MaterialTheme.typography.labelSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf<Int?>(3, 6, 12, null).forEach { value ->
+                FilterChip(selected = window == value, onClick = { window = value },
+                    label = { Text(value?.toString() ?: stringResource(Res.string.chart_all)) })
+            }
+        }
         if (!altRange.isEmpty() && altLabel != null) {
             // Two series: the legend is always present; identity by line style, not colour alone.
-            Row(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
-                LegendItem(stringResource(Res.string.chart_your_path), dotted = false)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
+                LegendItem(stringResource(if (projection == null) Res.string.chart_your_path else Res.string.future_path), dotted = false)
                 LegendItem(altLabel, dotted = true)
             }
         }
         // Y-axis title: what is plotted and its unit.
-        Text(stringResource(Res.string.chart_axis_net_worth, LocalCurrencyCode.current), style = labelStyle)
+        Text(metricLabel(metric) + " · " + LocalCurrencyCode.current, style = labelStyle)
 
         var bounds by remember { mutableStateOf<Rect?>(null) }
         BoxWithConstraints(
@@ -163,12 +196,13 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
             val bottomPx = with(density) { measurer.measure("0", labelStyle).size.height + 8.dp.toPx() }
             val widthPx = with(density) { maxWidth.toPx() }
             val plotWidth = (widthPx - leftPx - rightPx).coerceAtLeast(1f)
+            val monthTicks = ChartScale.monthTicks(count - 1, (maxWidth.value / 85).toInt().coerceIn(2, 6))
             val geometry by rememberUpdatedState(Triple(leftPx, plotWidth, count))
             fun xOf(index: Float) = leftPx + if (count <= 1) 0f else plotWidth * index / (count - 1)
 
             Canvas(
                 Modifier.matchParentSize()
-                    .pointerInput(session) {
+                    .pointerInput(session, projection, window) {
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent()
@@ -203,8 +237,8 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
             ) {
                 val plotBottom = size.height - bottomPx
                 val plotHeight = (plotBottom - topPx).coerceAtLeast(1f)
-                val span = (axis.max - axis.min).toFloat()
-                fun yOf(chf: Long) = topPx + plotHeight * (axis.max - chf) / span
+                val span = (axis.max - axis.min).toDouble()
+                fun yOf(cents: Long) = topPx + (plotHeight * (axis.max - cents) / span).toFloat()
                 val hairline = 1.dp.toPx()
 
                 // Grid and y labels; the zero line is one step stronger when it is in range.
@@ -219,7 +253,7 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                 }
                 // X labels: month numbers, kept inside the canvas.
                 for (month in monthTicks) {
-                    val text = measurer.measure(month.toString(), labelStyle)
+                    val text = measurer.measure((firstMonth + month).toString(), labelStyle)
                     val x = (xOf(month.toFloat()) - text.size.width / 2f).coerceIn(0f, size.width - text.size.width)
                     drawText(text, topLeft = Offset(x, plotBottom + 4.dp.toPx()))
                 }
@@ -273,14 +307,14 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                 } else {
                     null
                 }
-                val record = if (index > 0) history[index - 1] else null
+                val record = history[states[index].month]
                 TooltipRequest(
                     owner = owner,
                     anchor = IntRect(box.left.roundToInt(), box.top.roundToInt(), box.right.roundToInt(), box.bottom.roundToInt()),
                     pointX = (box.left + xOf(index.toFloat())).roundToInt(),
                     gap = gap,
                     margin = margin,
-                ) { MonthTooltip(index, states[index], record, alternative, events) }
+                ) { MonthTooltip(states[index].month, states[index], record, alternative, events, metric) }
             } else {
                 null
             }
@@ -301,6 +335,7 @@ private fun MonthTooltip(
     record: MonthlyRecord?,
     alternative: AlternativeReading?,
     events: Map<String, LifeEvent>,
+    metric: BalanceMetric,
 ) {
     val colors = MaterialTheme.colorScheme
     Column(
@@ -311,10 +346,10 @@ private fun MonthTooltip(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(monthLabel(index), style = MaterialTheme.typography.labelLarge)
-        TooltipLine(stringResource(Res.string.net_worth), money(state.netWorth))
+        TooltipLine(metricLabel(metric), money(metric.value(state)))
         if (alternative != null) {
-            TooltipLine(alternative.label, money(alternative.state.netWorth))
-            val difference = (state.netWorth - alternative.state.netWorth).cents / 100.0
+            TooltipLine(alternative.label, money(metric.value(alternative.state)))
+            val difference = (metric.value(state) - metric.value(alternative.state)).cents / 100.0
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
                 Text(
                     stringResource(Res.string.chart_difference),
@@ -325,7 +360,7 @@ private fun MonthTooltip(
                 DeltaIndicator(displayMoney(abs(difference)), DeltaDirection.fromAmount(difference))
             }
         }
-        TooltipLine(stringResource(Res.string.cash_balance), money(state.theoreticalCash))
+        TooltipLine(stringResource(Res.string.actual_cash), money(state.cash))
         val unpaid = state.unpaid.items.fold(Money.ZERO) { total, bill -> total + bill.missing }
         if (unpaid > Money.ZERO) TooltipLine(stringResource(Res.string.unpaid_bills), money(unpaid))
         if (record != null) {
@@ -393,3 +428,10 @@ private fun TooltipLine(label: String, value: String) {
 @Composable
 private fun monthLabel(index: Int): String =
     if (index == 0) stringResource(Res.string.opening_balance) else stringResource(Res.string.month_number, index)
+
+@Composable
+internal fun metricLabel(metric: BalanceMetric): String = stringResource(when (metric) {
+    BalanceMetric.Cash -> Res.string.metric_cash
+    BalanceMetric.NetWorth -> Res.string.net_worth
+    BalanceMetric.Theoretical -> Res.string.metric_theoretical
+})

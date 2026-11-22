@@ -1,5 +1,19 @@
 package com.tuna.finlife
 
+import finlife.shared.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import com.tuna.finlife.storage.rememberRunStorage
+import com.tuna.finlife.game.JourneySave
+import com.tuna.finlife.ui.ThemeMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -45,6 +59,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
     var setupOpen by remember { mutableStateOf(false) }
     var session by remember { mutableStateOf<SimulationSession?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
+    var calculationError by remember { mutableStateOf(false) }
     var ended by remember { mutableStateOf(false) }
     // What-ifs of the current month, still reversible. Cleared whenever time moves or the run changes.
     var whatIfDraft by remember { mutableStateOf<WhatIfDraft?>(null) }
@@ -54,6 +69,11 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
         val language = if (Locale.current.language == "fr") AppLanguage.French else AppLanguage.English
         mutableStateOf(DemoSettings(language))
     }
+    val storage = rememberRunStorage()
+    val storageLock = remember { Mutex() }
+    var loaded by remember { mutableStateOf(false) }
+    var savingPaused by remember { mutableStateOf(false) }
+    var storageError by remember { mutableStateOf(false) }
     var restoreLocale by remember { mutableStateOf<(() -> Unit)?>(null) }
     val scope = rememberCoroutineScope()
     // In memory only; a new run starts a new conversation.
@@ -63,6 +83,47 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
         chat = assistantModel?.let { AssistantChat(it, scope) }
     }
 
+    LaunchedEffect(storage) {
+        try {
+            val restored = withContext(Dispatchers.Default) { storage.read()?.let(JourneySave::decode) }
+            if (restored != null) {
+                startingData = restored.data
+                session = restored.session
+                whatIfDraft = restored.draft
+                ended = restored.ended
+                val language = AppLanguage.valueOf(restored.language)
+                restoreLocale = overrideAppLocale(language)
+                settings = settings.copy(language = language, themeMode = ThemeMode.valueOf(restored.theme))
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: Exception) {
+            println("FinLife restore failed: ${failure.message}")
+            savingPaused = true
+            storageError = true
+        } finally { loaded = true }
+    }
+    LaunchedEffect(loaded, session, startingData, whatIfDraft, ended, settings, savingPaused) {
+        if (loaded && !savingPaused) {
+            val current = session
+            val data = startingData
+            val draft = whatIfDraft
+            val isEnded = ended
+            val preferences = settings
+            try {
+                withContext(Dispatchers.Default) {
+                    storageLock.withLock {
+                        storage.write(current?.let { JourneySave.encode(data, it, draft, isEnded, preferences.language.name, preferences.themeMode.name) })
+                    }
+                }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                println("FinLife save failed: ${failure.message}")
+                savingPaused = true
+                storageError = true
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose { restoreLocale?.invoke() }
     }
@@ -70,7 +131,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
     FinLifeTheme(settings.themeMode) {
         CompositionLocalProvider(LocalCurrencyCode provides settings.currencyCode) {
             key(settings.language) {
-                when (val current = session) {
+                if (!loaded) Text(stringResource(Res.string.loading_journey)) else when (val current = session) {
                     null -> if (setupOpen) {
                         SetupScreen(
                             initial = startingData,
@@ -133,14 +194,15 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                             onOpenSettings = { settingsOpen = true },
                             onAdvance = {
                                 if (session === current) {
-                                    // The engine rejects a month whose amounts exceed its limit: end the run there.
+                                    // A calculation error is recoverable and must never silently end the run.
                                     val next = try {
                                         AdventureRun.advance(current)
-                                    } catch (_: IllegalArgumentException) {
+                                    } catch (failure: Exception) {
+                                        println("FinLife advance failed: ${failure.message}")
                                         null
                                     }
                                     if (next == null) {
-                                        ended = true
+                                        calculationError = true
                                     } else {
                                         counterfactual = try {
                                             Counterfactual.afterAdvance(counterfactual, whatIfDraft, next)
@@ -153,9 +215,13 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                 }
                             },
                             onEnd = { ended = true },
-                            onChoose = { eventId, optionId ->
+                            onChoose = choose@{ eventId, optionId ->
                                 if (session === current) {
-                                    val next = AdventureRun.choose(current, eventId, optionId)
+                                    val next = try { AdventureRun.choose(current, eventId, optionId) } catch (failure: Exception) {
+                                        println("FinLife decision failed: ${failure.message}")
+                                        calculationError = true
+                                        return@choose
+                                    }
                                     // This answer is now the latest choice: the dotted line shows the other answer.
                                     counterfactual = try {
                                         Counterfactual.afterChoice(current, eventId, optionId, next) ?: counterfactual?.catchUp(next)
@@ -193,14 +259,30 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                 if (session === current) {
                                     val draft = (whatIfDraft ?: WhatIfDraft(current, internshipSalary = startingData.internshipSalary))
                                         .toggle(whatIf, on)
-                                    whatIfDraft = draft
-                                    session = draft.session
+                                    try {
+                                        val proposed = draft.session
+                                        whatIfDraft = draft
+                                        session = proposed
+                                    } catch (failure: Exception) {
+                                        println("FinLife preview failed: ${failure.message}")
+                                        calculationError = true
+                                    }
                                 }
                             },
                             sidePanel = sidePanel,
                         )
                     }
                 }
+                if (storageError) AlertDialog(
+                    onDismissRequest = { storageError = false },
+                    text = { Text(stringResource(Res.string.save_error)) },
+                    confirmButton = { TextButton(onClick = { storageError = false }) { Text(stringResource(Res.string.acknowledge)) } },
+                )
+                if (calculationError) AlertDialog(
+                    onDismissRequest = { calculationError = false },
+                    text = { Text(stringResource(Res.string.operation_error)) },
+                    confirmButton = { TextButton(onClick = { calculationError = false }) { Text(stringResource(Res.string.acknowledge)) } },
+                )
                 if (settingsOpen) {
                     SettingsSheet(
                         settings = settings,
@@ -214,6 +296,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                         },
                         onThemeChange = { settings = settings.copy(themeMode = it) },
                         onReset = {
+                            savingPaused = false
                             session = null
                             setupOpen = false
                             whatIfDraft = null

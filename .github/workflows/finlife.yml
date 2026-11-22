@@ -1,0 +1,36 @@
+name: FinLife checks
+on:
+  push:
+    paths: ['FinLife/**', '.github/workflows/finlife.yml']
+  pull_request:
+    paths: ['FinLife/**', '.github/workflows/finlife.yml']
+permissions:
+  contents: read
+concurrency:
+  group: finlife-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: FinLife
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: python3 tools/check_resources.py
+      - run: bash gradlew :shared:jvmTest :shared:testAndroidHostTest :desktopApp:classes :androidApp:assembleDebug --console=plain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finlife-test-reports
+          path: |
+            FinLife/shared/build/reports/tests
+            FinLife/shared/build/qa

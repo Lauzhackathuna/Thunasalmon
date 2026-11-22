@@ -196,7 +196,7 @@ class AssistantTest {
     @Test
     fun conceptsUseTheAppRules() {
         val facts = AssistantFacts.concepts(context(played)).text
-        assertTrue("1 in 5" in facts && "1 in 12" in facts && "400 CHF" in facts, facts)
+        assertTrue("rent rise with probability 1 in 12" in facts && "1 in 12" in facts && "400 CHF" in facts, facts)
         assertTrue("not financial advice" in facts)
     }
 
