@@ -36,7 +36,7 @@ From the repository root, enter `FinLife`.
 
 For Android, open `FinLife` in Android Studio, sync Gradle, select an emulator or USB-connected device, and run `androidApp`. If Gradle cannot find the SDK, set `sdk.dir` in `FinLife/local.properties`.
 
-For AI explanations, start Ollama and run `ollama pull qwen3:4b` on the host computer. Desktop connects through localhost. On Android the assistant works in the emulator only: it reaches the host at `10.0.2.2:11434` and needs local-network access when prompted. A physical phone cannot reach it.
+For AI explanations, start Ollama and run `ollama pull qwen3:4b` on the host computer. Desktop connects through localhost. On Android the assistant reaches the host at `10.0.2.2:11434` and needs local-network access when prompted.
 
 ## 5. User Flow & Edge Cases
 

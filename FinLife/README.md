@@ -152,8 +152,8 @@ a number absent from those figures, or that give advice, are asked again once an
 app message. The assistant never changes the simulation; its chat is kept in memory and cleared with each run.
 
 - Desktop: `http://localhost:11434`. `FINLIFE_OLLAMA_MODEL` selects another installed model.
-- Android: emulator only, through the host address `10.0.2.2:11434` (plain HTTP allowed to that address
-  only) and the local-network permission requested at launch. A physical phone cannot reach it.
+- Android: through the host address `10.0.2.2:11434` (plain HTTP allowed to that address only) and the
+  local-network permission requested at launch.
 - Without Ollama, the panel says so and the rest of the app works unchanged.
 - Opt-in check against the real model: `FINLIFE_LIVE_OLLAMA=1 ./gradlew :shared:jvmTest --tests '*AssistantLiveEvaluation*' --rerun`
   writes `shared/build/assistant-live-report.txt`. Small models vary; this reports a pass rate.
