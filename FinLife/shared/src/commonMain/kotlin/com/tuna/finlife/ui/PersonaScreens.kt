@@ -63,9 +63,7 @@ internal fun PersonaSelectionScreen(
                     verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(stringResource(copy.name), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(copy.role), style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(copy.role), style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(copy.story), style = MaterialTheme.typography.bodyMedium)
                     Text(
                         text = stringResource(Res.string.opening_cash) + " · " + displayMoney(openingCash),
