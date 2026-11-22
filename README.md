@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-FinLife is an interactive financial life simulator for the UBS × LauzHack and JetBrains challenges. Follow , a fictional student in Lausanne, and explore how housing, work, and unexpected costs affect her cash, unpaid bills, and net worth.
+FinLife is an interactive financial life simulator for the UBS × LauzHack and JetBrains challenges. Follow , a fictional student in Lausanne, and explore how housing, work, and unexpected costs affect their cash, unpaid bills, and net worth.
 
 ## 2. Core Features
 
