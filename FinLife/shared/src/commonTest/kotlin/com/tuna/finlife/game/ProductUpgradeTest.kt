@@ -182,7 +182,7 @@ class ProductUpgradeTest {
 
     @Test fun corruptOrUnsupportedSaveNeverProducesAPartialRun() {
         val encoded = JourneySave.encode(StartingData.Default, AdventureRun.start(seed = 3), null, false, "English", "System")
-        assertFails { JourneySave.decode(encoded.replace("FINLIFE|2", "FINLIFE|99")) }
+        assertFails { JourneySave.decode(encoded.replace("FINLIFE|3", "FINLIFE|99")) }
         assertFails { JourneySave.decode(encoded.dropLast(4)) }
         assertFails { JourneySave.decode("broken") }
         assertFails { JourneySave.decode(encoded.replace("OpeningCash|8000", "OpeningCash|-1")) }
