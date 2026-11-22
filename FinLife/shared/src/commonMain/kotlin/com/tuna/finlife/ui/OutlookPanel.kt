@@ -32,11 +32,7 @@ internal fun OutlookCard(draft: WhatIfDraft, metric: BalanceMetric, outlook: Adv
                 LedgerLine(stringResource(Res.string.actual_cash), money(option.at(12).cash))
                 LedgerLine(stringResource(Res.string.net_worth), money(option.at(12).netWorth))
                 LedgerLine(stringResource(Res.string.theoretical_balance), money(option.at(12).theoreticalCash))
-                if (option.at(12).investments == Money.ZERO && option.at(12).debt == Money.ZERO) {
-                    Text(stringResource(Res.string.equal_metrics_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                // The balance card above already explains when net worth and balance are equal.
                 StabilityPanel(option.stability, compact = true)
                 HorizontalDivider()
                 SensitivityPanel(draft, outlook)
@@ -139,7 +135,8 @@ internal fun StabilityPanel(assessment: StabilityAssessment, compact: Boolean = 
     Text(stringResource(if (coverage.absorbsUnexpectedExpense) Res.string.shock_absorbable else Res.string.shock_not_absorbable,
         money(StabilitySettings().unexpectedExpense)), style = MaterialTheme.typography.bodySmall)
     Text(stringResource(Res.string.stability_budget, money(coverage.structuralBalance)))
-    if (coverage.balance == BudgetBalance.STRUCTURAL_DEFICIT) Text(stringResource(Res.string.stability_deficit))
+    // The compact view already states the deficit above the button.
+    if (!compact && coverage.balance == BudgetBalance.STRUCTURAL_DEFICIT) Text(stringResource(Res.string.stability_deficit))
     Text(coverage.monthsCovered?.let { stringResource(Res.string.stability_cover, displayMonths(it)) }
         ?: stringResource(Res.string.stability_zero))
     if (assessment.deficitMonths > 0) Text(stringResource(Res.string.stability_need,
