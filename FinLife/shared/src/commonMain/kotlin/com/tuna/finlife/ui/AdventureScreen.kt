@@ -1,6 +1,7 @@
 package com.tuna.finlife.ui
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -13,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -218,7 +220,8 @@ private fun AdventureFinances(
     onMetricChange: (BalanceMetric) -> Unit,
     onShowDetails: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
+    var explainEquality by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
         Text(stringResource(Res.string.journey_heading, session.profile.name, session.currentMonth), style = MaterialTheme.typography.titleLarge)
         KeyFigureCard(
             label = stringResource(Res.string.actual_cash),
@@ -229,13 +232,35 @@ private fun AdventureFinances(
                 val change = (record.after.cash - record.before.cash).cents / 100.0
                 DeltaIndicator(displayMoney(abs(change)), DeltaDirection.fromAmount(change))
             }
-            HorizontalDivider()
-            LedgerLine(stringResource(Res.string.net_worth), money(session.currentState.netWorth))
-            LedgerLine(stringResource(Res.string.theoretical_balance), money(session.currentState.theoreticalCash))
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(FinLifeSpacing.medium),
+                    horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.xSmall)) {
+                        Text(stringResource(Res.string.net_worth), style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(money(session.currentState.netWorth), style = MaterialTheme.typography.titleMedium)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.xSmall)) {
+                        Text(stringResource(Res.string.theoretical_balance), style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(money(session.currentState.theoreticalCash), style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
             if (session.currentState.netWorth == session.currentState.theoreticalCash &&
                 session.currentState.investments == Money.ZERO && session.currentState.debt == Money.ZERO) {
-                Text(stringResource(Res.string.equal_metrics_hint),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { explainEquality = !explainEquality }) {
+                    Text(stringResource(Res.string.equal_metrics_toggle))
+                }
+                AnimatedVisibility(visible = explainEquality) {
+                    Text(stringResource(Res.string.equal_metrics_hint),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             if (session.currentState.unpaid.items.isNotEmpty()) {
                 Text(stringResource(Res.string.shortfall_hint), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
