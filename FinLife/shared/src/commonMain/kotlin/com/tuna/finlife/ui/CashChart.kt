@@ -95,7 +95,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 
-private val ChartHeight = 200.dp
+private val ChartHeight = 252.dp
 private val TooltipWidth = 240.dp
 
 /** Whole CHF of the plotted value: the engine's net worth (cash + investments − debt − unpaid bills). */
