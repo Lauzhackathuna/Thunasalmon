@@ -13,6 +13,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.tuna.finlife.storage.rememberRunStorage
 import com.tuna.finlife.game.JourneySave
+import com.tuna.finlife.game.PlayerName
 import com.tuna.finlife.ui.ThemeMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -42,7 +43,8 @@ import com.tuna.finlife.ui.AssistantPanel
 import com.tuna.finlife.ui.SidePanel
 import com.tuna.finlife.ui.DemoSettings
 import com.tuna.finlife.ui.FinLifeTheme
-import com.tuna.finlife.ui.PersonaSelectionScreen
+import com.tuna.finlife.ui.NameEntryScreen
+import com.tuna.finlife.ui.LocalPlayerName
 import com.tuna.finlife.ui.SettingsSheet
 import com.tuna.finlife.ui.SetupScreen
 import com.tuna.finlife.ui.SummaryScreen
@@ -56,7 +58,7 @@ fun App() = FinLifeApp(assistantModel = null)
 internal fun FinLifeApp(assistantModel: AssistantModel?) {
     // Editable on the setup screen; kept for the next run within this app session.
     var startingData by remember { mutableStateOf(StartingData.Default) }
-    var setupOpen by remember { mutableStateOf(false) }
+    var playerName by remember { mutableStateOf("") }
     var session by remember { mutableStateOf<SimulationSession?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
     var calculationError by remember { mutableStateOf(false) }
@@ -88,6 +90,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
             val restored = withContext(Dispatchers.Default) { storage.read()?.let(JourneySave::decode) }
             if (restored != null) {
                 startingData = restored.data
+                playerName = restored.playerName
                 session = restored.session
                 whatIfDraft = restored.draft
                 ended = restored.ended
@@ -102,8 +105,8 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
             storageError = true
         } finally { loaded = true }
     }
-    LaunchedEffect(loaded, session, startingData, whatIfDraft, ended, settings, savingPaused) {
-        if (loaded && !savingPaused) {
+    LaunchedEffect(loaded, session, startingData, whatIfDraft, ended, settings, savingPaused, playerName) {
+        if (loaded && !savingPaused && (session == null || PlayerName.normalize(playerName) != null)) {
             val current = session
             val data = startingData
             val draft = whatIfDraft
@@ -112,7 +115,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
             try {
                 withContext(Dispatchers.Default) {
                     storageLock.withLock {
-                        storage.write(current?.let { JourneySave.encode(data, it, draft, isEnded, preferences.language.name, preferences.themeMode.name) })
+                        storage.write(current?.let { JourneySave.encode(data, it, draft, isEnded, preferences.language.name, preferences.themeMode.name, playerName) })
                     }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
@@ -129,15 +132,21 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
     }
 
     FinLifeTheme(settings.themeMode) {
-        CompositionLocalProvider(LocalCurrencyCode provides settings.currencyCode) {
+        CompositionLocalProvider(LocalCurrencyCode provides settings.currencyCode, LocalPlayerName provides playerName) {
             key(settings.language) {
-                if (!loaded) Text(stringResource(Res.string.loading_journey)) else when (val current = session) {
-                    null -> if (setupOpen) {
+                if (!loaded) Text(stringResource(Res.string.loading_journey))
+                else if (playerName.isBlank()) {
+                    NameEntryScreen(
+                        onContinue = { playerName = it },
+                        onOpenSettings = { settingsOpen = true },
+                    )
+                } else when (val current = session) {
+                    null -> {
                         SetupScreen(
                             initial = startingData,
+                            playerName = playerName,
                             onStart = { data ->
                                 startingData = data
-                                setupOpen = false
                                 whatIfDraft = null
                                 counterfactual = null
                                 ended = false
@@ -145,12 +154,6 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                 session = AdventureRun.start(data = data)
                             },
                             onOpenSettings = { settingsOpen = true },
-                        )
-                    } else {
-                        PersonaSelectionScreen(
-                            openingCash = startingData.openingCash.toDouble(),
-                            onOpenSettings = { settingsOpen = true },
-                            onSelect = { setupOpen = true },
                         )
                     }
                     else -> {
@@ -166,6 +169,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                             whatIfs = whatIfDraft?.selected.orEmpty(),
                                             internshipSalary = startingData.internshipSalary,
                                             currency = settings.currencyCode,
+                                            playerName = playerName,
                                         )
                                         conversation.ask(question, context, settings.language)
                                     },
@@ -182,6 +186,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                 onContinue = if (current.status == SessionStatus.COMPLETED) null else ({ ended = false }),
                                 onStartOver = {
                                     session = null
+                                    playerName = ""
                                     ended = false
                                     whatIfDraft = null
                                     counterfactual = null
@@ -299,7 +304,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                         onReset = {
                             savingPaused = false
                             session = null
-                            setupOpen = false
+                            playerName = ""
                             whatIfDraft = null
                             counterfactual = null
                             ended = false
