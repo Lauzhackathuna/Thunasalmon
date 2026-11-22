@@ -150,7 +150,8 @@ internal object FirstName {
     const val MAX_LENGTH = 32
 
     fun normalize(raw: String): String? {
-        val value = raw.trim().replace(Regex("\\s+"), " ")
+        if (raw.any { it.isWhitespace() && it != ' ' }) return null
+        val value = raw.trim().replace(Regex(" +"), " ")
         if (value.length !in 1..MAX_LENGTH || !value.first().isLetter() || !value.last().isLetter()) return null
         val separators = " -'’"
         if (!value.all { it.isLetter() || it in separators }) return null
