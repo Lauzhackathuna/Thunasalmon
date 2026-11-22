@@ -47,6 +47,9 @@ internal class AssistantContext(
  */
 internal class FactSheet(val lines: List<String>) {
     val text: String get() = lines.joinToString("\n")
+    /** Adapt all narrative facts to the actual player, without changing financial values. */
+    fun named(firstName: String): FactSheet =
+        FactSheet(lines.map { it.replace("Maya", firstName) })
 }
 
 internal object AssistantFacts {
