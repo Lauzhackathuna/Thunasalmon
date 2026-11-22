@@ -74,7 +74,7 @@ object FinancialProjections {
                     is MonthStep.AwaitingDecision -> step.decisions.forEach { pending ->
                         val option = when (pending.event) {
                             is LifeEvent.Internship, is LifeEvent.ShortInternshipOffer -> "decline"
-                            is LifeEvent.RentRise, is LifeEvent.HousingChoice -> "stay"
+                            is LifeEvent.RentRise, is LifeEvent.HousingChoice, is LifeEvent.EpflJobOffer -> "stay"
                             else -> error("Provide an explicit choice for ${pending.event.id}")
                         }
                         selected += DecisionSelection(pending.event.id, option)
@@ -143,8 +143,7 @@ object FinancialStabilityAnalysis {
         require(comparison == null || comparison.reference.initialState == projection.initialState)
         val terminal = projection.finalState
         val index = configuration.priceIndex(terminal.month)
-        val terminalSalary = if (terminal.status == LifeStatus.EMPLOYED) profile.startingMonthlySalary.scaled(
-            (1.0 + configuration.annualSalaryGrowth).pow((terminal.month - requireNotNull(terminal.careerStartMonth)) / 12)) else Money.ZERO
+        val terminalSalary = MonthlySimulation.professionalIncome(profile, configuration, terminal)
         val terminalFlow = MonthlyFlow(
             professionalIncome = terminalSalary, taxes = terminalSalary.scaled(configuration.incomeTaxRate),
             rent = MonthlySimulation.rentAt(terminal, configuration), healthInsurance = profile.healthInsurance.scaled(index),

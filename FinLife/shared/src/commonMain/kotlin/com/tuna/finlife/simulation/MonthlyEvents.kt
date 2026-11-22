@@ -92,6 +92,42 @@ sealed class LifeEvent {
         }
     }
 
+    /** Voluntary six-month unpaid break. Ordinary bills continue throughout the break. */
+    data class CareerBreak(
+        override val id: String,
+        override val month: Int,
+        val durationMonths: Int = 6,
+    ) : LifeEvent() {
+        override val interactive: Boolean get() = false
+        init { validateEvent(id, month); require(durationMonths == 6) }
+    }
+
+    /** A fictional EPFL offer: the player chooses a lower, stable salary or their private job. */
+    data class EpflJobOffer(
+        override val id: String,
+        override val month: Int,
+        val monthlySalary: Money = Money.chf(4_500),
+        val privateCompanyFailureProbability: Double = 0.30,
+        val riskHorizonMonths: Int = 12,
+    ) : LifeEvent() {
+        override val interactive: Boolean get() = true
+        init {
+            validateEvent(id, month); requireCost(monthlySalary)
+            require(privateCompanyFailureProbability.isFinite() && privateCompanyFailureProbability in 0.0..1.0)
+            require(riskHorizonMonths in 1..12)
+        }
+    }
+
+    /** Pre-drawn, deterministic company collapse following a "keep current job" choice. */
+    data class CompanyClosure(
+        override val id: String,
+        override val month: Int,
+        val offerId: String,
+    ) : LifeEvent() {
+        override val interactive: Boolean get() = false
+        init { validateEvent(id, month); require(offerId.isNotBlank()) }
+    }
+
     data class OneOffExpense(
         override val id: String,
         override val month: Int,
@@ -203,6 +239,7 @@ object EventCalendar {
             require(sameMonth.count { it is LifeEvent.ShortInternshipOffer } <= 1)
             require(sameMonth.count { it is LifeEvent.HousingChoice } <= 1)
             require(sameMonth.count { it is LifeEvent.RentRise } <= 1)
+            require(sameMonth.count { it is LifeEvent.EpflJobOffer } <= 1)
         }
     }
 }

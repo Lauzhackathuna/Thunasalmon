@@ -45,6 +45,16 @@ class MonthlyRecord internal constructor(
 }
 
 object MonthlySimulation {
+    /** The same salary function is used by the monthly engine and stability assessment. */
+    fun professionalIncome(profile: MonthlyProfile, configuration: MonthlyConfiguration, state: MonthlyState): Money {
+        if (state.status != LifeStatus.EMPLOYED || state.careerBreakRemaining > 0 || state.jobLost) return Money.ZERO
+        return when (state.employerType) {
+            EmployerType.EPFL -> Money.chf(4_500)
+            EmployerType.PRIVATE -> profile.startingMonthlySalary.scaled(
+                (1.0 + configuration.annualSalaryGrowth).pow((state.month - requireNotNull(state.careerStartMonth)) / 12))
+        }
+    }
+
     fun initialState(profile: MonthlyProfile, configuration: MonthlyConfiguration): MonthlyState {
         val netWorth = profile.cash + profile.investments - profile.debt
         return MonthlyState(0, profile.cash, profile.investments, profile.debt, netWorth,
@@ -140,6 +150,12 @@ object MonthlySimulation {
                 }
                 is LifeEvent.OneOffExpense -> { cost = event.amount; exceptional += cost }
                 is LifeEvent.Financing -> { borrowing += event.borrowing; repayment += event.principalRepayment }
+                is LifeEvent.CareerBreak -> working = working.copy(careerBreakRemaining = event.durationMonths)
+                is LifeEvent.EpflJobOffer -> {
+                    declined = choice == "stay"
+                    if (!declined) working = working.copy(employerType = EmployerType.EPFL)
+                }
+                is LifeEvent.CompanyClosure -> working = working.copy(jobLost = true)
             }
             outcomes += EventOutcome(event.id, if (declined) EventApplication.DECLINED else EventApplication.APPLIED,
                 if (declined) "Option de référence conservée" else "Règle appliquée pendant le mois $month", cost, choice)
@@ -153,8 +169,7 @@ object MonthlySimulation {
         val studentIncome = if (status == LifeStatus.STUDENT) profile.studentMonthlyIncome else Money.ZERO
         val internIncome = (if (status == LifeStatus.INTERN) working.internshipMonthlyIncome else Money.ZERO) +
             (working.shortInternship?.takeIf { it.active(month) }?.monthlyIncome ?: Money.ZERO)
-        val professionalIncome = if (status == LifeStatus.EMPLOYED) profile.startingMonthlySalary.scaled(
-            (1.0 + configuration.annualSalaryGrowth).pow((month - requireNotNull(working.careerStartMonth)) / 12)) else Money.ZERO
+        val professionalIncome = professionalIncome(profile, configuration, working)
         val studyProgress = working.studyMonthsCompleted
         val tuitionDue = status == LifeStatus.STUDENT && studyProgress % profile.tuitionEveryStudyMonths == 0 &&
             studyProgress > working.lastPaidTuitionProgress
@@ -198,7 +213,8 @@ object MonthlySimulation {
             realNetWorth = (cash + investments - debt - payable).scaled(1.0 / configuration.priceIndex(month + 1)),
             studyMonthsCompleted = studyCompleted, studyMonthsRemaining = studyRemaining,
             lastPaidTuitionProgress = if (tuitionDue) studyProgress else working.lastPaidTuitionProgress,
-            internshipMonthsRemaining = (working.internshipMonthsRemaining - 1).coerceAtLeast(0), careerStartMonth = careerStart)
+            internshipMonthsRemaining = (working.internshipMonthsRemaining - 1).coerceAtLeast(0), careerStartMonth = careerStart,
+            careerBreakRemaining = (working.careerBreakRemaining - 1).coerceAtLeast(0))
         check(after.netWorth - state.netWorth == flow.netWorthChange)
         return MonthStep.Calculated(MonthlyRecord(state, after, flow, outcomes, decisions, ledger))
     }
@@ -233,6 +249,12 @@ object MonthlySimulation {
         is LifeEvent.PurchaseChoice -> if (event.responsibility != PaymentResponsibility.CHARACTER) "Coût à la charge d'un tiers" else null
         is LifeEvent.OneOffExpense -> if (event.responsibility != PaymentResponsibility.CHARACTER) "Coût à la charge d'un tiers" else null
         is LifeEvent.Financing -> null
+        is LifeEvent.CareerBreak -> if (state.status != LifeStatus.EMPLOYED || state.jobLost ||
+            state.careerBreakRemaining > 0) "A six-month break requires an active professional job" else null
+        is LifeEvent.EpflJobOffer -> if (state.status != LifeStatus.EMPLOYED || state.jobLost ||
+            state.careerBreakRemaining > 0 || state.employerType != EmployerType.PRIVATE) "The EPFL offer requires an active private-sector job" else null
+        is LifeEvent.CompanyClosure -> if (state.status != LifeStatus.EMPLOYED ||
+            state.jobLost || state.employerType != EmployerType.PRIVATE) "The private-sector job is no longer active" else null
     }
 
     private fun options(event: LifeEvent, configuration: MonthlyConfiguration): List<DecisionOption> = when (event) {
@@ -244,6 +266,8 @@ object MonthlySimulation {
         is LifeEvent.PurchaseChoice -> listOf(DecisionOption("first", event.firstLabel, event.firstCost), DecisionOption("second", event.secondLabel, event.secondCost))
         is LifeEvent.HousingChoice -> listOf(DecisionOption("stay", "Conserver le logement", Money.ZERO),
             DecisionOption("move", "Changer de logement", if (event.responsibility == PaymentResponsibility.CHARACTER) event.movingCost else Money.ZERO))
+        is LifeEvent.EpflJobOffer -> listOf(DecisionOption("stay", "Conserver mon emploi actuel", Money.ZERO),
+            DecisionOption("epfl", "Accepter l'offre de l'EPFL", Money.ZERO))
         else -> emptyList()
     }
 }
