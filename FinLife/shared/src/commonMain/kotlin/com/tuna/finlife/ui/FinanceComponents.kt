@@ -10,14 +10,20 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -29,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * The bank balance is the focal point. Values slide in softly, rather than jumping,
@@ -45,16 +52,28 @@ fun KeyFigureCard(
     OutlinedCard(
         modifier = modifier.shadow(3.dp, shape, clip = false).animateContentSize(tween(240)),
         shape = shape,
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f),
+        ),
     ) {
         Column(
             modifier = Modifier.padding(FinLifeSpacing.large),
             verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier.width(4.dp).height(19.dp)
+                        .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small),
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             AnimatedContent(
                 targetState = value,
                 transitionSpec = {
@@ -63,7 +82,7 @@ fun KeyFigureCard(
                 },
                 label = "FinLife balance change",
             ) { currentValue ->
-                Text(currentValue, style = MaterialTheme.typography.headlineLarge)
+                Text(currentValue, style = MaterialTheme.typography.headlineLarge.copy(fontSize = 42.sp))
             }
             supportingContent()
         }
