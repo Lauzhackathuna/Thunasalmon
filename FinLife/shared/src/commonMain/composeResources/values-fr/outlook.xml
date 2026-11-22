@@ -79,4 +79,5 @@
     <string name="equal_metrics_hint">Ici, le patrimoine net et le solde théorique coïncident car Maya n’a ni investissements ni dette bancaire. Ils pourraient différer si elle en avait.</string>
     <string name="whatif_dashboard_hint">Fermez cette fenêtre pour voir le scénario choisi, sa trajectoire future et les résultats à 3, 6 et 12 mois sur la page principale. Les choix restent modifiables jusqu’au passage au mois suivant.</string>
     <string name="chart_future_range">Mois à venir · horizon de prévision</string>
+    <string name="dashboard_timeline_title">Votre trajectoire financière</string>
 </resources>
