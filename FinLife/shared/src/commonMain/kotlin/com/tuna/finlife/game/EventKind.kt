@@ -26,7 +26,7 @@ internal sealed interface EventKind {
     data class OneOffExpense(val label: String, val amount: Money) : EventKind
     data class Financing(val borrowing: Money, val principalRepayment: Money) : EventKind
     data class CareerBreak(val months: Int) : EventKind
-    data class EpflJobOffer(val salary: Money, val risk: Double, val horizon: Int) : EventKind
+    data class EpflJobOffer(val salary: Money, val monthlyRisk: Double) : EventKind
     data object CompanyClosure : EventKind
 }
 
@@ -48,7 +48,7 @@ internal fun LifeEvent.kind(): EventKind = when (this) {
     is LifeEvent.OneOffExpense -> EventKind.OneOffExpense(label, amount)
     is LifeEvent.Financing -> EventKind.Financing(borrowing, principalRepayment)
     is LifeEvent.CareerBreak -> EventKind.CareerBreak(durationMonths)
-    is LifeEvent.EpflJobOffer -> EventKind.EpflJobOffer(monthlySalary, privateCompanyFailureProbability, riskHorizonMonths)
+    is LifeEvent.EpflJobOffer -> EventKind.EpflJobOffer(monthlySalary, monthlyFailureProbability)
     is LifeEvent.CompanyClosure -> EventKind.CompanyClosure
 }
 

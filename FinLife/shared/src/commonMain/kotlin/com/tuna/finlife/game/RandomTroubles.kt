@@ -25,6 +25,17 @@ internal object RandomTroubles {
     private const val RENT_PREFIX = "random-rent-"
     private const val MAINTENANCE_PREFIX = "random-maintenance-"
 
+    /**
+     * A new 10% Bernoulli draw for EACH eligible month, not one draw for twelve months.
+     * This stream has a different salt from rent/maintenance; (seed, month) makes it
+     * reproducible across saves, replay and counterfactuals without predicting future draws.
+     */
+    fun privateCompanyFails(seed: Long, month: Int): Boolean {
+        require(month >= 0)
+        val random = Random(seed xor (month.toLong() * -0x61c8864680b583ebL) xor 0x4550464cL)
+        return random.nextDouble() < LifeEvent.EpflJobOffer.MONTHLY_FAILURE_PROBABILITY
+    }
+
     /** Deterministic in ([seed], [month]); drawing the same month twice gives the same events. */
     fun draw(seed: Long, month: Int, housingId: String, calendar: List<LifeEvent>): List<LifeEvent> {
         val random = Random(seed xor (month.toLong() * -0x61c8864680b583ebL))

@@ -103,7 +103,7 @@ internal fun decisionCopy(
     is EventKind.EpflJobOffer -> DecisionCopy(
         playerStringResource(Res.string.decision_epfl_title),
         playerStringResource(Res.string.decision_epfl_prompt,
-            money(currentSalary), money(kind.salary), percentLabel(kind.risk), kind.horizon),
+            money(currentSalary), money(kind.salary), percentLabel(kind.monthlyRisk)),
     )
     is EventKind.Housing -> DecisionCopy(
         playerStringResource(Res.string.decision_housing_title),

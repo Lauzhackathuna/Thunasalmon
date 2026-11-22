@@ -54,7 +54,7 @@ class CareerScenariosTest {
     fun epflChoicePaysTheOfferedSalaryAndHasNoCompanyClosureRisk() {
         val offered = reachOffer()
         val event = SimulationSessions.pendingDecisions(offered).single { it.event is LifeEvent.EpflJobOffer }
-        assertEquals(0.30, (event.event as LifeEvent.EpflJobOffer).privateCompanyFailureProbability)
+        assertEquals(0.10, (event.event as LifeEvent.EpflJobOffer).monthlyFailureProbability)
         val accepted = finishOtherDecisions(AdventureRun.choose(offered, event.event.id, "epfl"))
         assertEquals(EmployerType.EPFL, accepted.currentState.employerType)
         assertEquals(Money.chf(4_500), accepted.history.last().flow.professionalIncome)
@@ -72,8 +72,9 @@ class CareerScenariosTest {
         assertEquals(kept.calendar, restored.session.calendar)
         assertEquals(kept.currentState, restored.session.currentState)
 
-        // Risk draw is a separate event in a future month, never an immediate deduction from cash.
-        assertTrue(kept.calendar.filterIsInstance<LifeEvent.CompanyClosure>().all { it.month in (offered.currentMonth + 1)..(offered.currentMonth + 12) })
+        // Nothing is pre-drawn twelve months in advance; only a failed CURRENT month appears.
+        assertTrue(kept.calendar.filterIsInstance<LifeEvent.CompanyClosure>()
+            .all { it.month <= kept.currentMonth })
         assertEquals(EmployerType.PRIVATE, kept.currentState.employerType)
         assertFalse(kept.currentState.jobLost)
     }
@@ -83,7 +84,7 @@ class CareerScenariosTest {
         val employed = reachOffer()
         val event = SimulationSessions.pendingDecisions(employed).single { it.event is LifeEvent.EpflJobOffer }
         var session = AdventureRun.choose(employed, event.event.id, "stay")
-        // Explicit scenario independently tests failure, regardless of the seeded 30% draw.
+        // Explicit scenario independently tests failure, regardless of the monthly 10% draw.
         if (session.currentMonth == employed.currentMonth) session = finishOtherDecisions(session)
         val month = session.currentMonth
         session = SimulationSessions.schedule(session, LifeEvent.CompanyClosure("forced-closure", month, event.event.id))
@@ -105,4 +106,94 @@ class CareerScenariosTest {
         assertTrue(other.alternative.calendar.any { it is LifeEvent.EpflJobOffer })
         assertEquals(EmployerType.PRIVATE, other.alternative.currentState.employerType)
     }
+
+    @Test
+    fun monthlyCompanyFailureRollsAreReproducibleAndCloseToTenPercent() {
+        val seed = 2026L
+        val count = (1..10_000).count { month -> RandomTroubles.privateCompanyFails(seed, month) }
+        // Wide statistical tolerance: detects accidental annual-only, 30%, or no-risk logic.
+        assertTrue(count in 850..1150, "Expected about 10% failures, found $count/10000")
+        for (month in 1..1_200) {
+            assertEquals(RandomTroubles.privateCompanyFails(seed, month),
+                RandomTroubles.privateCompanyFails(seed, month))
+        }
+        assertTrue((30..100).any { RandomTroubles.privateCompanyFails(seed, it) })
+    }
+
+    @Test
+    fun keepingPrivateJobRollsEveryMonthUntilClosureWithoutPredrawingFutureEvents() {
+        val seed = 19L
+        val offered = reachOffer(seed)
+        val offer = SimulationSessions.pendingDecisions(offered).single { it.event is LifeEvent.EpflJobOffer }
+        var session = AdventureRun.choose(offered, offer.event.id, "stay")
+        // Resolve any other decisions at the offer month, to enter the FIRST month at risk.
+        while (session.currentMonth == offered.currentMonth) {
+            val pending = SimulationSessions.pendingDecisions(session).firstOrNull()
+            session = if (pending != null)
+                AdventureRun.choose(session, pending.event.id, requireNotNull(AdventureRun.defaultAnswer(pending.event)))
+            else AdventureRun.advance(session)
+        }
+        var monthsChecked = 0
+        while (!session.currentState.jobLost && monthsChecked < 120) {
+            val month = session.currentMonth
+            val closedThisMonth = session.calendar.any { it is LifeEvent.CompanyClosure && it.month == month }
+            assertEquals(RandomTroubles.privateCompanyFails(seed, month), closedThisMonth,
+                "Month $month must independently evaluate the 10% hazard")
+            assertTrue(session.calendar.filterIsInstance<LifeEvent.CompanyClosure>().none { it.month > month },
+                "Future company closures must not be revealed or scheduled")
+            while (session.currentMonth == month) {
+                val pending = SimulationSessions.pendingDecisions(session).firstOrNull()
+                session = if (pending != null)
+                    AdventureRun.choose(session, pending.event.id, requireNotNull(AdventureRun.defaultAnswer(pending.event)))
+                else AdventureRun.advance(session)
+            }
+            monthsChecked++
+        }
+        assertTrue(session.currentState.jobLost, "Company failure should eventually occur in this seeded run")
+        assertEquals(Money.ZERO, session.history.last().flow.professionalIncome)
+        assertTrue(session.currentState.cash >= Money.ZERO)
+    }
+
+    @Test
+    fun epflJobIsNotSubjectToMonthlyPrivateCompanyHazard() {
+        val offered = reachOffer(19L)
+        val offer = SimulationSessions.pendingDecisions(offered).single { it.event is LifeEvent.EpflJobOffer }
+        var session = AdventureRun.choose(offered, offer.event.id, "epfl")
+        while (session.currentMonth < offered.currentMonth + 20) {
+            val pending = SimulationSessions.pendingDecisions(session).firstOrNull()
+            session = if (pending != null)
+                AdventureRun.choose(session, pending.event.id, requireNotNull(AdventureRun.defaultAnswer(pending.event)))
+            else AdventureRun.advance(session)
+        }
+        assertEquals(EmployerType.EPFL, session.currentState.employerType)
+        assertFalse(session.currentState.jobLost)
+        assertTrue(session.calendar.none { it is LifeEvent.CompanyClosure })
+    }
+
+    @Test
+    fun legacyPredrawnCompanyClosureIsDiscardedWhenRestoringOldSave() {
+        val offered = reachOffer(19L)
+        val offer = SimulationSessions.pendingDecisions(offered).single { it.event is LifeEvent.EpflJobOffer }
+        var session = AdventureRun.choose(offered, offer.event.id, "stay")
+        val original = JourneySave.encode(StartingData.Default, session, null, false, "English", "System", "Alex")
+        val lines = original.substringBeforeLast("\nHASH|").lines().map { line ->
+            when {
+                line == "FINLIFE|3" -> "FINLIFE|2"
+                line.contains("|epfl|") && line.startsWith("E|") -> line + "|0.3|12"
+                else -> line
+            }
+        }.toMutableList()
+        fun hex(value: String) = value.map { it.code.toString(16).padStart(4, '0') }.joinToString("")
+        lines += "E|${hex("legacy-future-closure")}|${session.currentMonth + 5}|closure|${hex(offer.event.id)}"
+        val body = lines.joinToString("\n")
+        var hash = 2166136261u
+        body.forEach { hash = (hash xor it.code.toUInt()) * 16777619u }
+        val restored = JourneySave.decode(body + "\nHASH|" + hash.toString(16))
+        assertEquals(0.10, restored.session.calendar.filterIsInstance<LifeEvent.EpflJobOffer>()
+            .single().monthlyFailureProbability)
+        assertTrue(restored.session.calendar.none { it.id == "legacy-future-closure" })
+        assertEquals(session.currentState, restored.session.currentState)
+    }
+
+
 }

@@ -122,7 +122,7 @@ internal object AssistantFacts {
             is EventKind.CareerBreak -> if (applied) "Maya began a ${kind.months}-month unpaid work break; ordinary bills still apply." else null
             is EventKind.EpflJobOffer -> when {
                 applied && outcome.optionId == "epfl" -> "Maya accepted the fictional EPFL job at ${m(kind.salary, c)} per month."
-                outcome.optionId == "stay" -> "Maya stayed in the private job; ${percentLabel(kind.risk)}% company-collapse risk over the next ${kind.horizon} months."
+                outcome.optionId == "stay" -> "Maya stayed in the private job; a fresh, independent ${percentLabel(kind.monthlyRisk)}% chance of company collapse is drawn each month while that job remains active."
                 else -> "The EPFL offer did not apply."
             }
             EventKind.CompanyClosure -> if (applied) "The private company collapsed; Maya lost the job and future salary, but not existing savings." else null
@@ -254,7 +254,7 @@ internal object AssistantFacts {
         }
         is LifeEvent.ShortInternshipOffer -> "The offer lasts ${event.durationMonths} months at ${m(event.monthlyIncome, c)} per month, alongside studies."
         is LifeEvent.HousingChoice -> "The new rented home costs ${m(event.newContract.monthlyRent, c)} per month; moving costs ${m(event.movingCost, c)}."
-        is LifeEvent.EpflJobOffer -> "Fictional EPFL job salary: ${m(event.monthlySalary, c)} per month; staying in the private job means a ${percentLabel(event.privateCompanyFailureProbability)}% company-collapse risk over the next ${event.riskHorizonMonths} months. The risk is hypothetical, not an actual EPFL statistic."
+        is LifeEvent.EpflJobOffer -> "Fictional EPFL salary: ${m(event.monthlySalary, c)} per month; keeping the private-sector job means an independent ${percentLabel(event.monthlyFailureProbability)}% chance of company collapse EACH month, continuing until that company closes. This is a hypothetical game assumption, not an actual EPFL or company statistic."
         else -> null
     }
 
@@ -364,7 +364,7 @@ internal object AssistantFacts {
             "Random problems are drawn each month: a rent rise with probability 1 in ${RandomTroubles.RENT_ODDS}, at most ${RandomTroubles.MAX_RENT_RISES_PER_BLOCK} per ${RandomTroubles.BLOCK_MONTHS} months, raising the rent by ${percentLabel(rentRise)}% per year; " +
                 "and a maintenance bill of ${m(RandomTroubles.MAINTENANCE_COST, c)} with probability 1 in ${RandomTroubles.MAINTENANCE_ODDS}, at most ${RandomTroubles.MAX_MAINTENANCE_PER_BLOCK} per ${RandomTroubles.BLOCK_MONTHS} months.",
             "What-ifs can include a 3-month internship, moving into a shared flat, or (after finding work) a six-month unpaid career break. Ordinary expenses continue during the break; salary resumes afterwards unless the job was independently lost.",
-            "After at least three months of employment, the fictional EPFL offer is 4500 CHF per month and modeled as stable. Keeping a private-sector position has a one-time 30% chance of the employer failing in the next 12 months. This is a game assumption; job loss stops salary, not savings.",
+            "After at least three months of employment, the fictional EPFL offer is 4500 CHF per month and modeled as stable. Keeping the private-sector job triggers a NEW independent 10% company-failure draw every month while the job exists, with no twelve-month cutoff. This is a hypothetical assumption, not real company data. Job loss stops future salary, never removes savings.",
             "The dotted line on the chart is the same run with the other side of the latest choice, simulated by the same engine with the same random events. It never goes beyond the months played.",
             "The projection is the engine's simulation of up to the next 12 months if nothing changes, with no random events. It is not a prediction, and nothing beyond 12 months ahead is simulated.",
             "FinLife is a simulation, not financial advice.",
@@ -406,7 +406,7 @@ internal object AssistantFacts {
         is LifeEvent.RentRise -> if (optionId == "move") "move to the shared flat" else "stay in her rented flat and accept the new rent"
         is LifeEvent.HousingChoice -> if (optionId == "move") "move" else "stay in her rented flat"
         is LifeEvent.ShortInternshipOffer, is LifeEvent.Internship -> if (optionId == "accept") "accept the internship" else "decline the internship"
-        is LifeEvent.EpflJobOffer -> if (optionId == "epfl") "accept the stable EPFL job at 4500 CHF per month" else "stay in the higher-paid private job with its modeled 30% failure risk"
+        is LifeEvent.EpflJobOffer -> if (optionId == "epfl") "accept the stable EPFL job at 4500 CHF per month" else "stay in the higher-paid private job with a 10% company-failure chance each month"
         else -> if (optionId == "first") "first option" else "second option"
     }
 

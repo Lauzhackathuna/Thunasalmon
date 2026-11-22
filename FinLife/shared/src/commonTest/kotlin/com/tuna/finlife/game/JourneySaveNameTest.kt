@@ -27,7 +27,7 @@ class JourneySaveNameTest {
         val modern = JourneySave.encode(data, session, null, false, "English", "System", "Player")
         val legacyBody = modern.substringBeforeLast("\nHASH|").lines()
             .filterNot { it.startsWith("N|") }
-            .map { if (it == "FINLIFE|2") "FINLIFE|1" else it }
+            .map { if (it == "FINLIFE|3") "FINLIFE|1" else it }
             .joinToString("\n")
         val old = legacyBody + "\nHASH|" + checksum(legacyBody)
         val restored = JourneySave.decode(old)

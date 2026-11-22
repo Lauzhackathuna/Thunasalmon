@@ -59,7 +59,7 @@
     <!-- New career decisions; fictional assumptions, not real employment statistics. -->
     <string name="whatif_career_break">Take six months off work (unpaid; regular bills continue)</string>
     <string name="decision_epfl_title">An offer from EPFL</string>
-    <string name="decision_epfl_prompt">You already have a job paying %1$s/month. EPFL offers a fictional, more secure position paying %2$s/month. If you keep your current job, there is a %3$s%% simulated chance of your employer closing within the next %4$d months. You would lose your salary, not your savings. What do you choose?</string>
+    <string name="decision_epfl_prompt">You already have a job paying %1$s/month. EPFL offers a fictional, more secure position paying %2$s/month. If you keep your current job, each month your employer has a new, independent %3$s%% simulated chance of closing. The risk continues each month until a closure. You would lose future salary, not your savings. What do you choose?</string>
     <string name="option_epfl_stay">Keep my current job</string>
     <string name="option_epfl_accept">Accept the EPFL offer</string>
     <string name="outcome_epfl_accepted">You accepted the EPFL job at %1$s per month.</string>
