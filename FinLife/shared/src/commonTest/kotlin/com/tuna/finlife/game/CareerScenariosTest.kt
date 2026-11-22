@@ -42,10 +42,10 @@ class CareerScenariosTest {
 
         session = WhatIfDraft(session).toggle(WhatIf.CareerBreak, true).session
         for (i in 1..6) {
-            session = finishOtherDecisions(AdventureRun.advance(session))
+            session = SimulationSessions.advance(session)
             assertEquals(Money.ZERO, session.history.last().flow.professionalIncome, "Break month $i")
         }
-        session = finishOtherDecisions(AdventureRun.advance(session))
+        session = SimulationSessions.advance(session)
         assertEquals(Money.chf(4_500), session.history.last().flow.professionalIncome)
         assertFalse(session.currentState.jobLost)
     }
@@ -88,7 +88,7 @@ class CareerScenariosTest {
         val month = session.currentMonth
         session = SimulationSessions.schedule(session, LifeEvent.CompanyClosure("forced-closure", month, event.event.id))
         val before = session.currentState.cash
-        session = finishOtherDecisions(AdventureRun.advance(session))
+        session = SimulationSessions.advance(session)
         assertTrue(session.currentState.jobLost)
         assertEquals(Money.ZERO, session.history.last().flow.professionalIncome)
         assertTrue(session.currentState.cash <= before)
@@ -101,8 +101,8 @@ class CareerScenariosTest {
         val event = SimulationSessions.pendingDecisions(offered).single { it.event is LifeEvent.EpflJobOffer }
         val selected = AdventureRun.choose(offered, event.event.id, "epfl")
         val comparison = Counterfactual.afterChoice(offered, event.event.id, "epfl", selected)
-        assertTrue(comparison != null)
-        assertTrue(comparison.alternative.calendar.any { it is LifeEvent.EpflJobOffer })
-        assertEquals(EmployerType.PRIVATE, comparison.alternative.currentState.employerType)
+        val other = requireNotNull(comparison)
+        assertTrue(other.alternative.calendar.any { it is LifeEvent.EpflJobOffer })
+        assertEquals(EmployerType.PRIVATE, other.alternative.currentState.employerType)
     }
 }
