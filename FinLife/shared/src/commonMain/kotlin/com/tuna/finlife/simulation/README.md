@@ -292,14 +292,14 @@ Essentiels seuls : 1 633,33 CHF/mois ; colocation : 1 433,33. Repères seuls : e
 ## Tests et limites
 
 Depuis `FinLife` : `./gradlew :shared:jvmTest :shared:testAndroidHostTest --offline --console=plain`.
-Validation exécutée : **82 tests JVM et 82 tests Android hôte**, zéro échec, erreur ou test ignoré.
+La suite complète (JVM et Android hôte) doit passer sans échec ; la CI exécute les mêmes cibles.
 Les tests communs couvrent les invariants, arrondis, transferts et priorités, arriérés/règlement,
 capital bancaire, progression académique, logement, stages, indexation, projections, scénarios,
 stabilité et reproductibilité. Les tests annuels V1 sont conservés. Android est testé sur hôte,
 pas sur appareil ; aucune validation iOS/JS n'est revendiquée.
 
-Simplifications : paiements mensuels sans calendrier civil/journalier, pas de fiscalité ou de pénalités
-de retard, prix et revenus déterministes, absence de probabilités empiriques, réserve budgétaire selon
+Simplifications : paiements mensuels sans calendrier civil/journalier, fiscalité réduite à un taux
+forfaitaire synthétique sur le salaire, pas de pénalités de retard, prix et revenus déterministes, absence de probabilités empiriques, réserve budgétaire selon
 une politique explicite de deux échéances académiques, pas d'optimiseur global des choix futurs.
 Les cibles n'anticipent pas l'acceptation d'une proposition encore non décidée. Une nouvelle information
 recalcule le budget au prochain mois. La colocation ne comporte ni préavis ni coût par défaut.
@@ -308,3 +308,13 @@ Le moteur ne certifie pas la solvabilité réelle ni la conformité de chaque hy
 ## Impôts sur le salaire
 
 `MonthlyConfiguration.incomeTaxRate` (0 par défaut) prélève une part fixe du salaire (`professionalIncome`) au titre des impôts et cotisations sociales. Le montant apparaît dans `MonthlyFlow.taxes`, compte dans les dépenses et se paie depuis l'enveloppe OTHER comme les autres obligations. Le revenu étudiant et la rémunération des stages ne sont pas imposés. Taux forfaitaire synthétique, pas un barème fiscal réel.
+
+## Carrière : pause, offre EPFL et fermeture d'entreprise
+
+- `LifeEvent.CareerBreak` : pause volontaire non rémunérée de six mois, possible seulement avec un emploi
+  actif. Le salaire s'arrête pendant `careerBreakRemaining` mois ; les factures continuent.
+- `LifeEvent.EpflJobOffer` : décision `stay` (garder l'emploi privé) ou `epfl` (salaire EPFL, 4 500 CHF par
+  défaut, `EmployerType.EPFL`). Applicable seulement à un emploi privé actif.
+- `LifeEvent.CompanyClosure` : fermeture de l'employeur privé (`jobLost = true`). Le salaire futur s'arrête,
+  l'épargne existante reste. Le jeu tire ce risque à 10 % par mois, indépendamment, après avoir gardé
+  l'emploi privé ; une fermeture n'est jamais prévue à l'avance dans les projections.

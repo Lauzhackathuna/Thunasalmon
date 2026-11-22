@@ -35,10 +35,17 @@ Use `--offline` only when dependencies and SDK components are already cached.
 - Details: regular/occasional costs, actual payments, outstanding bills, optional envelope allocations,
   payments and transfers. Editable assumptions replay prior months while preserving decisions.
 - Summary: opening/final finances, income, accrued expenses, actual payments, unpaid bills, internship
-  income and a recorded-event recap. Continue or start over. No past decision rewriting is exposed.
+  income, goal progress and a recorded-event recap. Continue or start over. No past decision rewriting is exposed.
+- Assumptions: every value the engine uses for the run (profile, configuration, random-problem rules, goal),
+  read from the engine and labelled synthetic.
+- Goal: progress toward the engine's goal (350,000 CHF of net worth by month 120 by default).
+- Sensitivity: rent of the current flat and income from parents, −50% to +50%; the engine reruns the
+  12-month outlook with the changed inputs and the chart compares it with the unchanged values.
+- Dotted-line breakdown: the net-worth gap between the player's path and the dotted line, split by flow
+  item (salary, rent, taxes…). Each item is a sum of engine amounts, so the items add up exactly to the gap.
 
-Maya is the supported V3 persona. Other legacy personas are retained for compatibility and tests;
-they are not presented as functioning V3 journeys.
+The journey starts by asking the player's first name; no fixed persona is shown. Legacy personas are
+retained for compatibility and tests; they are not presented as functioning V3 journeys.
 
 ## Financial definitions and assumptions
 
@@ -102,7 +109,12 @@ and minor repairs each have a 1/12 monthly trigger, capped at one announcement a
 block. A rent rule already active on a contract remains non-applicable to a second announcement.
 The 400 CHF demo household repair is a `OneOffExpense`, **not S040 and not an oven replacement**.
 Oven repair/replacement remain 450/800 in the engine's choice event; S040 remains major maintenance at 6,000.
-Responsibility is explicit; events paid by another party do not charge Maya.
+Responsibility is explicit; events paid by another party do not charge the player's character.
+
+Career: after studies the character earns the reference salary in a private job, taxed at a flat synthetic 20%.
+Three months into the career, a fictional EPFL offer (4,500 CHF/month, stable) can replace the private job.
+Keeping the private job adds an independent 10% chance each month that the company closes; the salary then
+stops, savings remain. A voluntary six-month unpaid career break is available as a What If; bills continue.
 
 Future previews share the same already-known external events, including a problem drawn for the current
 month, and preserve active commitments. They never generate unseen future disasters. At the engine's
@@ -128,12 +140,28 @@ run and pause saving to protect the existing file; reset from Settings explicitl
 
 I/O and reconstruction run off the UI thread; a mutex serializes writes. No server, account or database.
 A session-free launch does not persist a standalone settings profile. A sudden process kill before an
-asynchronous write completes can lose the very latest change. Save format version 1 supports events exposed
-by the adventure, not every arbitrary custom event supported by the engine.
+asynchronous write completes can lose the very latest change. The save format (currently version 3, older
+versions migrated) supports events exposed by the adventure, not every arbitrary custom event supported by the engine.
+
+## Assistant (optional, explanation only)
+
+A local Ollama model (`qwen3:4b` by default) answers questions about the run: a played month, the current
+situation, the dotted line, a waiting decision, the coming 1–12 months or how the simulation works.
+The model only classifies the question and words figures the app takes from the engine. Replies that quote
+a number absent from those figures, or that give advice, are asked again once and otherwise replaced by an
+app message. The assistant never changes the simulation; its chat is kept in memory and cleared with each run.
+
+- Desktop: `http://localhost:11434`. `FINLIFE_OLLAMA_MODEL` selects another installed model.
+- Android: emulator only, through the host address `10.0.2.2:11434` (plain HTTP allowed to that address
+  only) and the local-network permission requested at launch. A physical phone cannot reach it.
+- Without Ollama, the panel says so and the rest of the app works unchanged.
+- Opt-in check against the real model: `FINLIFE_LIVE_OLLAMA=1 ./gradlew :shared:jvmTest --tests '*AssistantLiveEvaluation*' --rerun`
+  writes `shared/build/assistant-live-report.txt`. Small models vary; this reports a pass rate.
 
 ## Limitations and review
 
-Synthetic deterministic inputs, monthly rather than daily timing, no tax or late-payment penalties,
+Synthetic deterministic inputs, monthly rather than daily timing, a flat synthetic salary tax instead of a
+real tax schedule, no late-payment penalties,
 no empirical event probabilities, no financial product recommendations. The comparison explores the current
 two choices, not every possible future. Financial errors are recoverable; they do not silently end a run.
 
