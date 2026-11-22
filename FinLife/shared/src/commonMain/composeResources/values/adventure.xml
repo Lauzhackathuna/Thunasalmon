@@ -7,8 +7,8 @@
     <string name="expenses">Expenses</string>
     <string name="simulation_complete">Simulation complete</string>
     <string name="adventure_title">%1$s’s journey</string>
-    <string name="adventure_arrival">Maya has just arrived for her master’s degree. Her monthly student income is %1$s.</string>
-    <string name="adventure_month">Maya received %1$s and had %2$s in expenses this month.</string>
+    <string name="adventure_arrival">%1$s has just arrived for a master’s degree. Monthly student income: %2$s.</string>
+    <string name="adventure_month">%1$s received %2$s and had %3$s in expenses this month.</string>
     <string name="monthly_rent">Monthly rent</string>
     <string name="closing_cash">Closing cash</string>
     <string name="cash_history">Cash balance history</string>
