@@ -158,7 +158,7 @@ internal fun AdventureScreen(
                         val events = remember(session) { session.calendar.associateBy { it.id } }
                         for (outcome in record.events) {
                             val event = events[outcome.eventId] ?: continue
-                            outcomeText(event.kind(), outcome, record)?.let { Text(it) }
+                            outcomeText(event.kind(), outcome, record, session.profile.name)?.let { Text(it) }
                         }
                         Text(stringResource(Res.string.adventure_month, session.profile.name, money(record.flow.income), money(record.flow.expenses)))
                         HorizontalDivider()
@@ -269,7 +269,7 @@ private fun AdventureFinances(
                     Text(stringResource(Res.string.equal_metrics_toggle))
                 }
                 AnimatedVisibility(visible = explainEquality) {
-                    Text(stringResource(Res.string.equal_metrics_hint),
+                    Text(stringResource(Res.string.equal_metrics_hint).replace("Maya", session.profile.name),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -300,7 +300,7 @@ private fun AdventureFinances(
             }
         }
         val breakdown = remember(session, counterfactual) { counterfactual?.let { DifferenceBreakdown.of(session, it) } }
-        if (breakdown != null) DifferenceBreakdownCard(breakdown)
+        if (breakdown != null) DifferenceBreakdownCard(breakdown, session.profile.name)
     }
 }
 
@@ -313,7 +313,7 @@ private fun PendingDecisionView(session: SimulationSession, decision: PendingDec
     val shared = remember(session, decision) {
         MonthlySimulation.sharedContract(decision.event.month, session.configuration).monthlyRent
     }
-    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month))
+    val copy = decisionCopy(kind, decision.event.month, shared, session.configuration.sharedMovingCostAt(decision.event.month), session.profile.name)
     if (copy.title.isNotEmpty()) Text(copy.title, style = MaterialTheme.typography.titleLarge)
     Text(copy.prompt, style = MaterialTheme.typography.bodyMedium)
     for (option in decision.options) {
