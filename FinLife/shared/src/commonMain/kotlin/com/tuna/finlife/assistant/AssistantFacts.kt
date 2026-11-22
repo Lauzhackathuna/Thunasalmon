@@ -317,7 +317,7 @@ internal object AssistantFacts {
     internal fun studiedScenarios(context: AssistantContext): List<Pair<String, TwelveMonthProjection>>? {
         val session = context.session
         val state = session.currentState
-        val known = session.calendar.filter { it.month >= state.month && !RandomTroubles.isRandom(it) }
+        val known = session.calendar.filter { it.month >= state.month && !RandomTroubles.isRandom(it) && it !is LifeEvent.CompanyClosure }
         // A move or an offer already lined up for this month is a choice already made: no comparison then.
         if (known.any { it is LifeEvent.HousingChoice || it is LifeEvent.ShortInternshipOffer || it is LifeEvent.PurchaseChoice }) return null
         val offerPossible = state.status == LifeStatus.STUDENT &&

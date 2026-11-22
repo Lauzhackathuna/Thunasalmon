@@ -11,6 +11,15 @@ import com.tuna.finlife.simulation.EventOutcome
 import com.tuna.finlife.simulation.Money
 import com.tuna.finlife.simulation.MonthlyRecord
 import finlife.shared.generated.resources.event_minor_repair
+import finlife.shared.generated.resources.decision_epfl_title
+import finlife.shared.generated.resources.decision_epfl_prompt
+import finlife.shared.generated.resources.option_epfl_stay
+import finlife.shared.generated.resources.option_epfl_accept
+import finlife.shared.generated.resources.outcome_career_break
+import finlife.shared.generated.resources.outcome_epfl_not_applicable
+import finlife.shared.generated.resources.outcome_epfl_accepted
+import finlife.shared.generated.resources.outcome_epfl_stayed
+import finlife.shared.generated.resources.outcome_company_closure
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.decision_rent_rise_prompt
 import finlife.shared.generated.resources.decision_rent_rise_title

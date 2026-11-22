@@ -46,7 +46,7 @@ object FinancialProjections {
         project("Si rien ne change", profile, configuration, state, knownEvents, commitments)
 
     fun nothingChanges(session: SimulationSession, knownEvents: List<LifeEvent> = session.calendar.filter {
-        it.month >= session.currentMonth && !it.id.startsWith("random-") }): TwelveMonthProjection =
+        it.month >= session.currentMonth && !it.id.startsWith("random-") && it !is LifeEvent.CompanyClosure }): TwelveMonthProjection =
         nothingChanges(session.profile, session.configuration, session.currentState, knownEvents,
             session.selections.filter { choice -> knownEvents.any { it.id == choice.eventId } })
 
