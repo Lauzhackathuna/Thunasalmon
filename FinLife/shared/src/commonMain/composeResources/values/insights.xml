@@ -50,6 +50,15 @@
     <string name="sensitivity_difference">Difference with unchanged values: %1$s</string>
     <string name="sensitivity_stability">Stability with these values: %1$s</string>
     <string name="sensitivity_reset">Reset</string>
+    <string name="sensitivity_chart_now">Now</string>
+    <string name="sensitivity_chart_current">Current values</string>
+    <string name="sensitivity_chart_tested">With tested values</string>
+    <string name="sensitivity_chart_hint">Move a slider to see the effect</string>
+    <string name="sensitivity_chart_description">In %1$d months, net worth: %2$s with tested values, versus %3$s with current values.</string>
+    <string name="sensitivity_tooltip_one_month">In 1 month</string>
+    <string name="sensitivity_tooltip_months">In %1$d months</string>
+    <string name="sensitivity_tooltip_gap">Difference</string>
+    <string name="sensitivity_chart_description_neutral">In %1$d months, net worth: %2$s with current values.</string>
     <!-- Difference with the dotted line -->
     <string name="breakdown_title">Why the two lines differ</string>
     <string name="breakdown_more">At the end of month %1$d, Maya’s path has %2$s more net worth than the dotted line.</string>

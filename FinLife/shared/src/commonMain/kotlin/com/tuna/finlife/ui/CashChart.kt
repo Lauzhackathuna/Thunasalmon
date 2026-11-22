@@ -507,7 +507,7 @@ private fun alternativeLabel(choice: AlternativeChoice): String = when (choice) 
 
 /** Tooltip row: the value leads; the label is small and muted. */
 @Composable
-private fun TooltipLine(label: String, value: String) {
+internal fun TooltipLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
         Text(
             label,

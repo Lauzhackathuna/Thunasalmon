@@ -17,7 +17,7 @@ internal sealed interface ChatEntry {
 
 /**
  * One conversation, kept in memory only: a new run starts a new chat and nothing is written to disk.
- * Questions are answered one at a time.
+ * Questions are answered one at a time
  */
 internal class AssistantChat(private val model: AssistantModel, private val scope: CoroutineScope) {
     val modelName: String get() = model.modelName
