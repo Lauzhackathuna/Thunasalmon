@@ -16,7 +16,7 @@ internal fun rememberOutlook(draft: WhatIfDraft): Result<AdventureOutlook> = rem
 }
 
 @Composable
-internal fun OutlookCard(draft: WhatIfDraft, metric: BalanceMetric, outlook: AdventureOutlook? = rememberOutlook(draft).getOrNull()) {
+internal fun OutlookCard(draft: WhatIfDraft, metric: BalanceMetric, outlook: AdventureOutlook?) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(FinLifeSpacing.medium), verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small)) {
             Text(stringResource(Res.string.outlook_title), style = MaterialTheme.typography.titleLarge)
