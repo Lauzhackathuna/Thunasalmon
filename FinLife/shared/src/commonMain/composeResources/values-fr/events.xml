@@ -59,7 +59,7 @@
     <!-- Nouvelles décisions professionnelles : hypothèses fictives, pas statistiques réelles. -->
     <string name="whatif_career_break">Et si je ne travaillais pas pendant 6 mois ? (sans salaire)</string>
     <string name="decision_epfl_title">Une offre d’emploi à l’EPFL</string>
-    <string name="decision_epfl_prompt">Vous avez déjà un poste rémunéré %1$s/mois. L’EPFL vous propose un poste fictif plus sûr à %2$s/mois. En gardant votre emploi actuel, le jeu suppose %3$s %% de risque que votre entreprise ferme dans les %4$d prochains mois. Vous perdriez votre salaire, pas votre épargne. Que choisissez-vous ?</string>
+    <string name="decision_epfl_prompt">Vous avez déjà un poste rémunéré %1$s/mois. L’EPFL vous propose un poste fictif plus sûr à %2$s/mois. En gardant votre emploi actuel, chaque mois votre entreprise a une nouvelle probabilité indépendante de %3$s %% de faire faillite. Le tirage recommence chaque mois tant qu’elle existe. Vous perdriez votre salaire futur, mais pas votre épargne. Que choisissez-vous ?</string>
     <string name="option_epfl_stay">Garder mon emploi actuel</string>
     <string name="option_epfl_accept">Accepter l’offre de l’EPFL</string>
     <string name="outcome_epfl_accepted">Vous avez accepté le poste à l’EPFL pour %1$s par mois.</string>
