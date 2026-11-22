@@ -110,24 +110,55 @@ private fun MonthlyState.plotted(metric: BalanceMetric): Long = metric.value(thi
 @Composable
 internal fun CashChart(session: SimulationSession, counterfactual: Counterfactual?, modifier: Modifier = Modifier,
     projection: TwelveMonthProjection? = null, baseline: TwelveMonthProjection? = null,
+    combineHistory: Boolean = false,
+    selectedMetric: BalanceMetric? = null,
+    onSelectMetric: ((BalanceMetric) -> Unit)? = null,
 ) {
-    var metric by remember { mutableStateOf(BalanceMetric.Cash) }
+    var localMetric by remember { mutableStateOf(BalanceMetric.Cash) }
+    val metric = selectedMetric ?: localMetric
     var window by remember { mutableStateOf<Int?>(12) }
-    val allStates = remember(session, projection) { projection?.states ?: session.states }
+    val combined = projection != null && combineHistory
+    val allStates = remember(session, projection, combined) {
+        when {
+            combined -> session.states.dropLast(1) + requireNotNull(projection).states
+            projection != null -> projection.states
+            else -> session.states
+        }
+    }
     if (allStates.size == 1) {
         Text(stringResource(Res.string.history_empty), style = MaterialTheme.typography.bodyMedium)
         return
     }
-    val states = remember(allStates, window) { allStates.slice(ChartScale.visibleRange(allStates.size, window, projection != null)) }
+    val states = remember(allStates, window, combined, session.currentMonth) {
+        if (combined) {
+            // In forecast mode, 3/6/12 means upcoming months, plus at most 3 past months for context.
+            val start = if (window == null) 0 else (session.currentMonth - 3).coerceAtLeast(0)
+            val end = session.currentMonth + (window ?: 12)
+            allStates.filter { it.month in start..end }
+        } else allStates.slice(ChartScale.visibleRange(allStates.size, window, projection != null))
+    }
     val firstMonth = states.first().month
-    val history = remember(session, projection) { (projection?.records ?: session.history).associateBy { it.after.month } }
+    val projectionStart = if (combined) session.currentMonth - firstMonth else -1
+    val history = remember(session, projection, combined) {
+        (if (combined) session.history + requireNotNull(projection).records
+         else projection?.records ?: session.history).associateBy { it.after.month }
+    }
     val events = remember(session) { session.calendar.associateBy { it.id } }
     val values = remember(states, metric) { states.map { it.plotted(metric) } }
     val count = states.size
-    val altStates = remember(counterfactual, baseline, firstMonth) {
-        (baseline?.states ?: counterfactual?.alternative?.states.orEmpty()).filter { it.month >= firstMonth }
+    val altStates = remember(session, counterfactual, baseline, firstMonth, combined) {
+        val all = when {
+            combined && baseline != null -> session.states.dropLast(1) + baseline.states
+            baseline != null -> baseline.states
+            else -> counterfactual?.alternative?.states.orEmpty()
+        }
+        all.filter { it.month >= firstMonth }
     }
-    val altFrom = if (baseline != null) 0 else ((counterfactual?.month ?: firstMonth) - firstMonth).coerceAtLeast(0)
+    val altFrom = when {
+        combined && baseline != null -> projectionStart
+        baseline != null -> 0
+        else -> ((counterfactual?.month ?: firstMonth) - firstMonth).coerceAtLeast(0)
+    }
     val altValues = remember(altStates, metric) { altStates.map { it.plotted(metric) } }
     val altLast = minOf(altStates.lastIndex, values.lastIndex)
     val altRange = if (altLast > altFrom) altFrom..altLast else IntRange.EMPTY
@@ -166,7 +197,9 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
         Text(stringResource(Res.string.chart_metric), style = MaterialTheme.typography.labelSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             BalanceMetric.entries.forEach { value ->
-                FilterChip(selected = metric == value, onClick = { metric = value }, label = { Text(metricLabel(value)) })
+                FilterChip(selected = metric == value, onClick = {
+                    if (selectedMetric == null) localMetric = value else onSelectMetric?.invoke(value)
+                }, label = { Text(metricLabel(value)) })
             }
         }
         Text(stringResource(Res.string.chart_range), style = MaterialTheme.typography.labelSmall)
@@ -176,11 +209,16 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                     label = { Text(value?.toString() ?: stringResource(Res.string.chart_all)) })
             }
         }
-        if (!altRange.isEmpty() && altLabel != null) {
-            // Two series: the legend is always present; identity by line style, not colour alone.
+        if (combined) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
+                LegendItem(stringResource(Res.string.chart_your_path), dotted = false)
+                LegendItem(stringResource(Res.string.future_path), dotted = true)
+                if (!altRange.isEmpty() && altLabel != null) LegendItem(altLabel, dotted = true, secondary = true)
+            }
+        } else if (!altRange.isEmpty() && altLabel != null) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) {
                 LegendItem(stringResource(if (projection == null) Res.string.chart_your_path else Res.string.future_path), dotted = false)
-                LegendItem(altLabel, dotted = true)
+                LegendItem(altLabel, dotted = true, secondary = true)
             }
         }
         // Y-axis title: what is plotted and its unit.
@@ -257,13 +295,23 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                     val x = (xOf(month.toFloat()) - text.size.width / 2f).coerceIn(0f, size.width - text.size.width)
                     drawText(text, topLeft = Offset(x, plotBottom + 4.dp.toPx()))
                 }
-                // The player's path.
+                // Historical path stays solid; future projection is distinguished by a dashed line.
                 val line = Path()
                 for ((index, value) in values.withIndex()) {
+                    if (combined && index > projectionStart) break
                     val point = Offset(xOf(index.toFloat()), yOf(value))
                     if (index == 0) line.moveTo(point.x, point.y) else line.lineTo(point.x, point.y)
                 }
                 drawPath(line, colors.primary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                if (combined && projectionStart >= 0 && projectionStart < values.lastIndex) {
+                    val forecast = Path()
+                    for (index in projectionStart..values.lastIndex) {
+                        val point = Offset(xOf(index.toFloat()), yOf(values[index]))
+                        if (index == projectionStart) forecast.moveTo(point.x, point.y) else forecast.lineTo(point.x, point.y)
+                    }
+                    drawPath(forecast, colors.primary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx()))))
+                }
                 // The alternative, dotted, from the month of the choice.
                 if (!altRange.isEmpty()) {
                     val dotted = Path()
@@ -271,7 +319,7 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                         val point = Offset(xOf(index.toFloat()), yOf(altValues[index]))
                         if (index == altRange.first) dotted.moveTo(point.x, point.y) else dotted.lineTo(point.x, point.y)
                     }
-                    drawPath(dotted, colors.primary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, pathEffect = dots(this)))
+                    drawPath(dotted, colors.secondary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, pathEffect = dots(this)))
                 }
 
                 // Crosshair and markers (8dp dot with a 2dp surface ring), else an end-dot on the latest month.
@@ -314,7 +362,8 @@ internal fun CashChart(session: SimulationSession, counterfactual: Counterfactua
                     pointX = (box.left + xOf(index.toFloat())).roundToInt(),
                     gap = gap,
                     margin = margin,
-                ) { MonthTooltip(states[index].month, states[index], record, alternative, events, metric) }
+                ) { MonthTooltip(states[index].month, states[index], record, alternative, events, metric,
+                    projected = combined && states[index].month > session.currentMonth) }
             } else {
                 null
             }
@@ -336,6 +385,7 @@ private fun MonthTooltip(
     alternative: AlternativeReading?,
     events: Map<String, LifeEvent>,
     metric: BalanceMetric,
+    projected: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     Column(
@@ -346,6 +396,7 @@ private fun MonthTooltip(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(monthLabel(index), style = MaterialTheme.typography.labelLarge)
+        if (projected) Text(stringResource(Res.string.future_path), style = MaterialTheme.typography.labelSmall)
         TooltipLine(metricLabel(metric), money(metric.value(state)))
         if (alternative != null) {
             TooltipLine(alternative.label, money(metric.value(alternative.state)))
@@ -382,14 +433,14 @@ private fun dots(scope: DrawScope): PathEffect = with(scope) {
 }
 
 @Composable
-private fun LegendItem(label: String, dotted: Boolean) {
-    val color = MaterialTheme.colorScheme.primary
+private fun LegendItem(label: String, dotted: Boolean, secondary: Boolean = false) {
+    val color = if (secondary) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Canvas(Modifier.width(20.dp).height(8.dp)) {
             val y = size.height / 2
             drawLine(
                 color, Offset(0f, y), Offset(size.width, y), 2.dp.toPx(), cap = StrokeCap.Round,
-                pathEffect = if (dotted) dots(this) else null,
+                pathEffect = if (dotted) PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx())) else null,
             )
         }
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
