@@ -50,6 +50,15 @@
     <string name="sensitivity_difference">Écart avec les valeurs inchangées : %1$s</string>
     <string name="sensitivity_stability">Stabilité avec ces valeurs : %1$s</string>
     <string name="sensitivity_reset">Réinitialiser</string>
+    <string name="sensitivity_chart_now">Maintenant</string>
+    <string name="sensitivity_chart_current">Valeurs actuelles</string>
+    <string name="sensitivity_chart_tested">Avec les valeurs testées</string>
+    <string name="sensitivity_chart_hint">Modifiez un curseur pour voir l’effet</string>
+    <string name="sensitivity_chart_description">Dans %1$d mois, patrimoine net : %2$s avec les valeurs testées, contre %3$s avec les valeurs actuelles.</string>
+    <string name="sensitivity_tooltip_one_month">Dans 1 mois</string>
+    <string name="sensitivity_tooltip_months">Dans %1$d mois</string>
+    <string name="sensitivity_tooltip_gap">Écart</string>
+    <string name="sensitivity_chart_description_neutral">Dans %1$d mois, patrimoine net : %2$s avec les valeurs actuelles.</string>
     <!-- Écart avec la ligne pointillée -->
     <string name="breakdown_title">Pourquoi les deux lignes diffèrent</string>
     <string name="breakdown_more">À la fin du mois %1$d, le parcours de Maya a %2$s de patrimoine net de plus que la ligne pointillée.</string>

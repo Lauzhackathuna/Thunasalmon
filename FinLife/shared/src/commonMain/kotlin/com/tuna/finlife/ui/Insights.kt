@@ -119,8 +119,6 @@ internal fun GoalProgressView(progress: GoalProgress) {
  */
 @Composable
 internal fun SensitivityPanel(draft: WhatIfDraft, unchanged: AdventureOutlook) {
-    // Net worth: cash stops at 0 while unpaid bills grow, so a cash comparison could hide the effect.
-    val metric = BalanceMetric.NetWorth
     var rent by remember(draft.base) { mutableStateOf(0) }
     var income by remember(draft.base) { mutableStateOf(0) }
     val sensitivity = Sensitivity(rent, income)
@@ -136,19 +134,10 @@ internal fun SensitivityPanel(draft: WhatIfDraft, unchanged: AdventureOutlook) {
     if (!sensitivity.isNeutral) {
         TextButton(onClick = { rent = 0; income = 0 }) { Text(playerStringResource(Res.string.sensitivity_reset)) }
     }
+    // Same projections as the stability below: no extra engine run. Amounts are read in the chart's tooltip.
+    SensitivityChart(sensitivitySeries(unchanged.selected(draft.selected), adjusted?.selected(draft.selected)), Modifier.fillMaxWidth())
     if (adjusted != null) {
         val option = adjusted.selected(draft.selected)
-        val reference = unchanged.selected(draft.selected)
-        Text(playerStringResource(Res.string.sensitivity_result), style = MaterialTheme.typography.labelLarge)
-        Text(metricLabel(metric), style = MaterialTheme.typography.labelSmall)
-        for (offset in listOf(3, 6, 12)) {
-            LedgerLine(playerStringResource(Res.string.checkpoint, offset), money(metric.value(option.at(offset))))
-            Text(
-                playerStringResource(Res.string.sensitivity_difference,
-                    signedMoney(metric.value(option.at(offset)) - metric.value(reference.at(offset)))),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
         Text(playerStringResource(Res.string.sensitivity_stability, stabilityLabel(option.stability.category)),
             style = MaterialTheme.typography.labelLarge)
     }
