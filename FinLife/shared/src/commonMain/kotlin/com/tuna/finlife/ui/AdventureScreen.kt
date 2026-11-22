@@ -196,7 +196,9 @@ private fun WhatIfDialog(draft: WhatIfDraft, onToggle: (WhatIf, Boolean) -> Unit
     GameSheet(onDismiss = onDismiss, sheetMaxWidth = 900.dp) {
         ScreenHeading(playerStringResource(Res.string.whatif_title))
         Text(playerStringResource(Res.string.preview_only))
-        Text(playerStringResource(Res.string.stage_assumption, money(Money.chf(draft.internshipSalary)), money(Money.chf(draft.internshipSalary).scaled(3.0))))
+        if (draft.canSwitch(WhatIf.Internship) || draft.isOn(WhatIf.Internship)) {
+            Text(playerStringResource(Res.string.stage_assumption, money(Money.chf(draft.internshipSalary)), money(Money.chf(draft.internshipSalary).scaled(3.0))))
+        }
         for (whatIf in WhatIf.entries) {
             val on = draft.isOn(whatIf)
             val enabled = draft.canSwitch(whatIf)

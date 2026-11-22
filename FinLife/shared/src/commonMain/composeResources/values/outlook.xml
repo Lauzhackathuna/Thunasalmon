@@ -5,7 +5,7 @@
     <string name="shortfall_hint">Unpaid bills are money owed, not an authorized overdraft.</string>
     <string name="outlook_title">Your next 12 months</string>
     <string name="outlook_baseline">If nothing changes</string>
-    <string name="outlook_assumptions">2% annual inflation on costs; fixed incomes. Known commitments continue. No new random events.</string>
+    <string name="outlook_assumptions">2% annual inflation on costs; known commitments continue. No new random events are forecast. A hidden future company-collapse draw is deliberately not included in this outlook.</string>
     <string name="outlook_unavailable">The outlook cannot be calculated with these amounts or this remaining horizon. Your journey has not changed.</string>
     <string name="preview_only">Preview only. Advance Month commits your selected choices; you can switch them off until then.</string>
     <string name="future_path">Future projection — selected choices</string>

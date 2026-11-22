@@ -5,7 +5,7 @@
     <string name="shortfall_hint">Les factures impayées sont de l’argent dû, pas un découvert autorisé.</string>
     <string name="outlook_title">Vos 12 prochains mois</string>
     <string name="outlook_baseline">Si rien ne change</string>
-    <string name="outlook_assumptions">Inflation annuelle de 2 % sur les coûts ; revenus fixes. Les engagements connus continuent. Aucun nouvel événement aléatoire.</string>
+    <string name="outlook_assumptions">Inflation annuelle de 2 % sur les coûts ; les engagements connus continuent. Aucun nouvel événement aléatoire n’est prévu. Un éventuel tirage de faillite non encore révélé n’est pas inclus dans cette projection.</string>
     <string name="outlook_unavailable">La projection ne peut pas être calculée avec ces montants ou cet horizon restant. Votre parcours est inchangé.</string>
     <string name="preview_only">Aperçu uniquement. Avancer le mois confirme vos choix ; ils restent réversibles jusque-là.</string>
     <string name="future_path">Projection future — choix sélectionnés</string>
