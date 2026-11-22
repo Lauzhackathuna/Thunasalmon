@@ -2,12 +2,12 @@
 <resources>
     <!-- Decisions -->
     <string name="decision_internship_title">A paid internship offer</string>
-    <string name="decision_internship_prompt">Maya can pause her studies for a %1$d-month internship paid %2$s per month.</string>
+    <string name="decision_internship_prompt">Maya can pause their studies for a %1$d-month internship paid %2$s per month.</string>
     <string name="option_internship_accept">Take the internship</string>
     <string name="option_internship_decline">Continue studies</string>
     <string name="decision_housing_title">A housing decision</string>
     <string name="decision_housing_prompt">Maya can move into a shared flat with a monthly rent of %1$s. Moving costs %2$s.</string>
-    <string name="option_housing_stay">Stay in her current home</string>
+    <string name="option_housing_stay">Stay in the current home</string>
     <string name="option_housing_move">Move into the shared flat</string>
     <string name="decision_plant_title">A plant for the flat</string>
     <string name="decision_plant_prompt">Maya sees a plant that costs %1$s.</string>
@@ -20,7 +20,7 @@
     <string name="decision_generic_prompt">Month %1$d. Choose one option.</string>
     <!-- Outcomes -->
     <string name="outcome_internship_accepted">Maya took the paid internship.</string>
-    <string name="outcome_internship_declined">Maya continued her studies.</string>
+    <string name="outcome_internship_declined">Maya continued studying.</string>
     <string name="outcome_internship_not_applicable">The internship offer did not apply: Maya is no longer studying.</string>
     <string name="outcome_rent_rise">Maya’s rent rises by %1$s% now and again every 12 months.</string>
     <string name="outcome_rent_rise_already_rising">Another rent increase was announced, but Maya’s rent is already rising every year.</string>
@@ -33,7 +33,7 @@
     <string name="outcome_oven_replaced">Maya replaced the oven.</string>
     <string name="outcome_other_party">This cost was paid by someone else.</string>
     <string name="outcome_housing_moved">Maya moved into the shared flat.</string>
-    <string name="outcome_housing_stayed">Maya stayed in her current home.</string>
+    <string name="outcome_housing_stayed">Maya stayed in the same home.</string>
     <string name="outcome_one_off">%1$s: %2$s</string>
     <string name="outcome_financing">Borrowed %1$s, repaid %2$s.</string>
     <!-- Ledger -->
@@ -44,12 +44,12 @@
     <string name="whatif_internship">A 3-month paid internship</string>
     <string name="whatif_shared_flat">Moving into a shared flat</string>
     <string name="decision_rent_rise_title">The rent is going up</string>
-    <string name="decision_rent_rise_prompt">Maya’s rent rises by %1$s% now and again every 12 months. She can accept it or move into a shared flat at %2$s per month (moving cost %3$s).</string>
+    <string name="decision_rent_rise_prompt">Maya’s rent rises by %1$s% now and again every 12 months. Options are to accept it or move into a shared flat at %2$s per month (moving cost %3$s).</string>
     <string name="option_rent_rise_stay">Accept the new rent</string>
     <string name="option_rent_rise_move">Move into a shared flat</string>
     <string name="outcome_rent_rise_moved">Maya moved into a shared flat instead of paying the higher rent.</string>
     <string name="decision_short_internship_title">A short paid internship</string>
-    <string name="decision_short_internship_prompt">A company offers Maya a %1$d-month internship paid %2$s per month, alongside her studies.</string>
+    <string name="decision_short_internship_prompt">A company offers Maya a %1$d-month internship paid %2$s per month, alongside their studies.</string>
     <string name="option_short_internship_accept">Accept the internship</string>
     <string name="option_short_internship_decline">Decline it</string>
     <string name="outcome_short_internship_accepted">Maya accepted the short paid internship.</string>

@@ -41,15 +41,15 @@ internal object AdventureRun {
     const val SALARY_TAX_RATE = 0.20
 
     /** [seed] drives the random problems; a new one per run unless given (tests). */
-    fun start(seed: Long = Random.nextLong(), data: StartingData = StartingData.Default): SimulationSession {
-        return openMonth(createSession(seed, data))
+    fun start(seed: Long = Random.nextLong(), data: StartingData = StartingData.Default, playerName: String = "Player"): SimulationSession {
+        return openMonth(createSession(seed, data, playerName = playerName))
     }
 
-    private fun createSession(seed: Long, data: StartingData, events: List<LifeEvent> = emptyList()): SimulationSession {
+    private fun createSession(seed: Long, data: StartingData, events: List<LifeEvent> = emptyList(), playerName: String = "Player"): SimulationSession {
         val home = HousingContract("maya-home", Money.chf(data.rent), 0, HousingType.ALONE)
         val profile = MonthlyProfile.alexia().copy(
             profileId = "finlife-maya",
-            name = "Maya",
+            name = requireNotNull(PlayerName.normalize(playerName)),
             cash = Money.chf(data.openingCash),
             studentMonthlyIncome = Money.chf(data.parentIncome),
             startingMonthlySalary = Money.chf(data.salaryAfterStudies),
@@ -83,7 +83,7 @@ internal object AdventureRun {
     /** Replays the same calendar and answers from opening with revised assumptions. */
     fun recalculate(session: SimulationSession, data: StartingData): SimulationSession? {
         val seed = session.configuration.randomSeed
-        val base = createSession(seed, data)
+        val base = createSession(seed, data, playerName = session.profile.name)
         val configuration = base.configuration
         val revisedEvents = session.calendar.map { event ->
             when (event) {
@@ -94,16 +94,16 @@ internal object AdventureRun {
                 else -> event
             }
         }
-        return restore(seed, data, revisedEvents, session.selections, session.currentMonth)
+        return restore(seed, data, revisedEvents, session.selections, session.currentMonth, playerName = session.profile.name)
     }
 
     /** Deterministic replay of recorded choices, used only for assumption edits and local restoration. */
     fun restore(seed: Long, data: StartingData, events: List<LifeEvent>, selections: List<com.tuna.finlife.simulation.DecisionSelection>,
-        completedMonths: Int): SimulationSession? {
+        completedMonths: Int, playerName: String = "Player"): SimulationSession? {
         require(completedMonths in 0..MonthlyConfiguration.MAX_MONTHS)
         require(selections.map { it.eventId }.distinct().size == selections.size)
         val answers = selections.associate { it.eventId to it.optionId }
-        var replay = createSession(seed, data)
+        var replay = createSession(seed, data, playerName = playerName)
         for (month in 0..completedMonths) {
             // Adventure events are revealed when their month opens. Feeding the entire saved
             // calendar at month zero would earmark future random repairs before they were known.

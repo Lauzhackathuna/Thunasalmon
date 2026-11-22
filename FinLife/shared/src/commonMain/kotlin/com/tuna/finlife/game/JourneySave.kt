@@ -3,16 +3,18 @@ package com.tuna.finlife.game
 import com.tuna.finlife.simulation.*
 
 internal data class RestoredJourney(val data: StartingData, val session: SimulationSession,
-    val draft: WhatIfDraft?, val ended: Boolean, val language: String, val theme: String)
+    val draft: WhatIfDraft?, val ended: Boolean, val language: String, val theme: String, val playerName: String)
 
 /** Versioned app inputs and recorded calendar, not serialized engine internals.
  * Checksum detects accidental corruption, not malicious tampering. Unknown versions/types fail closed. */
 internal object JourneySave {
     fun encode(data: StartingData, session: SimulationSession, draft: WhatIfDraft?, ended: Boolean,
-        language: String, theme: String): String {
+        language: String, theme: String, playerName: String = "Player"): String {
+        val validatedName = requireNotNull(PlayerName.normalize(playerName)) { "A valid player name is required" }
         val base = draft?.base ?: session
         val lines = buildList {
-            add("FINLIFE|1")
+            add("FINLIFE|2")
+            add("N|${hex(validatedName)}")
             add("R|${base.configuration.randomSeed}|${base.currentMonth}|$ended|$language|$theme")
             StartingField.entries.forEach { add("A|${it.name}|${data[it]}") }
             add("V|${base.currentState.cash.cents}|${base.currentState.netWorth.cents}|${base.currentState.studyMonthsCompleted}|${base.currentState.accountsPayable.cents}")
@@ -42,8 +44,17 @@ internal object JourneySave {
         val body = text.substringBeforeLast("\nHASH|", "")
         require(body.isNotEmpty() && checksum(body) == text.substringAfterLast("\nHASH|")) { "Save checksum mismatch" }
         val lines = body.lines().map { it.split('|') }
-        require(lines.first() == listOf("FINLIFE", "1")) { "Unsupported save version" }
-        require(lines.drop(1).all { it.first() in setOf("R", "A", "V", "D", "C", "E") })
+        val version = lines.first().takeIf { it.size == 2 && it[0] == "FINLIFE" }?.get(1)
+        require(version in setOf("1", "2")) { "Unsupported save version" }
+        require(lines.drop(1).all { it.first() in setOf("R", "A", "V", "D", "C", "E", "N") })
+        val playerName = if (version == "2") {
+            val encoded = lines.single { it.first() == "N" }
+            require(encoded.size == 2)
+            requireNotNull(PlayerName.normalize(unhex(encoded[1]))) { "Invalid saved player name" }
+        } else {
+            require(lines.none { it.first() == "N" })
+            "" // An older journey is resumed after asking for the user's first name.
+        }
         val run = lines.single { it.first() == "R" }; require(run.size == 6)
         require(run[4] in setOf("English", "French") && run[5] in setOf("System", "Light", "Dark"))
         val amounts = lines.filter { it.first() == "A" }
@@ -66,14 +77,14 @@ internal object JourneySave {
             }
         }
         require(events.size <= 5000)
-        val base = requireNotNull(AdventureRun.restore(run[1].toLong(), data, events, choices, run[2].toInt())) { "Recorded decisions cannot be restored" }
+        val base = requireNotNull(AdventureRun.restore(run[1].toLong(), data, events, choices, run[2].toInt(), playerName = playerName.ifEmpty { "Player" })) { "Recorded decisions cannot be restored" }
         val expected = lines.single { it.first() == "V" }.drop(1)
         require(expected == listOf(base.currentState.cash.cents.toString(), base.currentState.netWorth.cents.toString(),
             base.currentState.studyMonthsCompleted.toString(), base.currentState.accountsPayable.cents.toString())) { "Replayed balances differ" }
         val selected = lines.filter { it.first() == "D" }.map { require(it.size == 2); WhatIf.valueOf(it[1]) }.toSet()
         require(selected.all { AdventureRun.whatIfStates(base)[it] == WhatIfState.Available })
         val draft = if (selected.isEmpty()) null else WhatIfDraft(base, selected, data.internshipSalary)
-        return RestoredJourney(data, draft?.session ?: base, draft, run[3].toBooleanStrict(), run[4], run[5])
+        return RestoredJourney(data, draft?.session ?: base, draft, run[3].toBooleanStrict(), run[4], run[5], playerName)
     }
 
     private fun hex(value: String) = value.map { it.code.toString(16).padStart(4, '0') }.joinToString("")

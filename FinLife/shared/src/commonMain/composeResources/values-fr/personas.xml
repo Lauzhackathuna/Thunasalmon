@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="first_year_abroad">Première année à l’étranger</string>
-    <string name="choose_persona">Choisissez un personnage</string>
+    <string name="name_intro">Quel est votre prénom ?</string>
+    <string name="name_label">Prénom</string>
+    <string name="name_placeholder">Votre prénom</string>
+    <string name="name_continue">Continuer</string>
+    <string name="name_context">Vous explorerez un parcours financier fictif sous votre propre prénom. Les montants de départ sont illustratifs.</string>
+    <string name="name_error">Saisissez 1 à %1$d lettres ; espaces, traits d’union et apostrophes autorisés.</string>
     <string name="room_title">Chambre</string>
     <string name="synthetic_data">Données synthétiques</string>
     <string name="opening_cash">Solde de départ</string>
     <string name="money_pattern">%1$s %2$s</string>
     <string name="money_group_separator"> </string>
     <string name="money_decimal_separator">,</string>
-    <string name="maya_role">Étudiante en master</string>
-    <string name="maya_story">Maya commence un master à l’étranger et paie ses frais de scolarité deux fois par an.</string>
     <string name="samir_role">Travailleur nouvellement arrivé</string>
     <string name="samir_story">Samir touche son premier salaire au mois 2 et envoie de l’argent à sa famille.</string>
     <string name="camille_role">Apprenti·e</string>

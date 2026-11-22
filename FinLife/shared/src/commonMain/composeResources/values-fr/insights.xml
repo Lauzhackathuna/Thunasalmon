@@ -17,7 +17,7 @@
     <string name="assumptions_months">%1$d mois</string>
     <string name="assumptions_tuition">Frais de scolarité, tous les %1$d mois d’études</string>
     <string name="assumptions_section_costs">Dépenses mensuelles (indexées à l’inflation)</string>
-    <string name="assumptions_rent">Loyer de l’appartement que Maya loue seule</string>
+    <string name="assumptions_rent">Loyer du logement loué par Maya</string>
     <string name="assumptions_insurance">Assurance maladie</string>
     <string name="assumptions_groceries">Courses</string>
     <string name="assumptions_other">Autres dépenses</string>

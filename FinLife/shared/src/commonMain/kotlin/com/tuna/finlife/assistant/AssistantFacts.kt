@@ -36,6 +36,7 @@ internal class AssistantContext(
     val whatIfs: Set<WhatIf>,
     val internshipSalary: Long,
     val currency: String,
+    val playerName: String = "Player",
 ) {
     val monthsPlayed: Int get() = session.history.size
 }
