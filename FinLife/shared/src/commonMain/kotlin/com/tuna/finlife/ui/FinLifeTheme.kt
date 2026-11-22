@@ -33,42 +33,42 @@ internal object FinLifeSpacing {
 
 /** Quiet Motion: warm paper, slate ink, restrained glacier blue and a soft copper accent. */
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF315C80),
+    primary = Color(0xFF087E6D),
     onPrimary = Color.White,
-    secondary = Color(0xFF8E735D),
+    secondary = Color(0xFFD47A5A),
     onSecondary = Color.White,
-    tertiary = Color(0xFF607C7A),
-    background = Color(0xFFF6F6F3),
-    onBackground = Color(0xFF202B36),
+    tertiary = Color(0xFF447E83),
+    background = Color(0xFFF5F7F6),
+    onBackground = Color(0xFF1A2928),
     surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF202B36),
-    surfaceVariant = Color(0xFFF0F3F5),
-    onSurfaceVariant = Color(0xFF566371),
-    outline = Color(0xFF7D8B98),
-    outlineVariant = Color(0xFFE1E6EA),
-    primaryContainer = Color(0xFFDCEBF5),
-    onPrimaryContainer = Color(0xFF203D54),
+    onSurface = Color(0xFF1A2928),
+    surfaceVariant = Color(0xFFF0F5F3),
+    onSurfaceVariant = Color(0xFF5B6D68),
+    outline = Color(0xFF81958D),
+    outlineVariant = Color(0xFFE1EBE6),
+    primaryContainer = Color(0xFFDDF3E9),
+    onPrimaryContainer = Color(0xFF084A41),
     secondaryContainer = Color(0xFFF0E8DF),
     onSecondaryContainer = Color(0xFF654D3A),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFA8D2F1),
-    onPrimary = Color(0xFF132C40),
-    secondary = Color(0xFFD4B196),
-    onSecondary = Color(0xFF372B22),
-    tertiary = Color(0xFF9CCAC3),
-    background = Color(0xFF171B23),
-    onBackground = Color(0xFFF2F4F5),
-    surface = Color(0xFF222936),
-    onSurface = Color(0xFFF2F4F5),
-    surfaceVariant = Color(0xFF2A3543),
-    onSurfaceVariant = Color(0xFFC0CDD9),
-    outline = Color(0xFF8EA0B0),
-    outlineVariant = Color(0xFF3A4655),
-    primaryContainer = Color(0xFF25445E),
-    onPrimaryContainer = Color(0xFFE1F2FF),
-    secondaryContainer = Color(0xFF493F38),
+    primary = Color(0xFF5AE3B3),
+    onPrimary = Color(0xFF08261F),
+    secondary = Color(0xFFF1A58E),
+    onSecondary = Color(0xFF35251D),
+    tertiary = Color(0xFF8DCBCB),
+    background = Color(0xFF0D1217),
+    onBackground = Color(0xFFF2F7F4),
+    surface = Color(0xFF182128),
+    onSurface = Color(0xFFF2F7F4),
+    surfaceVariant = Color(0xFF203039),
+    onSurfaceVariant = Color(0xFFA8BDB6),
+    outline = Color(0xFF779388),
+    outlineVariant = Color(0xFF30433D),
+    primaryContainer = Color(0xFF164C3E),
+    onPrimaryContainer = Color(0xFFD6F8E7),
+    secondaryContainer = Color(0xFF493E3B),
     onSecondaryContainer = Color(0xFFF1D9C5),
 )
 
@@ -80,11 +80,11 @@ internal data class DeltaColors(val gain: Color, val loss: Color, val neutral: C
     }
 }
 
-private val LightDeltaColors = DeltaColors(Color(0xFF277453), Color(0xFFAA4550), LightColors.onSurfaceVariant)
-private val DarkDeltaColors = DeltaColors(Color(0xFF9DE0BC), Color(0xFFFFB1B5), DarkColors.onSurfaceVariant)
+private val LightDeltaColors = DeltaColors(Color(0xFF087E6D), Color(0xFFC34A56), LightColors.onSurfaceVariant)
+private val DarkDeltaColors = DeltaColors(Color(0xFF5AE3B3), Color(0xFFFF9EA5), DarkColors.onSurfaceVariant)
 internal val LocalDeltaColors = staticCompositionLocalOf { LightDeltaColors }
-private val LightBackdrop = Brush.verticalGradient(listOf(Color(0xFFFBFAF8), LightColors.background))
-private val DarkBackdrop = Brush.verticalGradient(listOf(Color(0xFF242D3B), DarkColors.background, Color(0xFF151921)))
+private val LightBackdrop = Brush.verticalGradient(listOf(Color(0xFFF9FCFA), LightColors.background))
+private val DarkBackdrop = Brush.verticalGradient(listOf(Color(0xFF111C20), DarkColors.background, Color(0xFF090E12)))
 internal val LocalGameBackdrop = staticCompositionLocalOf { LightBackdrop }
 /** Background of outlined buttons: white in light mode, the dark surface in dark mode. */
 internal val LocalButtonContainer = staticCompositionLocalOf { Color.White }
