@@ -151,7 +151,7 @@ internal fun FinLifeApp(assistantModel: AssistantModel?) {
                                 counterfactual = null
                                 ended = false
                                 newChat()
-                                session = AdventureRun.start(data = data)
+                                session = AdventureRun.start(data = data, playerName = playerName)
                             },
                             onOpenSettings = { settingsOpen = true },
                         )
