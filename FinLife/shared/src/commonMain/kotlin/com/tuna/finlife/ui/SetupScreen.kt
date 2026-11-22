@@ -62,6 +62,7 @@ private val Sections: List<Pair<StringResource, List<StartingField>>> = listOf(
 @Composable
 internal fun SetupScreen(
     initial: StartingData,
+    playerName: String,
     onStart: (StartingData) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -82,7 +83,7 @@ internal fun SetupScreen(
             }
         },
     ) {
-        ScreenHeading(stringResource(Res.string.setup_title))
+        ScreenHeading(stringResource(Res.string.setup_title, playerName))
         Text(
             stringResource(Res.string.setup_hint),
             style = MaterialTheme.typography.bodyMedium,
@@ -148,5 +149,5 @@ private val StartingField.label: StringResource
 @Preview
 @Composable
 private fun SetupScreenPreview() {
-    FinLifeTheme { SetupScreen(StartingData.Default, onStart = {}, onOpenSettings = {}) }
+    FinLifeTheme { SetupScreen(StartingData.Default, playerName = "Alex", onStart = {}, onOpenSettings = {}) }
 }
