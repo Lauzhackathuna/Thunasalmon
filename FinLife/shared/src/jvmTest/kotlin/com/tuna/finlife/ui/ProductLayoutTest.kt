@@ -71,7 +71,7 @@ class ProductLayoutTest {
             FinLifeTheme { AdventureScreen(waiting, {}, {}, {}, { _, _ -> }, WhatIfDraft(waiting), null, StartingData.Default, { true }, { _, _ -> }) }
         }
         assertTrue(pending.any { it.contains("800") })
-        val setup = render("setup", 390, 844) { FinLifeTheme { SetupScreen(StartingData.Default, {}, {}) } }
+        val setup = render("setup", 390, 844) { FinLifeTheme { SetupScreen(StartingData.Default, playerName = "Alex", onStart = {}, onOpenSettings = {}) } }
         assertTrue(setup.any { it.contains("CHF") })
     }
 }
