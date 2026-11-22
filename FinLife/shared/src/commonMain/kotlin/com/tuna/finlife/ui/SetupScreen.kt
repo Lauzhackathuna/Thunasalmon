@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.tuna.finlife.game.FieldError
+import com.tuna.finlife.game.FirstName
 import com.tuna.finlife.game.StartingData
 import com.tuna.finlife.game.StartingDataForm
 import com.tuna.finlife.game.StartingField
@@ -24,6 +25,9 @@ import com.tuna.finlife.i18n.LocalCurrencyCode
 import com.tuna.finlife.i18n.displayMoney
 import finlife.shared.generated.resources.Res
 import finlife.shared.generated.resources.error_empty
+import finlife.shared.generated.resources.error_first_name
+import finlife.shared.generated.resources.first_name_hint
+import finlife.shared.generated.resources.field_first_name
 import finlife.shared.generated.resources.error_negative
 import finlife.shared.generated.resources.error_number
 import finlife.shared.generated.resources.error_too_large
@@ -66,7 +70,10 @@ internal fun SetupScreen(
     onOpenSettings: () -> Unit,
 ) {
     var texts by remember(initial) { mutableStateOf(StartingDataForm.texts(initial)) }
-    val data = StartingDataForm.build(texts)
+    // New journeys always request a name; existing saved journeys are restored without this screen.
+    var firstNameInput by remember { mutableStateOf("") }
+    val firstName = FirstName.normalize(firstNameInput)
+    val data = firstName?.let { StartingDataForm.build(texts, it) }
     GameScreen(
         onOpenSettings = onOpenSettings,
         actions = {
@@ -87,6 +94,21 @@ internal fun SetupScreen(
             stringResource(Res.string.setup_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedTextField(
+            value = firstNameInput,
+            onValueChange = { firstNameInput = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(Res.string.field_first_name)) },
+            singleLine = true,
+            isError = firstNameInput.isNotBlank() && firstName == null,
+            supportingText = {
+                Text(stringResource(
+                    if (firstNameInput.isNotBlank() && firstName == null) Res.string.error_first_name
+                    else Res.string.first_name_hint,
+                ))
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
         )
         StartingAmountFields(texts) { field, value -> texts = texts + (field to value) }
     }
