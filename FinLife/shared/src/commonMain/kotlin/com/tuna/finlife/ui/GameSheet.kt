@@ -41,7 +41,7 @@ internal fun GameSheet(
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         sheetMaxWidth = sheetMaxWidth,
-    ) {
+    ) { TooltipHost {
         val sheetScroll = if (bodyScrolls) Modifier else Modifier.verticalScroll(rememberScrollState())
         Column(
             modifier = Modifier.fillMaxWidth().then(heightLimit).then(sheetScroll)
@@ -68,5 +68,5 @@ internal fun GameSheet(
                 )
             }
         }
-    }
+    } }
 }

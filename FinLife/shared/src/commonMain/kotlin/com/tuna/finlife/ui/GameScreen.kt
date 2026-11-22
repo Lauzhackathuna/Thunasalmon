@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,7 +41,7 @@ internal fun GameScreen(
         BoxWithConstraints(Modifier.fillMaxSize().background(LocalGameBackdrop.current).safeContentPadding()) {
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
             val wideRoom = maxWidth >= 760.dp * fontScale && header != null && actions != null
-            val pinControls = maxHeight >= 700.dp * fontScale
+            val pinControls = maxHeight >= 480.dp * fontScale
             // Keep content clear of the top-right gear when the window leaves no free margin for it.
             val contentWidth = if (wideRoom) FinLifeContentWidth * 2 else FinLifeContentWidth
             val gearMargin = (FinLifeSpacing.touchTarget + FinLifeSpacing.medium * 2) * 2
@@ -53,29 +54,27 @@ internal fun GameScreen(
                 if (wideRoom) {
                     Row(
                         modifier = Modifier.weight(1f).widthIn(max = FinLifeContentWidth * 2).fillMaxWidth()
-                            .verticalScroll(rememberScrollState()).padding(FinLifeSpacing.large),
+                            .padding(FinLifeSpacing.large),
                         horizontalArrangement = Arrangement.spacedBy(FinLifeSpacing.large),
                     ) {
-                        Box(Modifier.weight(1f)) { header() }
+                        Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) { header() }
                         Column(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                             verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
                         ) {
-                            content()
+                            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium)) { content() }
                             actions()
                         }
                     }
                 } else {
-                    if (pinControls && header != null) {
-                        Box(screenWidth().padding(top = FinLifeSpacing.medium)) { header() }
-                    }
                     Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                         Column(
                             modifier = Modifier.align(Alignment.TopCenter).then(screenWidth())
                                 .padding(vertical = if (header == null) FinLifeSpacing.large else FinLifeSpacing.medium),
                             verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.medium),
                         ) {
-                            if (!pinControls) header?.invoke()
+                            header?.invoke()
                             content()
                             if (!pinControls) actions?.invoke()
                         }

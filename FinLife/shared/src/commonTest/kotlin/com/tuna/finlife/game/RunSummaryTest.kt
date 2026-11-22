@@ -30,7 +30,7 @@ class RunSummaryTest {
         val summary = RunSummary.of(waiting)
         assertEquals(waiting.history.size, summary.monthsSimulated)
         // No investments, borrowing or debt in the demo run: cash moves by income minus expenses.
-        assertEquals(waiting.initialState.cash + summary.totalIncome - summary.totalExpenses, summary.cash)
-        assertEquals(summary.cash, summary.netWorth)
+        assertEquals(waiting.initialState.cash + summary.totalIncome - summary.totalPaid, summary.cash)
+        assertEquals(summary.cash - summary.unpaid, summary.netWorth)
     }
 }

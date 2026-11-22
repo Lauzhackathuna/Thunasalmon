@@ -5,10 +5,17 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
+import kotlin.math.roundToLong
 import kotlin.math.roundToInt
 
 /** Pure axis maths for the cash chart. Amounts are whole CHF. */
 internal object ChartScale {
+    fun visibleRange(count: Int, months: Int?, future: Boolean): IntRange {
+        require(count > 0 && (months == null || months > 0))
+        val size = minOf(count, months?.plus(1) ?: count)
+        return if (future) 0 until size else count - size until count
+    }
+
     data class Axis(val min: Long, val max: Long, val ticks: List<Long>)
 
     /** Clean ticks (1, 2, 2.5 or 5 × a power of ten) covering [low]..[high], about [target] of them. */
@@ -55,9 +62,9 @@ internal object ChartScale {
         val sign = if (chf < 0) "−" else ""
         val magnitude = abs(chf)
         if (compact && magnitude != 0L) {
-            val tenths = (magnitude / 100.0).roundToInt()
-            val whole = group((tenths / 10).toLong(), groupSeparator)
-            val text = if (tenths % 10 == 0) whole else "$whole$decimalSeparator${tenths % 10}"
+            val tenths = (magnitude / 100.0).roundToLong()
+            val whole = group(tenths / 10, groupSeparator)
+            val text = if (tenths % 10 == 0L) whole else "$whole$decimalSeparator${tenths % 10}"
             return "$sign${text}K"
         }
         return sign + group(magnitude, groupSeparator)

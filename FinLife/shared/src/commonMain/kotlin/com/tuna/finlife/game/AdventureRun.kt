@@ -89,20 +89,33 @@ internal object AdventureRun {
                 else -> event
             }
         }
-        val answers = session.selections.associate { it.eventId to it.optionId }
-        var replay = SimulationSessions.start(base.profile, configuration, revisedEvents)
-        for (month in 0..session.currentMonth) {
-            while (true) {
-                val pending = SimulationSessions.pendingDecisions(replay).firstOrNull { it.event.id in answers } ?: break
-                replay = SimulationSessions.submit(replay, pending.event.id, answers.getValue(pending.event.id))
+        return restore(seed, data, revisedEvents, session.selections, session.currentMonth)
+    }
+
+    /** Deterministic replay of recorded choices, used only for assumption edits and local restoration. */
+    fun restore(seed: Long, data: StartingData, events: List<LifeEvent>, selections: List<com.tuna.finlife.simulation.DecisionSelection>,
+        completedMonths: Int): SimulationSession? {
+        require(completedMonths in 0..MonthlyConfiguration.MAX_MONTHS)
+        require(selections.map { it.eventId }.distinct().size == selections.size)
+        val answers = selections.associate { it.eventId to it.optionId }
+        var replay = createSession(seed, data)
+        for (month in 0..completedMonths) {
+            // Adventure events are revealed when their month opens. Feeding the entire saved
+            // calendar at month zero would earmark future random repairs before they were known.
+            events.filter { it.month == month }.forEach { replay = SimulationSessions.schedule(replay, it) }
+            repeat(events.count { it.month == month && it.interactive }) {
+                val pending = SimulationSessions.pendingDecisions(replay).firstOrNull { it.event.id in answers }
+                if (pending != null) replay = SimulationSessions.submit(replay, pending.event.id, answers.getValue(pending.event.id))
             }
             val waiting = SimulationSessions.pendingDecisions(replay).isNotEmpty()
-            if (month == session.currentMonth) {
-                if (replay.selections.toSet() != session.selections.toSet()) return null
+            if (month == completedMonths) {
+                if (replay.selections.toSet() != selections.toSet()) return null
+                events.filter { it.month > completedMonths }.forEach { replay = SimulationSessions.schedule(replay, it) }
                 return if (waiting) SimulationSessions.advance(replay) else replay
             }
             if (waiting) return null
             replay = SimulationSessions.advance(replay)
+            if (replay.currentMonth != month + 1) return null
         }
         return null
     }
@@ -153,7 +166,7 @@ internal object AdventureRun {
                 WhatIf.SharedFlat -> state.housing.type == HousingType.SHARED
             }
             val possible = when (whatIf) {
-                WhatIf.Internship -> state.status == LifeStatus.STUDENT
+                WhatIf.Internship -> state.status == LifeStatus.STUDENT && month <= MonthlyConfiguration.MAX_MONTHS - 3
                 WhatIf.SharedFlat -> true
             }
             when {
@@ -196,7 +209,7 @@ internal object AdventureRun {
 
     private fun whatIfId(whatIf: WhatIf, month: Int) = when (whatIf) {
         // Id chosen by the engine's proposeSharedHousing.
-        WhatIf.SharedFlat -> MonthlySimulation.sharedHousingChoice(month, MonthlyConfiguration(horizonMonths = month + 1)).id
+        WhatIf.SharedFlat -> "FINLIFE_SHARED_$month"
         else -> "whatif-${whatIf.name.lowercase()}-$month"
     }
 
@@ -218,8 +231,8 @@ internal object AdventureRun {
         )
         if (drawn.isEmpty()) return session
         val indexed = drawn.map { event ->
-            if (event is LifeEvent.Maintenance) {
-                event.copy(nominalAmount = event.nominalAmount.scaled(session.configuration.priceIndex(event.month)))
+            if (event is LifeEvent.OneOffExpense) {
+                event.copy(amount = event.amount.scaled(session.configuration.priceIndex(event.month)))
             } else event
         }
         val scheduled = withEvents(session, indexed)
