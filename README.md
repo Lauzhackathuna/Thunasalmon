@@ -2,12 +2,12 @@
 
 ## 1. Overview
 
-FinLife is an interactive financial life simulator for the UBS × LauzHack and JetBrains challenges. Follow Maya, a fictional student in Lausanne, and explore how housing, work, and unexpected costs affect her cash, unpaid bills, and net worth.
+FinLife is an interactive financial life simulator for the UBS × LauzHack and JetBrains challenges. Follow , a fictional student in Lausanne, and explore how housing, work, and unexpected costs affect her cash, unpaid bills, and net worth.
 
 ## 2. Core Features
 
 - **Editable budget** — Set starting cash, income, and expenses. The Details view explains monthly results and lets you revise inputs while retaining recorded decisions.
-- **What If** — Compare a paid internship, shared housing, or both against the current path in a 12-month outlook.
+- **What If** — Compare a paid internship, shared housing, or both, or even stop working for 6 months against the current path in a 12-month outlook.
 - **Financial history** — Advance month by month, track cash and net worth, and review income, expenses, and unpaid bills.
 - **AI assistant** — An optional local Ollama model explains simulation results. The Kotlin engine performs the calculations.
 
@@ -37,6 +37,6 @@ For AI explanations, start Ollama and run `ollama pull qwen3:4b` on the host com
 
 ## 5. User Flow & Edge Cases
 
-Choose Maya → edit her budget → preview a choice → advance a month to apply it → review the results. The simulation works without Ollama. Unpaid bills are tracked separately from available cash. All figures are illustrative. Simulation under stated assumptions, not a forecast or financial advice.
+Choose a name → edit his/her budget → preview a choice → advance a month to apply it → review the results. The simulation works without Ollama. Unpaid bills are tracked separately from available cash. All figures are illustrative. Simulation under stated assumptions, not a forecast or financial advice.
 
 [Developer guide and model assumptions](FinLife/README.md)
