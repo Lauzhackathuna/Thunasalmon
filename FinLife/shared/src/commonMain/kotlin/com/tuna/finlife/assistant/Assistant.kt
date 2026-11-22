@@ -41,7 +41,8 @@ internal class Assistant(private val model: AssistantModel) {
         language: AppLanguage,
     ): AssistantAnswer {
         model.check()?.let { return AssistantAnswer.Unavailable(it, model.modelName) }
-        val routing = AssistantPrompts.routing(AssistantFacts.routingSummary(context).replace("Maya", context.playerName), language)
+        val routing = AssistantPrompts.routing(AssistantFacts.routingSummary(context), language)
+            .replace("Maya", context.playerName)
         val extraction = when (val result = model.extract(routing, history.takeLast(6) + ChatTurn(Speaker.User, question))) {
             is ModelResult.Ok -> result.value
             is ModelResult.Failed -> return failed(result.failure)
