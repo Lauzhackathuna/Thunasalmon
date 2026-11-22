@@ -181,7 +181,7 @@ class ProductUpgradeTest {
             .lines().filterNot { it.startsWith("N|") }.joinToString("\n")
         var hash = 2166136261u
         legacyBody.forEach { hash = (hash xor it.code.toUInt()) * 16777619u }
-        val legacy = JourneySave.decode("$legacyBody\nHASH|\${hash.toString(16)}")
+        val legacy = JourneySave.decode("$legacyBody\nHASH|${hash.toString(16)}")
         assertEquals("Maya", legacy.data.firstName)
         assertEquals("Maya", legacy.session.profile.name)
 
