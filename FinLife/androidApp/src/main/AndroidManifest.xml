@@ -3,6 +3,8 @@
 
     <!-- The assistant talks to Ollama on the developer's computer (emulator: 10.0.2.2). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 17+: 10.0.2.2 is on the local network, which needs this runtime permission. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <application
         android:allowBackup="true"

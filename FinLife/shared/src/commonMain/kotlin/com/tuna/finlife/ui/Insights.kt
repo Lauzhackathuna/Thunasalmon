@@ -98,8 +98,10 @@ private fun percent(rate: Double) = percentLabel(rate) + " %"
 @Composable
 internal fun GoalProgressView(progress: GoalProgress) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        LedgerLine(stringResource(Res.string.goal_title),
-            stringResource(Res.string.goal_target, money(progress.goal.nominalAmount), progress.goal.dueMonth))
+        // Title on its own line: beside a long target, a narrow screen would squeeze it into a column.
+        Text(stringResource(Res.string.goal_title), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(Res.string.goal_target, money(progress.goal.nominalAmount), progress.goal.dueMonth),
+            style = MaterialTheme.typography.labelLarge)
         val fraction = (progress.percentage / 100.0).coerceIn(0.0, 1.0).toFloat()
         LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
         Text(
