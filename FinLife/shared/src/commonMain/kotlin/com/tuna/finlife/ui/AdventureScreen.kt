@@ -254,7 +254,7 @@ private fun AdventureFinances(
                 modifier = Modifier.padding(FinLifeSpacing.large),
                 verticalArrangement = Arrangement.spacedBy(FinLifeSpacing.small),
             ) {
-                Text(stringResource(Res.string.outlook_title),
+                Text(stringResource(Res.string.dashboard_timeline_title),
                     style = MaterialTheme.typography.titleLarge)
                 CashChart(session, counterfactual, Modifier.fillMaxWidth(),
                     projection = projection, baseline = baseline, combineHistory = projection != null,
