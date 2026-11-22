@@ -107,18 +107,16 @@ sealed class LifeEvent {
         override val id: String,
         override val month: Int,
         val monthlySalary: Money = Money.chf(4_500),
-        val privateCompanyFailureProbability: Double = 0.30,
-        val riskHorizonMonths: Int = 12,
+
     ) : LifeEvent() {
         override val interactive: Boolean get() = true
-        init {
-            validateEvent(id, month); requireCost(monthlySalary)
-            require(privateCompanyFailureProbability.isFinite() && privateCompanyFailureProbability in 0.0..1.0)
-            require(riskHorizonMonths in 1..12)
-        }
+        /** Independent failure hazard while the player remains in the private-sector job. */
+        val monthlyFailureProbability: Double get() = MONTHLY_FAILURE_PROBABILITY
+        init { validateEvent(id, month); requireCost(monthlySalary) }
+        companion object { const val MONTHLY_FAILURE_PROBABILITY = 0.10 }
     }
 
-    /** Pre-drawn, deterministic company collapse following a "keep current job" choice. */
+    /** Discovered when its month opens, never scheduled twelve months in advance. */
     data class CompanyClosure(
         override val id: String,
         override val month: Int,

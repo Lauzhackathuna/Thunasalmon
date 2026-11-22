@@ -222,22 +222,9 @@ internal object AdventureRun {
         else -> "whatif-${whatIf.name.lowercase()}-$month"
     }
 
-    /**
-     * Store a choice without advancing time. Keeping the private-sector job exposes that run
-     * to one independently seeded 30% failure draw over the following twelve months.
-     * The drawn event is committed to the calendar so saves and counterfactuals replay exactly.
-     */
-    internal fun commitDecision(session: SimulationSession, eventId: String, optionId: String): SimulationSession? {
-        val answered = submit(session, eventId, optionId) ?: return null
-        val offer = session.calendar.filterIsInstance<LifeEvent.EpflJobOffer>()
-            .singleOrNull { it.id == eventId } ?: return answered
-        if (optionId != "stay") return answered
-        val draw = Random(session.configuration.randomSeed xor offer.id.hashCode().toLong() xor 0x4550464cL)
-        if (draw.nextDouble() >= offer.privateCompanyFailureProbability) return answered
-        val month = offer.month + draw.nextInt(1, offer.riskHorizonMonths + 1)
-        if (month >= session.configuration.horizonMonths) return answered
-        return SimulationSessions.schedule(answered, LifeEvent.CompanyClosure("company-closure-${offer.id}", month, offer.id))
-    }
+    /** Record the choice; unlike before, no future company failure is pre-drawn here. */
+    internal fun commitDecision(session: SimulationSession, eventId: String, optionId: String): SimulationSession? =
+        submit(session, eventId, optionId)
 
     private fun submit(session: SimulationSession, eventId: String, optionId: String): SimulationSession? {
         val pending = SimulationSessions.pendingDecisions(session).singleOrNull { it.event.id == eventId }
@@ -264,13 +251,25 @@ internal object AdventureRun {
             session.calendar.none { it is LifeEvent.EpflJobOffer }
         ) listOf(LifeEvent.EpflJobOffer("epfl-offer-${session.currentMonth}", session.currentMonth))
         else emptyList()
-        if (drawn.isEmpty() && jobOffer.isEmpty()) return session
+        // Only after choosing to KEEP the private job; each subsequent month has a new 10% draw.
+        // No draw applies after switching to EPFL or after the company has already closed.
+        val retainedOffer = session.calendar.filterIsInstance<LifeEvent.EpflJobOffer>()
+            .firstOrNull { offer -> session.selections.any { it.eventId == offer.id && it.optionId == "stay" } }
+        val closure = if (retainedOffer != null &&
+            state.status == LifeStatus.EMPLOYED &&
+            state.employerType == com.tuna.finlife.simulation.EmployerType.PRIVATE &&
+            !state.jobLost &&
+            session.calendar.none { it is LifeEvent.CompanyClosure && it.month == session.currentMonth } &&
+            RandomTroubles.privateCompanyFails(session.configuration.randomSeed, session.currentMonth)
+        ) listOf(LifeEvent.CompanyClosure("company-closure-${session.currentMonth}", session.currentMonth, retainedOffer.id))
+        else emptyList()
+        if (drawn.isEmpty() && jobOffer.isEmpty() && closure.isEmpty()) return session
         val indexed = drawn.map { event ->
             if (event is LifeEvent.OneOffExpense) {
                 event.copy(amount = event.amount.scaled(session.configuration.priceIndex(event.month)))
             } else event
         }
-        val scheduled = withEvents(session, indexed + jobOffer)
+        val scheduled = withEvents(session, indexed + jobOffer + closure)
         // A drawn rent rise can be a decision now: surface it before anything else happens this month.
         return if (noPendingDecision(scheduled)) scheduled else SimulationSessions.advance(scheduled)
     }

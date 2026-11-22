@@ -13,7 +13,7 @@ internal object JourneySave {
         val validatedName = requireNotNull(PlayerName.normalize(playerName)) { "A valid player name is required" }
         val base = draft?.base ?: session
         val lines = buildList {
-            add("FINLIFE|2")
+            add("FINLIFE|3")
             add("N|${hex(validatedName)}")
             add("R|${base.configuration.randomSeed}|${base.currentMonth}|$ended|$language|$theme")
             StartingField.entries.forEach { add("A|${it.name}|${data[it]}") }
@@ -28,7 +28,7 @@ internal object JourneySave {
                     is LifeEvent.Maintenance -> "maintenance|${e.nominalAmount.cents}|${e.responsibility.name}"
                     is LifeEvent.ShortInternshipOffer -> "short|${e.startMonth}|${e.monthlyIncome.cents}"
                     is LifeEvent.CareerBreak -> "break|${e.durationMonths}"
-                    is LifeEvent.EpflJobOffer -> "epfl|${e.monthlySalary.cents}|${e.privateCompanyFailureProbability}|${e.riskHorizonMonths}"
+                    is LifeEvent.EpflJobOffer -> "epfl|${e.monthlySalary.cents}"
                     is LifeEvent.CompanyClosure -> "closure|${hex(e.offerId)}"
                     is LifeEvent.HousingChoice -> {
                         require(e.newRentRule == null) { "Unsupported app housing rule" }
@@ -48,9 +48,9 @@ internal object JourneySave {
         require(body.isNotEmpty() && checksum(body) == text.substringAfterLast("\nHASH|")) { "Save checksum mismatch" }
         val lines = body.lines().map { it.split('|') }
         val version = lines.first().takeIf { it.size == 2 && it[0] == "FINLIFE" }?.get(1)
-        require(version in setOf("1", "2")) { "Unsupported save version" }
+        require(version in setOf("1", "2", "3")) { "Unsupported save version" }
         require(lines.drop(1).all { it.first() in setOf("R", "A", "V", "D", "C", "E", "N") })
-        val playerName = if (version == "2") {
+        val playerName = if (version != "1") {
             val encoded = lines.single { it.first() == "N" }
             require(encoded.size == 2)
             requireNotNull(PlayerName.normalize(unhex(encoded[1]))) { "Invalid saved player name" }
@@ -66,7 +66,7 @@ internal object JourneySave {
         val choices = lines.filter { it.first() == "C" }.map {
             require(it.size == 3); DecisionSelection(unhex(it[1]), unhex(it[2]))
         }
-        val events = lines.filter { it.first() == "E" }.map { fields ->
+        val parsedEvents = lines.filter { it.first() == "E" }.map { fields ->
             val id = unhex(fields[1]); val month = fields[2].toInt()
             when (fields[3]) {
                 "rent" -> { require(fields.size == 6); LifeEvent.RentRise(id, month, MonthlyRentRule(unhex(fields[4]), month, fields[5].toDouble())) }
@@ -74,8 +74,15 @@ internal object JourneySave {
                 "maintenance" -> { require(fields.size == 6); LifeEvent.Maintenance(id, month, PaymentResponsibility.valueOf(fields[5]), Money(fields[4].toLong())) }
                 "short" -> { require(fields.size == 6); LifeEvent.ShortInternshipOffer(id, month, fields[4].toInt(), Money(fields[5].toLong())) }
                 "break" -> { require(fields.size == 5); LifeEvent.CareerBreak(id, month, fields[4].toInt()) }
-                "epfl" -> { require(fields.size == 7); LifeEvent.EpflJobOffer(id, month,
-                    Money(fields[4].toLong()), fields[5].toDouble(), fields[6].toInt()) }
+                "epfl" -> {
+                    require(fields.size == 5 || (version == "2" && fields.size == 7))
+                    // Version 2 stored a 30% twelve-month lottery. Upgrade it to a 10%
+                    // monthly hazard; the old probability/horizon no longer apply.
+                    if (fields.size == 7) {
+                        require(fields[5].toDouble() in 0.0..1.0 && fields[6].toInt() in 1..12)
+                    }
+                    LifeEvent.EpflJobOffer(id, month, Money(fields[4].toLong()))
+                }
                 "closure" -> { require(fields.size == 5); LifeEvent.CompanyClosure(id, month, unhex(fields[4])) }
                 "housing" -> { require(fields.size == 10); LifeEvent.HousingChoice(id, month,
                     HousingContract(unhex(fields[4]), Money(fields[5].toLong()), fields[6].toInt(), HousingType.valueOf(fields[7])),
@@ -83,6 +90,10 @@ internal object JourneySave {
                 else -> error("Unsupported event in save")
             }
         }
+        // Legacy saves could contain a failure scheduled months in advance.
+        // Keep only failures from completed months; new saves have no pre-drawn outcomes.
+        val events = parsedEvents.filterNot { version == "2" &&
+            it is LifeEvent.CompanyClosure && it.month >= run[2].toInt() }
         require(events.size <= 5000)
         val base = requireNotNull(AdventureRun.restore(run[1].toLong(), data, events, choices, run[2].toInt(), playerName = playerName.ifEmpty { "Player" })) { "Recorded decisions cannot be restored" }
         val expected = lines.single { it.first() == "V" }.drop(1)
